@@ -1,0 +1,94 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/main.gd" id="1_main"]
+[ext_resource type="Shader" path="res://assets/models/track.gdshader" id="2_track"]
+[ext_resource type="PackedScene" path="res://scenes/receptor.tscn" id="3_receptor"]
+
+[sub_resource type="Environment" id="Environment_neon"]
+background_mode = 1
+ambient_light_source = 3
+ambient_light_color = Color(0.02, 0.01, 0.06, 1)
+ambient_light_energy = 0.18
+tonemap_mode = 3
+ssr_enabled = true
+ssr_depth_tolerance = 0.2
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.98
+glow_strength = 0.92
+glow_bloom = 0.18
+glow_hdr_threshold = 0.9
+fog_enabled = true
+fog_light_color = Color(0.03, 0.005, 0.08, 1)
+fog_light_energy = 0.28
+fog_density = 0.0026
+fog_height = -2.0
+fog_height_density = 0.2
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0018
+volumetric_fog_albedo = Color(0.12, 0.02, 0.22, 1)
+volumetric_fog_emission = Color(0.01, 0, 0.025, 1)
+volumetric_fog_emission_energy = 0.16
+volumetric_fog_length = 80.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_track"]
+size = Vector2(8, 120)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_track"]
+render_priority = 0
+shader = ExtResource("2_track")
+shader_parameter/base_color = Color(0.005, 0, 0.018, 0.92)
+shader_parameter/divider_color = Color(0.72, 0.9, 1, 1)
+shader_parameter/edge_color = Color(1, 0, 0.82, 1)
+shader_parameter/lane_fill_mask = null
+shader_parameter/cyan_fill_color = Color(0, 0.96, 1, 1)
+shader_parameter/magenta_fill_color = Color(1, 0, 0.82, 1)
+shader_parameter/active_lane_opacity = 0.3
+shader_parameter/scroll_speed = 0.72
+shader_parameter/grid_tiling_x = 1.0
+shader_parameter/grid_tiling_y = 9.0
+shader_parameter/grid_emission = 3.2
+shader_parameter/depth_fade_power = 3.35
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_neon")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 4.5, 7.25)
+rotation_degrees = Vector3(-16, 0, 0)
+current = true
+fov = 72.0
+
+[node name="Track" type="MeshInstance3D" parent="."]
+position = Vector3(0, -1.8, -55)
+mesh = SubResource("PlaneMesh_track")
+material_override = SubResource("ShaderMaterial_track")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="Notes" type="Node3D" parent="."]
+
+[node name="Receptors" type="Node3D" parent="."]
+
+[node name="Receptor0" parent="Receptors" instance=ExtResource("3_receptor")]
+position = Vector3(-3, -1.7, 0)
+lane = 0
+
+[node name="Receptor1" parent="Receptors" instance=ExtResource("3_receptor")]
+position = Vector3(-1, -1.7, 0)
+lane = 1
+
+[node name="Receptor2" parent="Receptors" instance=ExtResource("3_receptor")]
+position = Vector3(1, -1.7, 0)
+lane = 2
+
+[node name="Receptor3" parent="Receptors" instance=ExtResource("3_receptor")]
+position = Vector3(3, -1.7, 0)
+lane = 3
+
+[node name="TunnelFrames" type="Node3D" parent="."]
+
+[node name="HitEffects" type="Node3D" parent="."]

@@ -1,0 +1,5 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/main.tscn" id="1_main_scene"]
+
+[node name="MainCompatibility" instance=ExtResource("1_main_scene")]

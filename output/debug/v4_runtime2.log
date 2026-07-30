@@ -1,0 +1,6 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+Render clock: mode=frame fps=30.000 movie=false headless=true diagnostic=-1.000 stop_after=1.000 file= debug_timeline=false
+Background video: fallback=procedural_tunnel reason=headless_skip path=res://assets/images/background/reference_fullhd.mp4
+Renderer capability: method=forward_plus fog_volume=true movie=false
+Headless validation mode: skipping audio playback.

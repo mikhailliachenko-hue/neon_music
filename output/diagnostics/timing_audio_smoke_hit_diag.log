@@ -1,0 +1,274 @@
+CLOCK_DIAG event=spawn frame=000000 song_time=0.000000 note=000 lane=2 hit_time=0.021333 spawn_z=-0.426660
+CLOCK_DIAG event=spawn frame=000000 song_time=0.000000 note=001 lane=3 hit_time=0.992000 spawn_z=-19.840000
+CLOCK_DIAG event=spawn frame=000000 song_time=0.000000 note=002 lane=3 hit_time=1.994667 spawn_z=-39.893340
+CLOCK_DIAG event=spawn frame=000000 song_time=0.000000 note=003 lane=1 hit_time=2.954667 spawn_z=-59.093340
+CLOCK_DIAG event=spawn frame=000000 song_time=0.000000 note=004 lane=2 hit_time=3.797333 spawn_z=-75.946660
+CLOCK_DIAG event=hit_trigger kind=tap frame=000002 receptor_cross_frame=000002 lane=2 source=000 expected_beat=0.021333 hit_time=0.021333 actual_trigger_time=0.033333 error_ms=12.000
+CLOCK_DIAG event=spawn frame=000048 song_time=0.800000 note=005 lane=2 hit_time=4.789333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=000060 receptor_cross_frame=000060 lane=3 source=001 expected_beat=0.992000 hit_time=0.992000 actual_trigger_time=1.000000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000095 song_time=1.583333 note=006 lane=0 hit_time=5.578667 spawn_z=-79.906673
+CLOCK_DIAG event=hit_trigger kind=tap frame=000120 receptor_cross_frame=000120 lane=3 source=002 expected_beat=1.994667 hit_time=1.994667 actual_trigger_time=2.000000 error_ms=5.333
+CLOCK_DIAG event=spawn frame=000156 song_time=2.600000 note=007 lane=3 hit_time=6.592000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000178 receptor_cross_frame=000178 lane=1 source=003 expected_beat=2.954667 hit_time=2.954667 actual_trigger_time=2.966667 error_ms=12.000
+CLOCK_DIAG event=spawn frame=000204 song_time=3.400000 note=008 lane=2 hit_time=7.392000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000228 receptor_cross_frame=000228 lane=2 source=004 expected_beat=3.797333 hit_time=3.797333 actual_trigger_time=3.800000 error_ms=2.667
+CLOCK_DIAG event=spawn frame=000252 song_time=4.200000 note=009 lane=3 hit_time=8.192000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000288 receptor_cross_frame=000288 lane=2 source=005 expected_beat=4.789333 hit_time=4.789333 actual_trigger_time=4.800000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=000300 song_time=5.000000 note=010 lane=0 hit_time=8.992000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000335 receptor_cross_frame=000335 lane=0 source=006 expected_beat=5.578667 hit_time=5.578667 actual_trigger_time=5.583333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=000348 song_time=5.800000 note=011 lane=2 hit_time=9.792000 spawn_z=-79.840000
+CLOCK_DIAG event=spawn frame=000396 song_time=6.600000 note=012 lane=3 hit_time=10.592000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000396 receptor_cross_frame=000396 lane=3 source=007 expected_beat=6.592000 hit_time=6.592000 actual_trigger_time=6.600000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000444 song_time=7.400000 note=013 lane=3 hit_time=11.392000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000444 receptor_cross_frame=000444 lane=2 source=008 expected_beat=7.392000 hit_time=7.392000 actual_trigger_time=7.400000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000491 song_time=8.183333 note=014 lane=1 hit_time=12.170667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=tap frame=000492 receptor_cross_frame=000492 lane=3 source=009 expected_beat=8.192000 hit_time=8.192000 actual_trigger_time=8.200000 error_ms=8.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000540 receptor_cross_frame=000540 lane=0 source=010 expected_beat=8.992000 hit_time=8.992000 actual_trigger_time=9.000000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000550 song_time=9.166667 note=015 lane=1 hit_time=13.162667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=000588 receptor_cross_frame=000588 lane=2 source=011 expected_beat=9.792000 hit_time=9.792000 actual_trigger_time=9.800000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000600 song_time=10.000000 note=016 lane=2 hit_time=13.994667 spawn_z=-79.893340
+CLOCK_DIAG event=hit_trigger kind=tap frame=000636 receptor_cross_frame=000636 lane=3 source=012 expected_beat=10.592000 hit_time=10.592000 actual_trigger_time=10.600000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000647 song_time=10.783333 note=017 lane=0 hit_time=14.773333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=000684 receptor_cross_frame=000684 lane=3 source=013 expected_beat=11.392000 hit_time=11.392000 actual_trigger_time=11.400000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=000694 song_time=11.566667 note=018 lane=1 hit_time=15.562667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=000731 receptor_cross_frame=000731 lane=1 source=014 expected_beat=12.170667 hit_time=12.170667 actual_trigger_time=12.183333 error_ms=12.666
+CLOCK_DIAG event=spawn frame=000732 song_time=12.200000 note=019 lane=2 hit_time=16.192000 spawn_z=-79.840000
+CLOCK_DIAG event=spawn frame=000779 song_time=12.983333 note=020 lane=0 hit_time=16.981333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=000790 receptor_cross_frame=000790 lane=1 source=015 expected_beat=13.162667 hit_time=13.162667 actual_trigger_time=13.166667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=000828 song_time=13.800000 note=021 lane=1 hit_time=17.792000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000840 receptor_cross_frame=000840 lane=2 source=016 expected_beat=13.994667 hit_time=13.994667 actual_trigger_time=14.000000 error_ms=5.333
+CLOCK_DIAG event=spawn frame=000864 song_time=14.400000 note=022 lane=3 hit_time=18.389333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=000887 receptor_cross_frame=000887 lane=0 source=017 expected_beat=14.773333 hit_time=14.773333 actual_trigger_time=14.783333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=000900 song_time=15.000000 note=023 lane=0 hit_time=18.986667 spawn_z=-79.733340
+CLOCK_DIAG event=hit_trigger kind=tap frame=000934 receptor_cross_frame=000934 lane=1 source=018 expected_beat=15.562667 hit_time=15.562667 actual_trigger_time=15.566667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=000936 song_time=15.600000 note=024 lane=2 hit_time=19.594667 spawn_z=-79.893340
+CLOCK_DIAG event=spawn frame=000972 song_time=16.200000 note=025 lane=1 hit_time=20.192000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=000972 receptor_cross_frame=000972 lane=2 source=019 expected_beat=16.192000 hit_time=16.192000 actual_trigger_time=16.200000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=001008 song_time=16.800000 note=026 lane=3 hit_time=20.789333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=001019 receptor_cross_frame=001019 lane=0 source=020 expected_beat=16.981333 hit_time=16.981333 actual_trigger_time=16.983333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=001044 song_time=17.400000 note=027 lane=0 hit_time=21.386667 spawn_z=-79.733340
+CLOCK_DIAG event=hit_trigger kind=tap frame=001068 receptor_cross_frame=001068 lane=1 source=021 expected_beat=17.792000 hit_time=17.792000 actual_trigger_time=17.800000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=001078 song_time=17.966667 note=028 lane=1 hit_time=21.962667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=001104 receptor_cross_frame=001104 lane=3 source=022 expected_beat=18.389333 hit_time=18.389333 actual_trigger_time=18.400000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=001116 song_time=18.600000 note=029 lane=2 hit_time=22.592000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=001140 receptor_cross_frame=001140 lane=0 source=023 expected_beat=18.986667 hit_time=18.986667 actual_trigger_time=19.000000 error_ms=13.333
+CLOCK_DIAG event=spawn frame=001151 song_time=19.183333 note=030 lane=0 hit_time=23.168000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=001176 receptor_cross_frame=001176 lane=2 source=024 expected_beat=19.594667 hit_time=19.594667 actual_trigger_time=19.600000 error_ms=5.333
+CLOCK_DIAG event=hit_trigger kind=tap frame=001212 receptor_cross_frame=001212 lane=1 source=025 expected_beat=20.192000 hit_time=20.192000 actual_trigger_time=20.200000 error_ms=8.000
+CLOCK_DIAG event=spawn_wall frame=001243 song_time=20.716667 wall=000 type=wall_right start=24.704048 duration=3.242672 z=0.000000
+CLOCK_DIAG event=hit_trigger kind=tap frame=001248 receptor_cross_frame=001248 lane=3 source=026 expected_beat=20.789333 hit_time=20.789333 actual_trigger_time=20.800000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=001272 song_time=21.200000 note=031 lane=0 hit_time=25.194667 spawn_z=-79.893340
+CLOCK_DIAG event=hit_trigger kind=tap frame=001284 receptor_cross_frame=001284 lane=0 source=027 expected_beat=21.386667 hit_time=21.386667 actual_trigger_time=21.400000 error_ms=13.333
+CLOCK_DIAG event=hit_trigger kind=tap frame=001318 receptor_cross_frame=001318 lane=1 source=028 expected_beat=21.962667 hit_time=21.962667 actual_trigger_time=21.966667 error_ms=4.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=001356 receptor_cross_frame=001356 lane=2 source=029 expected_beat=22.592000 hit_time=22.592000 actual_trigger_time=22.600000 error_ms=8.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=001391 receptor_cross_frame=001391 lane=0 source=030 expected_beat=23.168000 hit_time=23.168000 actual_trigger_time=23.183333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=001392 song_time=23.200000 note=032 lane=1 hit_time=27.189333 spawn_z=-79.786660
+CLOCK_DIAG event=spawn frame=001487 song_time=24.783333 note=033 lane=3 hit_time=28.778667 spawn_z=-79.906673
+CLOCK_DIAG event=hit_trigger kind=tap frame=001512 receptor_cross_frame=001512 lane=0 source=031 expected_beat=25.194667 hit_time=25.194667 actual_trigger_time=25.200000 error_ms=5.333
+CLOCK_DIAG event=spawn frame=001529 song_time=25.483333 note=034 lane=0 hit_time=29.472000 spawn_z=-79.773333
+CLOCK_DIAG event=spawn frame=001572 song_time=26.200000 note=035 lane=3 hit_time=30.186667 spawn_z=-79.733340
+CLOCK_DIAG event=spawn frame=001607 song_time=26.783333 note=036 lane=2 hit_time=30.773333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=001632 receptor_cross_frame=001632 lane=1 source=032 expected_beat=27.189333 hit_time=27.189333 actual_trigger_time=27.200000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=001643 song_time=27.383333 note=037 lane=2 hit_time=31.381333 spawn_z=-79.959993
+CLOCK_DIAG event=spawn frame=001679 song_time=27.983333 note=038 lane=3 hit_time=31.978667 spawn_z=-79.906673
+CLOCK_DIAG event=spawn frame=001721 song_time=28.683333 note=039 lane=1 hit_time=32.682667 spawn_z=-79.986673
+CLOCK_DIAG event=hit_trigger kind=tap frame=001727 receptor_cross_frame=001727 lane=3 source=033 expected_beat=28.778667 hit_time=28.778667 actual_trigger_time=28.783333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=001763 song_time=29.383333 note=040 lane=3 hit_time=33.376000 spawn_z=-79.853333
+CLOCK_DIAG event=hit_trigger kind=tap frame=001769 receptor_cross_frame=001769 lane=0 source=034 expected_beat=29.472000 hit_time=29.472000 actual_trigger_time=29.483333 error_ms=11.333
+CLOCK_DIAG event=spawn frame=001800 song_time=30.000000 note=041 lane=2 hit_time=33.984000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=001812 receptor_cross_frame=001812 lane=3 source=035 expected_beat=30.186667 hit_time=30.186667 actual_trigger_time=30.200000 error_ms=13.333
+CLOCK_DIAG event=spawn frame=001835 song_time=30.583333 note=042 lane=3 hit_time=34.581333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=001847 receptor_cross_frame=001847 lane=2 source=036 expected_beat=30.773333 hit_time=30.773333 actual_trigger_time=30.783333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=001870 song_time=31.166667 note=043 lane=0 hit_time=35.157333 spawn_z=-79.813327
+CLOCK_DIAG event=hit_trigger kind=tap frame=001883 receptor_cross_frame=001883 lane=2 source=037 expected_beat=31.381333 hit_time=31.381333 actual_trigger_time=31.383333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=001912 song_time=31.866667 note=044 lane=1 hit_time=35.861333 spawn_z=-79.893327
+CLOCK_DIAG event=hit_trigger kind=tap frame=001919 receptor_cross_frame=001919 lane=3 source=038 expected_beat=31.978667 hit_time=31.978667 actual_trigger_time=31.983333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=001943 song_time=32.383333 note=045 lane=2 hit_time=36.373333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=001961 receptor_cross_frame=001961 lane=1 source=039 expected_beat=32.682667 hit_time=32.682667 actual_trigger_time=32.683333 error_ms=0.666
+CLOCK_DIAG event=spawn frame=001979 song_time=32.983333 note=046 lane=2 hit_time=36.981333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002003 receptor_cross_frame=002003 lane=3 source=040 expected_beat=33.376000 hit_time=33.376000 actual_trigger_time=33.383333 error_ms=7.333
+CLOCK_DIAG event=spawn frame=002015 song_time=33.583333 note=047 lane=1 hit_time=37.568000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002040 receptor_cross_frame=002040 lane=2 source=041 expected_beat=33.984000 hit_time=33.984000 actual_trigger_time=34.000000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=002050 song_time=34.166667 note=048 lane=0 hit_time=38.154667 spawn_z=-79.760007
+CLOCK_DIAG event=hit_trigger kind=tap frame=002075 receptor_cross_frame=002075 lane=3 source=042 expected_beat=34.581333 hit_time=34.581333 actual_trigger_time=34.583333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=002088 song_time=34.800000 note=049 lane=3 hit_time=38.784000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=002110 receptor_cross_frame=002110 lane=0 source=043 expected_beat=35.157333 hit_time=35.157333 actual_trigger_time=35.166667 error_ms=9.334
+CLOCK_DIAG event=spawn frame=002122 song_time=35.366667 note=050 lane=3 hit_time=39.360000 spawn_z=-79.866667
+CLOCK_DIAG event=hit_trigger kind=tap frame=002152 receptor_cross_frame=002152 lane=1 source=044 expected_beat=35.861333 hit_time=35.861333 actual_trigger_time=35.866667 error_ms=5.334
+CLOCK_DIAG event=spawn frame=002159 song_time=35.983333 note=051 lane=2 hit_time=39.978667 spawn_z=-79.906673
+CLOCK_DIAG event=hit_trigger kind=tap frame=002183 receptor_cross_frame=002183 lane=2 source=045 expected_beat=36.373333 hit_time=36.373333 actual_trigger_time=36.383333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=002201 song_time=36.683333 note=052 lane=3 hit_time=40.672000 spawn_z=-79.773333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002219 receptor_cross_frame=002219 lane=2 source=046 expected_beat=36.981333 hit_time=36.981333 actual_trigger_time=36.983333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=002231 song_time=37.183333 note=053 lane=1 hit_time=41.173333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002255 receptor_cross_frame=002255 lane=1 source=047 expected_beat=37.568000 hit_time=37.568000 actual_trigger_time=37.583333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=002267 song_time=37.783333 note=054 lane=2 hit_time=41.781333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002290 receptor_cross_frame=002290 lane=0 source=048 expected_beat=38.154667 hit_time=38.154667 actual_trigger_time=38.166667 error_ms=12.000
+CLOCK_DIAG event=spawn frame=002303 song_time=38.383333 note=055 lane=2 hit_time=42.368000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002328 receptor_cross_frame=002328 lane=3 source=049 expected_beat=38.784000 hit_time=38.784000 actual_trigger_time=38.800000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=002339 song_time=38.983333 note=056 lane=3 hit_time=42.976000 spawn_z=-79.853333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002362 receptor_cross_frame=002362 lane=3 source=050 expected_beat=39.360000 hit_time=39.360000 actual_trigger_time=39.366667 error_ms=6.667
+CLOCK_DIAG event=spawn frame=002375 song_time=39.583333 note=057 lane=2 hit_time=43.573333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002399 receptor_cross_frame=002399 lane=2 source=051 expected_beat=39.978667 hit_time=39.978667 actual_trigger_time=39.983333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=002411 song_time=40.183333 note=058 lane=0 hit_time=44.170667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=tap frame=002441 receptor_cross_frame=002441 lane=3 source=052 expected_beat=40.672000 hit_time=40.672000 actual_trigger_time=40.683333 error_ms=11.333
+CLOCK_DIAG event=spawn frame=002446 song_time=40.766667 note=059 lane=3 hit_time=44.757333 spawn_z=-79.813327
+CLOCK_DIAG event=hit_trigger kind=tap frame=002471 receptor_cross_frame=002471 lane=1 source=053 expected_beat=41.173333 hit_time=41.173333 actual_trigger_time=41.183333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=002495 song_time=41.583333 note=060 lane=1 hit_time=45.568000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002507 receptor_cross_frame=002507 lane=2 source=054 expected_beat=41.781333 hit_time=41.781333 actual_trigger_time=41.783333 error_ms=2.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=002543 receptor_cross_frame=002543 lane=2 source=055 expected_beat=42.368000 hit_time=42.368000 actual_trigger_time=42.383333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=002544 song_time=42.400000 note=061 lane=0 hit_time=46.389333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=002579 receptor_cross_frame=002579 lane=3 source=056 expected_beat=42.976000 hit_time=42.976000 actual_trigger_time=42.983333 error_ms=7.333
+CLOCK_DIAG event=spawn frame=002592 song_time=43.200000 note=062 lane=2 hit_time=47.189333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=002615 receptor_cross_frame=002615 lane=2 source=057 expected_beat=43.573333 hit_time=43.573333 actual_trigger_time=43.583333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=002625 song_time=43.750000 note=063 lane=1 hit_time=47.744000 spawn_z=-79.880000
+CLOCK_DIAG event=hit_trigger kind=tap frame=002651 receptor_cross_frame=002651 lane=0 source=058 expected_beat=44.170667 hit_time=44.170667 actual_trigger_time=44.183333 error_ms=12.666
+CLOCK_DIAG event=spawn frame=002664 song_time=44.400000 note=064 lane=3 hit_time=48.384000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=002686 receptor_cross_frame=002686 lane=3 source=059 expected_beat=44.757333 hit_time=44.757333 actual_trigger_time=44.766667 error_ms=9.334
+CLOCK_DIAG event=spawn frame=002710 song_time=45.166667 note=065 lane=0 hit_time=49.162667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=002735 receptor_cross_frame=002735 lane=1 source=060 expected_beat=45.568000 hit_time=45.568000 actual_trigger_time=45.583333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=002747 song_time=45.783333 note=066 lane=0 hit_time=49.781333 spawn_z=-79.959993
+CLOCK_DIAG event=spawn frame=002784 song_time=46.400000 note=067 lane=1 hit_time=50.389333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=002784 receptor_cross_frame=002784 lane=0 source=061 expected_beat=46.389333 hit_time=46.389333 actual_trigger_time=46.400000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=002818 song_time=46.966667 note=068 lane=1 hit_time=50.954667 spawn_z=-79.760007
+CLOCK_DIAG event=hit_trigger kind=tap frame=002832 receptor_cross_frame=002832 lane=2 source=062 expected_beat=47.189333 hit_time=47.189333 actual_trigger_time=47.200000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=002855 song_time=47.583333 note=069 lane=2 hit_time=51.573333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002865 receptor_cross_frame=002865 lane=1 source=063 expected_beat=47.744000 hit_time=47.744000 actual_trigger_time=47.750000 error_ms=6.000
+CLOCK_DIAG event=spawn frame=002891 song_time=48.183333 note=070 lane=3 hit_time=52.181333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=002904 receptor_cross_frame=002904 lane=3 source=064 expected_beat=48.384000 hit_time=48.384000 actual_trigger_time=48.400000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=002927 song_time=48.783333 note=071 lane=2 hit_time=52.768000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=002950 receptor_cross_frame=002950 lane=0 source=065 expected_beat=49.162667 hit_time=49.162667 actual_trigger_time=49.166667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=002976 song_time=49.600000 note=072 lane=0 hit_time=53.589333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=002987 receptor_cross_frame=002987 lane=0 source=066 expected_beat=49.781333 hit_time=49.781333 actual_trigger_time=49.783333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=003010 song_time=50.166667 note=073 lane=1 hit_time=54.154667 spawn_z=-79.760007
+CLOCK_DIAG event=hit_trigger kind=tap frame=003024 receptor_cross_frame=003024 lane=1 source=067 expected_beat=50.389333 hit_time=50.389333 actual_trigger_time=50.400000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=003048 song_time=50.800000 note=074 lane=3 hit_time=54.784000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=003058 receptor_cross_frame=003058 lane=1 source=068 expected_beat=50.954667 hit_time=50.954667 actual_trigger_time=50.966667 error_ms=12.000
+CLOCK_DIAG event=spawn frame=003083 song_time=51.383333 note=075 lane=0 hit_time=55.370667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=tap frame=003095 receptor_cross_frame=003095 lane=2 source=069 expected_beat=51.573333 hit_time=51.573333 actual_trigger_time=51.583333 error_ms=10.000
+CLOCK_DIAG event=spawn frame=003120 song_time=52.000000 note=076 lane=0 hit_time=55.989333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=003131 receptor_cross_frame=003131 lane=3 source=070 expected_beat=52.181333 hit_time=52.181333 actual_trigger_time=52.183333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=003154 song_time=52.566667 note=077 lane=2 hit_time=56.565333 spawn_z=-79.973327
+CLOCK_DIAG event=hit_trigger kind=tap frame=003167 receptor_cross_frame=003167 lane=2 source=071 expected_beat=52.768000 hit_time=52.768000 actual_trigger_time=52.783333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=003191 song_time=53.183333 note=078 lane=3 hit_time=57.173333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=003216 receptor_cross_frame=003216 lane=0 source=072 expected_beat=53.589333 hit_time=53.589333 actual_trigger_time=53.600000 error_ms=10.667
+CLOCK_DIAG event=hit_trigger kind=tap frame=003250 receptor_cross_frame=003250 lane=1 source=073 expected_beat=54.154667 hit_time=54.154667 actual_trigger_time=54.166667 error_ms=12.000
+CLOCK_DIAG event=spawn_wall frame=003286 song_time=54.766667 wall=001 type=wall_left start=58.752121 duration=3.242672 z=0.000000
+CLOCK_DIAG event=hit_trigger kind=tap frame=003288 receptor_cross_frame=003288 lane=3 source=074 expected_beat=54.784000 hit_time=54.784000 actual_trigger_time=54.800000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=003312 song_time=55.200000 note=079 lane=3 hit_time=59.189333 spawn_z=-79.786660
+CLOCK_DIAG event=hit_trigger kind=tap frame=003323 receptor_cross_frame=003323 lane=0 source=075 expected_beat=55.370667 hit_time=55.370667 actual_trigger_time=55.383333 error_ms=12.666
+CLOCK_DIAG event=hit_trigger kind=tap frame=003360 receptor_cross_frame=003360 lane=0 source=076 expected_beat=55.989333 hit_time=55.989333 actual_trigger_time=56.000000 error_ms=10.667
+CLOCK_DIAG event=hit_trigger kind=tap frame=003394 receptor_cross_frame=003394 lane=2 source=077 expected_beat=56.565333 hit_time=56.565333 actual_trigger_time=56.566667 error_ms=1.334
+CLOCK_DIAG event=spawn frame=003426 song_time=57.100000 note=080 lane=2 hit_time=61.088000 spawn_z=-79.760000
+CLOCK_DIAG event=hit_trigger kind=tap frame=003431 receptor_cross_frame=003431 lane=3 source=078 expected_beat=57.173333 hit_time=57.173333 actual_trigger_time=57.183333 error_ms=10.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=003552 receptor_cross_frame=003552 lane=3 source=079 expected_beat=59.189333 hit_time=59.189333 actual_trigger_time=59.200000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=003600 song_time=60.000000 note=081 lane=1 hit_time=63.989333 spawn_z=-79.786660
+CLOCK_DIAG event=spawn_hold frame=003626 song_time=60.433333 hold=000 lane=2 start=64.426800 end=65.426800
+CLOCK_DIAG event=spawn frame=003635 song_time=60.583333 note=082 lane=0 hit_time=64.576000 spawn_z=-79.853333
+CLOCK_DIAG event=hit_trigger kind=tap frame=003666 receptor_cross_frame=003666 lane=2 source=080 expected_beat=61.088000 hit_time=61.088000 actual_trigger_time=61.100000 error_ms=12.000
+CLOCK_DIAG event=spawn frame=003670 song_time=61.166667 note=083 lane=1 hit_time=65.162667 spawn_z=-79.920007
+CLOCK_DIAG event=spawn frame=003707 song_time=61.783333 note=084 lane=1 hit_time=65.781333 spawn_z=-79.959993
+CLOCK_DIAG event=spawn frame=003743 song_time=62.383333 note=085 lane=2 hit_time=66.368000 spawn_z=-79.693333
+CLOCK_DIAG event=spawn_hold frame=003772 song_time=62.866667 hold=001 lane=3 start=66.858805 end=67.858805
+CLOCK_DIAG event=spawn frame=003778 song_time=62.966667 note=086 lane=0 hit_time=66.965333 spawn_z=-79.973327
+CLOCK_DIAG event=spawn frame=003814 song_time=63.566667 note=087 lane=1 hit_time=67.562667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=003840 receptor_cross_frame=003840 lane=1 source=081 expected_beat=63.989333 hit_time=63.989333 actual_trigger_time=64.000000 error_ms=10.667
+CLOCK_DIAG event=spawn frame=003851 song_time=64.183333 note=088 lane=0 hit_time=68.170667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=003866 receptor_cross_frame=003866 lane=2 source=000 expected_beat=64.426800 hit_time=64.426800 actual_trigger_time=64.433333 error_ms=6.533
+CLOCK_DIAG event=hit_trigger kind=tap frame=003875 receptor_cross_frame=003875 lane=0 source=082 expected_beat=64.576000 hit_time=64.576000 actual_trigger_time=64.583333 error_ms=7.333
+CLOCK_DIAG event=spawn frame=003887 song_time=64.783333 note=089 lane=1 hit_time=68.768000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=003910 receptor_cross_frame=003910 lane=1 source=083 expected_beat=65.162667 hit_time=65.162667 actual_trigger_time=65.166667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=003923 song_time=65.383333 note=090 lane=3 hit_time=69.376000 spawn_z=-79.853333
+CLOCK_DIAG event=release_hold frame=003926 song_time=65.433333 hold=000 lane=2 start=64.426800 end=65.426800
+CLOCK_DIAG event=hit_trigger kind=tap frame=003947 receptor_cross_frame=003947 lane=1 source=084 expected_beat=65.781333 hit_time=65.781333 actual_trigger_time=65.783333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=003954 song_time=65.900000 note=091 lane=2 hit_time=69.888000 spawn_z=-79.760000
+CLOCK_DIAG event=clear_hold frame=003955 song_time=65.916667 hold=000 lane=2 start=64.426800 end=65.426800
+CLOCK_DIAG event=hit_trigger kind=tap frame=003983 receptor_cross_frame=003983 lane=2 source=085 expected_beat=66.368000 hit_time=66.368000 actual_trigger_time=66.383333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=003995 song_time=66.583333 note=092 lane=0 hit_time=70.570667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=004012 receptor_cross_frame=004012 lane=3 source=001 expected_beat=66.858805 hit_time=66.858805 actual_trigger_time=66.866667 error_ms=7.862
+CLOCK_DIAG event=hit_trigger kind=tap frame=004018 receptor_cross_frame=004018 lane=0 source=086 expected_beat=66.965333 hit_time=66.965333 actual_trigger_time=66.966667 error_ms=1.334
+CLOCK_DIAG event=spawn frame=004029 song_time=67.150000 note=093 lane=1 hit_time=71.146667 spawn_z=-79.933340
+CLOCK_DIAG event=hit_trigger kind=tap frame=004054 receptor_cross_frame=004054 lane=1 source=087 expected_beat=67.562667 hit_time=67.562667 actual_trigger_time=67.566667 error_ms=4.000
+CLOCK_DIAG event=spawn_hold frame=004064 song_time=67.733333 hold=002 lane=3 start=71.722815 end=72.722815
+CLOCK_DIAG event=spawn frame=004066 song_time=67.766667 note=094 lane=0 hit_time=71.754667 spawn_z=-79.760007
+CLOCK_DIAG event=release_hold frame=004072 song_time=67.866667 hold=001 lane=3 start=66.858805 end=67.858805
+CLOCK_DIAG event=hit_trigger kind=tap frame=004091 receptor_cross_frame=004091 lane=0 source=088 expected_beat=68.170667 hit_time=68.170667 actual_trigger_time=68.183333 error_ms=12.666
+CLOCK_DIAG event=clear_hold frame=004101 song_time=68.350000 hold=001 lane=3 start=66.858805 end=67.858805
+CLOCK_DIAG event=spawn frame=004102 song_time=68.366667 note=095 lane=1 hit_time=72.362667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=004127 receptor_cross_frame=004127 lane=1 source=089 expected_beat=68.768000 hit_time=68.768000 actual_trigger_time=68.783333 error_ms=15.333
+CLOCK_DIAG event=spawn frame=004139 song_time=68.983333 note=096 lane=3 hit_time=72.970667 spawn_z=-79.746673
+CLOCK_DIAG event=hit_trigger kind=tap frame=004163 receptor_cross_frame=004163 lane=3 source=090 expected_beat=69.376000 hit_time=69.376000 actual_trigger_time=69.383333 error_ms=7.333
+CLOCK_DIAG event=spawn frame=004175 song_time=69.583333 note=097 lane=0 hit_time=73.568000 spawn_z=-79.693333
+CLOCK_DIAG event=hit_trigger kind=tap frame=004194 receptor_cross_frame=004194 lane=2 source=091 expected_beat=69.888000 hit_time=69.888000 actual_trigger_time=69.900000 error_ms=12.000
+CLOCK_DIAG event=spawn_hold frame=004210 song_time=70.166667 hold=003 lane=0 start=74.154821 end=75.154821
+CLOCK_DIAG event=spawn frame=004212 song_time=70.200000 note=098 lane=3 hit_time=74.186667 spawn_z=-79.733340
+CLOCK_DIAG event=hit_trigger kind=tap frame=004235 receptor_cross_frame=004235 lane=0 source=092 expected_beat=70.570667 hit_time=70.570667 actual_trigger_time=70.583333 error_ms=12.666
+CLOCK_DIAG event=spawn frame=004247 song_time=70.783333 note=099 lane=2 hit_time=74.773333 spawn_z=-79.799993
+CLOCK_DIAG event=hit_trigger kind=tap frame=004269 receptor_cross_frame=004269 lane=1 source=093 expected_beat=71.146667 hit_time=71.146667 actual_trigger_time=71.150000 error_ms=3.333
+CLOCK_DIAG event=spawn frame=004296 song_time=71.600000 note=100 lane=3 hit_time=75.584000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=004304 receptor_cross_frame=004304 lane=3 source=002 expected_beat=71.722815 hit_time=71.722815 actual_trigger_time=71.733333 error_ms=10.518
+CLOCK_DIAG event=hit_trigger kind=tap frame=004306 receptor_cross_frame=004306 lane=0 source=094 expected_beat=71.754667 hit_time=71.754667 actual_trigger_time=71.766667 error_ms=12.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004342 receptor_cross_frame=004342 lane=1 source=095 expected_beat=72.362667 hit_time=72.362667 actual_trigger_time=72.366667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=004344 song_time=72.400000 note=101 lane=2 hit_time=76.394667 spawn_z=-79.893340
+CLOCK_DIAG event=release_hold frame=004364 song_time=72.733333 hold=002 lane=3 start=71.722815 end=72.722815
+CLOCK_DIAG event=spawn frame=004379 song_time=72.983333 note=102 lane=1 hit_time=76.981333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=004379 receptor_cross_frame=004379 lane=3 source=096 expected_beat=72.970667 hit_time=72.970667 actual_trigger_time=72.983333 error_ms=12.666
+CLOCK_DIAG event=clear_hold frame=004393 song_time=73.216667 hold=002 lane=3 start=71.722815 end=72.722815
+CLOCK_DIAG event=spawn frame=004413 song_time=73.550000 note=103 lane=0 hit_time=77.546667 spawn_z=-79.933340
+CLOCK_DIAG event=hit_trigger kind=tap frame=004415 receptor_cross_frame=004415 lane=0 source=097 expected_beat=73.568000 hit_time=73.568000 actual_trigger_time=73.583333 error_ms=15.333
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=004450 receptor_cross_frame=004450 lane=0 source=003 expected_beat=74.154821 hit_time=74.154821 actual_trigger_time=74.166667 error_ms=11.846
+CLOCK_DIAG event=spawn frame=004452 song_time=74.200000 note=104 lane=3 hit_time=78.186667 spawn_z=-79.733340
+CLOCK_DIAG event=hit_trigger kind=tap frame=004452 receptor_cross_frame=004452 lane=3 source=098 expected_beat=74.186667 hit_time=74.186667 actual_trigger_time=74.200000 error_ms=13.333
+CLOCK_DIAG event=spawn frame=004486 song_time=74.766667 note=105 lane=1 hit_time=78.762667 spawn_z=-79.920007
+CLOCK_DIAG event=hit_trigger kind=tap frame=004487 receptor_cross_frame=004487 lane=2 source=099 expected_beat=74.773333 hit_time=74.773333 actual_trigger_time=74.783333 error_ms=10.000
+CLOCK_DIAG event=spawn_hold frame=004502 song_time=75.033333 hold=004 lane=1 start=79.018831 end=80.234833
+CLOCK_DIAG event=release_hold frame=004510 song_time=75.166667 hold=003 lane=0 start=74.154821 end=75.154821
+CLOCK_DIAG event=spawn frame=004524 song_time=75.400000 note=106 lane=2 hit_time=79.392000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004536 receptor_cross_frame=004536 lane=3 source=100 expected_beat=75.584000 hit_time=75.584000 actual_trigger_time=75.600000 error_ms=16.000
+CLOCK_DIAG event=clear_hold frame=004539 song_time=75.650000 hold=003 lane=0 start=74.154821 end=75.154821
+CLOCK_DIAG event=spawn frame=004559 song_time=75.983333 note=107 lane=3 hit_time=79.978667 spawn_z=-79.906673
+CLOCK_DIAG event=hit_trigger kind=tap frame=004584 receptor_cross_frame=004584 lane=2 source=101 expected_beat=76.394667 hit_time=76.394667 actual_trigger_time=76.400000 error_ms=5.333
+CLOCK_DIAG event=spawn frame=004594 song_time=76.566667 note=108 lane=0 hit_time=80.554667 spawn_z=-79.760007
+CLOCK_DIAG event=hit_trigger kind=tap frame=004619 receptor_cross_frame=004619 lane=1 source=102 expected_beat=76.981333 hit_time=76.981333 actual_trigger_time=76.983333 error_ms=2.000
+CLOCK_DIAG event=spawn frame=004632 song_time=77.200000 note=109 lane=2 hit_time=81.184000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004653 receptor_cross_frame=004653 lane=0 source=103 expected_beat=77.546667 hit_time=77.546667 actual_trigger_time=77.550000 error_ms=3.333
+CLOCK_DIAG event=spawn frame=004668 song_time=77.800000 note=110 lane=3 hit_time=81.792000 spawn_z=-79.840000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004692 receptor_cross_frame=004692 lane=3 source=104 expected_beat=78.186667 hit_time=78.186667 actual_trigger_time=78.200000 error_ms=13.333
+CLOCK_DIAG event=spawn frame=004703 song_time=78.383333 note=111 lane=2 hit_time=82.378667 spawn_z=-79.906673
+CLOCK_DIAG event=hit_trigger kind=tap frame=004726 receptor_cross_frame=004726 lane=1 source=105 expected_beat=78.762667 hit_time=78.762667 actual_trigger_time=78.766667 error_ms=4.000
+CLOCK_DIAG event=spawn frame=004737 song_time=78.950000 note=112 lane=1 hit_time=82.944000 spawn_z=-79.880000
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=004742 receptor_cross_frame=004742 lane=1 source=004 expected_beat=79.018831 hit_time=79.018831 actual_trigger_time=79.033333 error_ms=14.502
+CLOCK_DIAG event=hit_trigger kind=tap frame=004764 receptor_cross_frame=004764 lane=2 source=106 expected_beat=79.392000 hit_time=79.392000 actual_trigger_time=79.400000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=004776 song_time=79.600000 note=113 lane=2 hit_time=83.584000 spawn_z=-79.680000
+CLOCK_DIAG event=spawn_hold frame=004793 song_time=79.883333 hold=005 lane=2 start=83.882841 end=85.098843
+CLOCK_DIAG event=hit_trigger kind=tap frame=004799 receptor_cross_frame=004799 lane=3 source=107 expected_beat=79.978667 hit_time=79.978667 actual_trigger_time=79.983333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=004809 song_time=80.150000 note=114 lane=0 hit_time=84.149333 spawn_z=-79.986660
+CLOCK_DIAG event=release_hold frame=004815 song_time=80.250000 hold=004 lane=1 start=79.018831 end=80.234833
+CLOCK_DIAG event=hit_trigger kind=tap frame=004834 receptor_cross_frame=004834 lane=0 source=108 expected_beat=80.554667 hit_time=80.554667 actual_trigger_time=80.566667 error_ms=12.000
+CLOCK_DIAG event=clear_hold frame=004843 song_time=80.716667 hold=004 lane=1 start=79.018831 end=80.234833
+CLOCK_DIAG event=spawn frame=004845 song_time=80.750000 note=115 lane=1 hit_time=84.736000 spawn_z=-79.720000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004872 receptor_cross_frame=004872 lane=2 source=109 expected_beat=81.184000 hit_time=81.184000 actual_trigger_time=81.200000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=004882 song_time=81.366667 note=116 lane=0 hit_time=85.365333 spawn_z=-79.973327
+CLOCK_DIAG event=hit_trigger kind=tap frame=004908 receptor_cross_frame=004908 lane=3 source=110 expected_beat=81.792000 hit_time=81.792000 actual_trigger_time=81.800000 error_ms=8.000
+CLOCK_DIAG event=spawn frame=004920 song_time=82.000000 note=117 lane=3 hit_time=85.984000 spawn_z=-79.680000
+CLOCK_DIAG event=hit_trigger kind=tap frame=004943 receptor_cross_frame=004943 lane=2 source=111 expected_beat=82.378667 hit_time=82.378667 actual_trigger_time=82.383333 error_ms=4.666
+CLOCK_DIAG event=spawn frame=004955 song_time=82.583333 note=118 lane=3 hit_time=86.581333 spawn_z=-79.959993
+CLOCK_DIAG event=hit_trigger kind=tap frame=004977 receptor_cross_frame=004977 lane=1 source=112 expected_beat=82.944000 hit_time=82.944000 actual_trigger_time=82.950000 error_ms=6.000
+CLOCK_DIAG event=spawn_hold frame=004988 song_time=83.133333 hold=006 lane=2 start=87.125515 end=88.125515
+CLOCK_DIAG event=spawn frame=004990 song_time=83.166667 note=119 lane=1 hit_time=87.157333 spawn_z=-79.813327
+CLOCK_DIAG event=hit_trigger kind=tap frame=005016 receptor_cross_frame=005016 lane=2 source=113 expected_beat=83.584000 hit_time=83.584000 actual_trigger_time=83.600000 error_ms=16.000
+CLOCK_DIAG event=spawn frame=005025 song_time=83.750000 note=120 lane=0 hit_time=87.744000 spawn_z=-79.880000
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=005033 receptor_cross_frame=005033 lane=2 source=005 expected_beat=83.882841 hit_time=83.882841 actual_trigger_time=83.883333 error_ms=0.492
+CLOCK_DIAG event=hit_trigger kind=tap frame=005049 receptor_cross_frame=005049 lane=0 source=114 expected_beat=84.149333 hit_time=84.149333 actual_trigger_time=84.150000 error_ms=0.667
+CLOCK_DIAG event=hit_trigger kind=tap frame=005085 receptor_cross_frame=005085 lane=1 source=115 expected_beat=84.736000 hit_time=84.736000 actual_trigger_time=84.750000 error_ms=14.000
+CLOCK_DIAG event=spawn frame=005105 song_time=85.083333 note=121 lane=2 hit_time=89.066667 spawn_z=-79.666673
+CLOCK_DIAG event=release_hold frame=005106 song_time=85.100000 hold=005 lane=2 start=83.882841 end=85.098843
+CLOCK_DIAG event=hit_trigger kind=tap frame=005122 receptor_cross_frame=005122 lane=0 source=116 expected_beat=85.365333 hit_time=85.365333 actual_trigger_time=85.366667 error_ms=1.334
+CLOCK_DIAG event=clear_hold frame=005135 song_time=85.583333 hold=005 lane=2 start=83.882841 end=85.098843
+CLOCK_DIAG event=hit_trigger kind=tap frame=005160 receptor_cross_frame=005160 lane=3 source=117 expected_beat=85.984000 hit_time=85.984000 actual_trigger_time=86.000000 error_ms=16.000
+CLOCK_DIAG event=hit_trigger kind=tap frame=005195 receptor_cross_frame=005195 lane=3 source=118 expected_beat=86.581333 hit_time=86.581333 actual_trigger_time=86.583333 error_ms=2.000
+CLOCK_DIAG event=hit_trigger kind=hold_start frame=005228 receptor_cross_frame=005228 lane=2 source=006 expected_beat=87.125515 hit_time=87.125515 actual_trigger_time=87.133333 error_ms=7.818
+CLOCK_DIAG event=hit_trigger kind=tap frame=005230 receptor_cross_frame=005230 lane=1 source=119 expected_beat=87.157333 hit_time=87.157333 actual_trigger_time=87.166667 error_ms=9.334
+CLOCK_DIAG event=hit_trigger kind=tap frame=005265 receptor_cross_frame=005265 lane=0 source=120 expected_beat=87.744000 hit_time=87.744000 actual_trigger_time=87.750000 error_ms=6.000
+CLOCK_DIAG event=release_hold frame=005288 song_time=88.133333 hold=006 lane=2 start=87.125515 end=88.125515
+CLOCK_DIAG event=clear_hold frame=005317 song_time=88.616667 hold=006 lane=2 start=87.125515 end=88.125515
+CLOCK_DIAG event=hit_trigger kind=tap frame=005345 receptor_cross_frame=005345 lane=2 source=121 expected_beat=89.066667 hit_time=89.066667 actual_trigger_time=89.083333 error_ms=16.666

@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/receptor.gd" id="1_receptor"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_glass"]
+size = Vector2(1.72, 2.92)
+
+[sub_resource type="BoxMesh" id="BoxMesh_border_horizontal"]
+size = Vector3(1.84, 0.025, 0.035)
+
+[sub_resource type="BoxMesh" id="BoxMesh_border_vertical"]
+size = Vector3(0.035, 0.025, 2.92)
+
+[node name="Receptor" type="Node3D"]
+script = ExtResource("1_receptor")
+
+[node name="Glass" type="MeshInstance3D" parent="."]
+rotation_degrees = Vector3(-90, 0, 0)
+mesh = SubResource("QuadMesh_glass")
+
+[node name="Border" type="Node3D" parent="."]
+
+[node name="Top" type="MeshInstance3D" parent="Border"]
+position = Vector3(0, 0.025, -1.46)
+mesh = SubResource("BoxMesh_border_horizontal")
+
+[node name="Bottom" type="MeshInstance3D" parent="Border"]
+position = Vector3(0, 0.025, 1.46)
+mesh = SubResource("BoxMesh_border_horizontal")
+
+[node name="Left" type="MeshInstance3D" parent="Border"]
+position = Vector3(-0.88, 0.025, 0)
+mesh = SubResource("BoxMesh_border_vertical")
+
+[node name="Right" type="MeshInstance3D" parent="Border"]
+position = Vector3(0.88, 0.025, 0)
+mesh = SubResource("BoxMesh_border_vertical")

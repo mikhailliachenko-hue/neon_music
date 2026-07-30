@@ -1,0 +1,43 @@
+﻿{
+  "schema": "neon_music.obstacle_cue_mapping.v2",
+  "principle": ["shape", "position", "motion_direction", "icon", "animation", "color"],
+  "performer_safe_zone": {"left": 0.0, "top": 0.0, "width": 0.24, "height": 1.0},
+  "gameplay_corridor": {"left": 0.30, "top": 0.08, "width": 0.66, "height": 0.84},
+  "mappings": {
+    "IDLE_BOUNCE":"HOLD_RING", "MARCH":"ALTERNATING_FOOT_PULSES",
+    "STEP_LEFT":"LANE_STEP_LEFT", "STEP_RIGHT":"LANE_STEP_RIGHT",
+    "DOUBLE_STEP_LEFT":"LANE_DOUBLE_STEP_LEFT", "DOUBLE_STEP_RIGHT":"LANE_DOUBLE_STEP_RIGHT",
+    "STEP_TOUCH_LEFT":"FOOT_PAD_LEFT", "STEP_TOUCH_RIGHT":"FOOT_PAD_RIGHT",
+    "LEAN_LEFT":"SIDE_SWEEP_FROM_RIGHT", "LEAN_RIGHT":"SIDE_SWEEP_FROM_LEFT",
+    "SIDE_REACH_LEFT":"HAND_TARGET_LEFT", "SIDE_REACH_RIGHT":"HAND_TARGET_RIGHT",
+    "SQUAT":"OVERHEAD_BAR", "DUCK":"LOW_CLEARANCE_GATE",
+    "SMALL_JUMP":"FLOOR_PULSE_SMALL", "JUMP":"FLOOR_PULSE_LARGE",
+    "PUNCH_LEFT":"HAND_TARGET_LEFT", "PUNCH_RIGHT":"HAND_TARGET_RIGHT",
+    "DOUBLE_PUNCH":"HAND_TARGET_DOUBLE", "CLAP":"CENTER_CONVERGE_TARGETS",
+    "OPEN_ARMS":"OUTWARD_EXPAND_TARGETS", "RUN_IN_PLACE":"ALTERNATING_FOOT_PULSES",
+    "HIGH_KNEES":"HIGH_FOOT_PULSES", "FREEZE":"HOLD_RING", "POSE":"POSE_FRAME"
+  },
+  "archetypes": {
+    "LANE_STEP_LEFT":{"shape":"foot_pad_arrow","position":"left_lane","motion":"left","icon":"foot_left"},
+    "LANE_STEP_RIGHT":{"shape":"foot_pad_arrow","position":"right_lane","motion":"right","icon":"foot_right"},
+    "LANE_DOUBLE_STEP_LEFT":{"shape":"double_foot_pad","position":"left_lane","motion":"left","icon":"foot_left_x2"},
+    "LANE_DOUBLE_STEP_RIGHT":{"shape":"double_foot_pad","position":"right_lane","motion":"right","icon":"foot_right_x2"},
+    "FOOT_PAD_LEFT":{"shape":"footprint_pad","position":"left_lane","motion":"approach","icon":"foot_left"},
+    "FOOT_PAD_RIGHT":{"shape":"footprint_pad","position":"right_lane","motion":"approach","icon":"foot_right"},
+    "SIDE_SWEEP_FROM_RIGHT":{"shape":"side_wave","position":"right_edge","motion":"right_to_left","icon":"lean_left"},
+    "SIDE_SWEEP_FROM_LEFT":{"shape":"side_wave","position":"left_corridor_edge","motion":"left_to_right","icon":"lean_right"},
+    "OVERHEAD_BAR":{"shape":"wide_overhead_bar","position":"upper_corridor","motion":"down","icon":"down_arrows"},
+    "LOW_CLEARANCE_GATE":{"shape":"clearance_gate","position":"upper_corridor","motion":"down","icon":"duck"},
+    "FLOOR_PULSE_SMALL":{"shape":"low_cross_wave","position":"floor","motion":"under_feet","icon":"up_arrow_small"},
+    "FLOOR_PULSE_LARGE":{"shape":"large_cross_wave","position":"floor","motion":"under_feet","icon":"up_arrow_large"},
+    "HAND_TARGET_LEFT":{"shape":"hand_sphere","position":"left_hand_height","motion":"inward_pulse","icon":"fist_left"},
+    "HAND_TARGET_RIGHT":{"shape":"hand_sphere","position":"right_hand_height","motion":"inward_pulse","icon":"fist_right"},
+    "HAND_TARGET_DOUBLE":{"shape":"paired_hand_spheres","position":"both_hands","motion":"inward_pulse","icon":"fists"},
+    "CENTER_CONVERGE_TARGETS":{"shape":"paired_discs","position":"center_chest","motion":"converge","icon":"clap"},
+    "OUTWARD_EXPAND_TARGETS":{"shape":"paired_discs","position":"center_chest","motion":"expand","icon":"open_arms"},
+    "ALTERNATING_FOOT_PULSES":{"shape":"alternating_footprints","position":"center_floor","motion":"alternate","icon":"feet"},
+    "HIGH_FOOT_PULSES":{"shape":"raised_knee_targets","position":"knee_height","motion":"alternate","icon":"high_knees"},
+    "HOLD_RING":{"shape":"segmented_hold_ring","position":"body_center","motion":"contract_then_hold","icon":"pause"},
+    "POSE_FRAME":{"shape":"body_silhouette_frame","position":"body_center","motion":"lock","icon":"pose"}
+  }
+}

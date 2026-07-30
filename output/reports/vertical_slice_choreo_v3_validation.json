@@ -1,0 +1,33 @@
+{
+  "schema": "neon_music.choreography_validation.v2",
+  "valid": true,
+  "summary": {
+    "hard_errors": 0,
+    "warnings": 2,
+    "movement_events": 46,
+    "phrases": 5,
+    "duration_2_to_8_ratio": 1.0,
+    "mandatory_cue_safe_zone_overlap": 0,
+    "max_judgment_error_seconds": 0.0,
+    "deterministic_digest": "1741c7bbe5fca260958f25fd3a18e611c52de5a6a54e2b71656efa1ee2989b50"
+  },
+  "hard_errors": [],
+  "warnings": [
+    {
+      "level": "warning",
+      "code": "side_asymmetry",
+      "timecode": 2.635,
+      "phrase_id": "phrase_000",
+      "movement_id": "move_00000",
+      "message": "balance difference 25.0%"
+    },
+    {
+      "level": "warning",
+      "code": "missing_mirror",
+      "timecode": 43.874,
+      "phrase_id": "phrase_003",
+      "movement_id": "move_00040",
+      "message": "Phrase has no left/right mirrored material"
+    }
+  ]
+}

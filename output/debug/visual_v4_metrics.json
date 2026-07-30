@@ -1,0 +1,31 @@
+{
+  "version": "visual_v4",
+  "lane_centers_x": [-3.0, -1.0, 1.0, 3.0],
+  "lane_width": 2.0,
+  "cue_width_ratio": 0.86,
+  "ground_y": -1.72,
+  "ground_offset": 0.045,
+  "pivot_mode": "center_bottom",
+  "spawn_depth_semantics": "unchanged: -(hit_time-song_time)*scroll_speed",
+  "hit_depth": 0.0,
+  "judgment_plane_z": 0.0,
+  "execution_pad_size": [1.82, 0.035, 3.35],
+  "afterglow_ms": 150,
+  "visual_profiles": ["CALM", "GROOVE", "BUILD", "PEAK", "RECOVERY"],
+  "hit_strength_tiers": [1.0, 1.2, 1.45],
+  "negative_scale_mirroring": false,
+  "core_contracts_changed": false,
+  "godot_parser_smoke": "pass",
+  "godot_runtime_smoke": "pass",
+  "contract_tests": {
+    "phrase_grid_contracts": "pass",
+    "phase3_choreography": "pass",
+    "hard_errors": 0,
+    "mandatory_safe_zone_overlaps": 0,
+    "max_judgment_error_seconds": 0.0
+  },
+  "renders": {
+    "clean": {"frames": 1680, "fps": 30, "duration_seconds": 56.0, "size": "1280x720", "codec": "mjpeg"},
+    "qa": {"frames": 1680, "fps": 30, "duration_seconds": 56.0, "size": "1280x720", "codec": "mjpeg"}
+  }
+}

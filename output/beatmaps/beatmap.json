@@ -1,0 +1,5351 @@
+{
+  "schema": "neon_music.beatmap.v3",
+  "audio": "C:\\Users\\BAZA\\Documents\\pov_neon\\neon_music\\assets\\audio\\Iron & Ash.mp3",
+  "bpm": 139.675,
+  "beat_interval": 0.429569,
+  "notes": [
+    {
+      "type": "note",
+      "time": 0.510839,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.145517,
+        "combined": 0.0
+      },
+      "beat_index": -5,
+      "beat_time": 0.48762,
+      "beat_phase": 0.054052,
+      "beat_delta": 0.023219,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 1.787937,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.207518,
+        "combined": 0.0
+      },
+      "beat_index": -2,
+      "beat_time": 1.776327,
+      "beat_phase": 0.027027,
+      "beat_delta": 0.01161,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 2.716735,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.23012,
+        "drums": 0.213587,
+        "combined": 0.493008
+      },
+      "beat_index": 0,
+      "beat_time": 2.635465,
+      "beat_phase": 0.18919,
+      "beat_delta": 0.08127,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 3.564263,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.302006,
+        "drums": 0.033407,
+        "combined": 0.290271
+      },
+      "beat_index": 2,
+      "beat_time": 3.494603,
+      "beat_phase": 0.162163,
+      "beat_delta": 0.06966,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 4.423401,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.297708,
+        "drums": 0.073399,
+        "combined": 0.353934
+      },
+      "beat_index": 4,
+      "beat_time": 4.353741,
+      "beat_phase": 0.162163,
+      "beat_delta": 0.06966,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 5.398639,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.652109,
+        "drums": 0.134592,
+        "combined": 0.740266
+      },
+      "beat_index": 6,
+      "beat_time": 5.212879,
+      "beat_phase": 0.432433,
+      "beat_delta": 0.18576,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 6.176508,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.370889,
+        "drums": 0.012965,
+        "combined": 0.440674
+      },
+      "beat_index": 8,
+      "beat_time": 6.072017,
+      "beat_phase": 0.243246,
+      "beat_delta": 0.104491,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 7.082086,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.607892,
+        "drums": 0.039427,
+        "combined": 0.535905
+      },
+      "beat_index": 10,
+      "beat_time": 6.931155,
+      "beat_phase": 0.351354,
+      "beat_delta": 0.150931,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 7.952834,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.713015,
+        "drums": 0.011894,
+        "combined": 0.606876
+      },
+      "beat_index": 12,
+      "beat_time": 7.790293,
+      "beat_phase": 0.378382,
+      "beat_delta": 0.162541,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 8.777143,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.246109,
+        "drums": 0.0,
+        "combined": 0.206666
+      },
+      "beat_index": 14,
+      "beat_time": 8.649431,
+      "beat_phase": 0.297303,
+      "beat_delta": 0.127712,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 9.543401,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.224571,
+        "drums": 0.015538,
+        "combined": 0.17056
+      },
+      "beat_index": 16,
+      "beat_time": 9.508569,
+      "beat_phase": 0.081086,
+      "beat_delta": 0.034832,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 10.553469,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.457494,
+        "drums": 0.089082,
+        "combined": 0.660976
+      },
+      "beat_index": 18,
+      "beat_time": 10.367707,
+      "beat_phase": 0.432438,
+      "beat_delta": 0.185762,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 11.308118,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.587671,
+        "drums": 0.0,
+        "combined": 0.489272
+      },
+      "beat_index": 20,
+      "beat_time": 11.226845,
+      "beat_phase": 0.189197,
+      "beat_delta": 0.081273,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 12.097596,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.454712,
+        "drums": 0.019169,
+        "combined": 0.469002
+      },
+      "beat_index": 22,
+      "beat_time": 12.085983,
+      "beat_phase": 0.027034,
+      "beat_delta": 0.011613,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 12.805805,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.161343,
+        "drums": 0.0,
+        "combined": 0.008254
+      },
+      "beat_index": 24,
+      "beat_time": 12.945121,
+      "beat_phase": 0.675684,
+      "beat_delta": -0.139316,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 13.479184,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.266396,
+        "drums": 3.2e-05,
+        "combined": 0.234777
+      },
+      "beat_index": 25,
+      "beat_time": 13.37469,
+      "beat_phase": 0.243253,
+      "beat_delta": 0.104494,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 14.140952,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.46098,
+        "drums": 0.04557,
+        "combined": 0.475453
+      },
+      "beat_index": 27,
+      "beat_time": 14.233828,
+      "beat_phase": 0.783793,
+      "beat_delta": -0.092876,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 14.860771,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.446331,
+        "drums": 0.233972,
+        "combined": 0.872048
+      },
+      "beat_index": 28,
+      "beat_time": 14.663397,
+      "beat_phase": 0.45947,
+      "beat_delta": 0.197374,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 15.61542,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.400303,
+        "drums": 0.054793,
+        "combined": 0.481239
+      },
+      "beat_index": 30,
+      "beat_time": 15.522535,
+      "beat_phase": 0.216228,
+      "beat_delta": 0.092885,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 16.381678,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.429956,
+        "combined": 0.400805
+      },
+      "beat_index": 32,
+      "beat_time": 16.381673,
+      "beat_phase": 1.2e-05,
+      "beat_delta": 5e-06,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 18.680454,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.806173,
+        "drums": 0.000627,
+        "combined": 0.636253
+      },
+      "beat_index": 37,
+      "beat_time": 18.529518,
+      "beat_phase": 0.351366,
+      "beat_delta": 0.150936,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 20.944399,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.273243,
+        "drums": 0.39585,
+        "combined": 0.710691
+      },
+      "beat_index": 43,
+      "beat_time": 21.106932,
+      "beat_phase": 0.621637,
+      "beat_delta": -0.162533,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 22.407256,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.471019,
+        "drums": 0.179889,
+        "combined": 0.679455
+      },
+      "beat_index": 46,
+      "beat_time": 22.395639,
+      "beat_phase": 0.027043,
+      "beat_delta": 0.011617,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 22.941315,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.100124,
+        "drums": 0.010728,
+        "combined": 0.0
+      },
+      "beat_index": 47,
+      "beat_time": 22.825208,
+      "beat_phase": 0.270287,
+      "beat_delta": 0.116107,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 23.626304,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.687465,
+        "drums": 0.235605,
+        "combined": 0.775312
+      },
+      "beat_index": 49,
+      "beat_time": 23.684346,
+      "beat_phase": 0.864883,
+      "beat_delta": -0.058042,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 24.288073,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.454458,
+        "drums": 0.193961,
+        "combined": 0.734271
+      },
+      "beat_index": 50,
+      "beat_time": 24.113915,
+      "beat_phase": 0.405425,
+      "beat_delta": 0.174158,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 24.822132,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.7668,
+        "drums": 0.083536,
+        "combined": 0.562109
+      },
+      "beat_index": 52,
+      "beat_time": 24.973053,
+      "beat_phase": 0.648669,
+      "beat_delta": -0.150921,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 25.47229,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.4527,
+        "drums": 0.400281,
+        "combined": 0.949004
+      },
+      "beat_index": 53,
+      "beat_time": 25.402622,
+      "beat_phase": 0.162181,
+      "beat_delta": 0.069668,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 26.122449,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.674367,
+        "drums": 0.130391,
+        "combined": 0.639499
+      },
+      "beat_index": 55,
+      "beat_time": 26.26176,
+      "beat_phase": 0.675696,
+      "beat_delta": -0.139311,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 26.668118,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.463959,
+        "drums": 0.081474,
+        "combined": 0.554488
+      },
+      "beat_index": 56,
+      "beat_time": 26.691329,
+      "beat_phase": 0.945967,
+      "beat_delta": -0.023211,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 27.353107,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.042313,
+        "drums": 0.072275,
+        "combined": 0.0
+      },
+      "beat_index": 58,
+      "beat_time": 27.550467,
+      "beat_phase": 0.540563,
+      "beat_delta": -0.19736,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 28.328345,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.15589,
+        "combined": 0.0
+      },
+      "beat_index": 60,
+      "beat_time": 28.409605,
+      "beat_phase": 0.810834,
+      "beat_delta": -0.08126,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 29.326803,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.727215,
+        "combined": 0.200869
+      },
+      "beat_index": 62,
+      "beat_time": 29.268743,
+      "beat_phase": 0.135159,
+      "beat_delta": 0.05806,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 30.000181,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.010129,
+        "drums": 0.140737,
+        "combined": 0.0
+      },
+      "beat_index": 64,
+      "beat_time": 30.127881,
+      "beat_phase": 0.702725,
+      "beat_delta": -0.1277,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 30.62712,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.103536,
+        "drums": 0.706746,
+        "combined": 0.623707
+      },
+      "beat_index": 65,
+      "beat_time": 30.55745,
+      "beat_phase": 0.162186,
+      "beat_delta": 0.06967,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 31.196009,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.025831,
+        "drums": 0.157549,
+        "combined": 0.0
+      },
+      "beat_index": 66,
+      "beat_time": 30.987019,
+      "beat_phase": 0.486511,
+      "beat_delta": 0.20899,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 31.776508,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.105432,
+        "combined": 0.552423
+      },
+      "beat_index": 68,
+      "beat_time": 31.846157,
+      "beat_phase": 0.837863,
+      "beat_delta": -0.069649,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 32.345397,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.376689,
+        "drums": 0.416146,
+        "combined": 1.0
+      },
+      "beat_index": 69,
+      "beat_time": 32.275726,
+      "beat_phase": 0.162188,
+      "beat_delta": 0.069671,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 33.041995,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.767876,
+        "drums": 0.070291,
+        "combined": 0.507239
+      },
+      "beat_index": 71,
+      "beat_time": 33.134864,
+      "beat_phase": 0.783809,
+      "beat_delta": -0.092869,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 33.634104,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.187393,
+        "drums": 0.367416,
+        "combined": 0.760579
+      },
+      "beat_index": 72,
+      "beat_time": 33.564433,
+      "beat_phase": 0.162188,
+      "beat_delta": 0.069671,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 34.214603,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.098199,
+        "drums": 0.00284,
+        "combined": 0.045621
+      },
+      "beat_index": 74,
+      "beat_time": 34.423571,
+      "beat_phase": 0.51354,
+      "beat_delta": -0.208968,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 34.771882,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.81953,
+        "drums": 0.079806,
+        "combined": 0.519473
+      },
+      "beat_index": 75,
+      "beat_time": 34.85314,
+      "beat_phase": 0.810838,
+      "beat_delta": -0.081258,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 35.375601,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.094077,
+        "drums": 1.0,
+        "combined": 0.608268
+      },
+      "beat_index": 76,
+      "beat_time": 35.282709,
+      "beat_phase": 0.216245,
+      "beat_delta": 0.092892,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 35.9561,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.112449,
+        "drums": 0.04844,
+        "combined": 0.000204
+      },
+      "beat_index": 78,
+      "beat_time": 36.141847,
+      "beat_phase": 0.567597,
+      "beat_delta": -0.185747,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 36.490159,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.133898,
+        "combined": 0.643701
+      },
+      "beat_index": 79,
+      "beat_time": 36.571416,
+      "beat_phase": 0.810841,
+      "beat_delta": -0.081257,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 37.024218,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.171589,
+        "drums": 0.555962,
+        "combined": 0.505539
+      },
+      "beat_index": 80,
+      "beat_time": 37.000985,
+      "beat_phase": 0.054084,
+      "beat_delta": 0.023233,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 37.639546,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.478127,
+        "drums": 0.002264,
+        "combined": 0.491454
+      },
+      "beat_index": 81,
+      "beat_time": 37.430554,
+      "beat_phase": 0.486516,
+      "beat_delta": 0.208992,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 38.208435,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.807473,
+        "drums": 0.104405,
+        "combined": 0.551103
+      },
+      "beat_index": 83,
+      "beat_time": 38.289692,
+      "beat_phase": 0.810841,
+      "beat_delta": -0.081257,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 38.858594,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.118125,
+        "drums": 1.0,
+        "combined": 0.642647
+      },
+      "beat_index": 84,
+      "beat_time": 38.719261,
+      "beat_phase": 0.324355,
+      "beat_delta": 0.139333,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 39.508753,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.114629,
+        "combined": 0.564248
+      },
+      "beat_index": 86,
+      "beat_time": 39.578399,
+      "beat_phase": 0.83787,
+      "beat_delta": -0.069646,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 40.112472,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 1.0,
+        "combined": 0.452621
+      },
+      "beat_index": 87,
+      "beat_time": 40.007968,
+      "beat_phase": 0.243276,
+      "beat_delta": 0.104504,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 40.78585,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.845895,
+        "drums": 0.125672,
+        "combined": 0.578448
+      },
+      "beat_index": 89,
+      "beat_time": 40.867106,
+      "beat_phase": 0.810843,
+      "beat_delta": -0.081256,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 41.412789,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.083538,
+        "drums": 0.352949,
+        "combined": 0.573794
+      },
+      "beat_index": 90,
+      "beat_time": 41.296675,
+      "beat_phase": 0.270303,
+      "beat_delta": 0.116114,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 42.086168,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.673398,
+        "drums": 0.090147,
+        "combined": 0.565908
+      },
+      "beat_index": 92,
+      "beat_time": 42.155813,
+      "beat_phase": 0.837872,
+      "beat_delta": -0.069645,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 42.724717,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.599419,
+        "combined": 0.186539
+      },
+      "beat_index": 93,
+      "beat_time": 42.585382,
+      "beat_phase": 0.32436,
+      "beat_delta": 0.139335,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 43.386485,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.880128,
+        "drums": 0.549091,
+        "combined": 0.94336
+      },
+      "beat_index": 95,
+      "beat_time": 43.44452,
+      "beat_phase": 0.864899,
+      "beat_delta": -0.058035,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 43.978594,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.118926,
+        "drums": 0.090321,
+        "combined": 0.065309
+      },
+      "beat_index": 96,
+      "beat_time": 43.874089,
+      "beat_phase": 0.243279,
+      "beat_delta": 0.104505,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 44.675193,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.281683,
+        "drums": 0.249951,
+        "combined": 0.53553
+      },
+      "beat_index": 98,
+      "beat_time": 44.733227,
+      "beat_phase": 0.864902,
+      "beat_delta": -0.058034,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 45.302132,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.011309,
+        "drums": 0.720219,
+        "combined": 0.473173
+      },
+      "beat_index": 99,
+      "beat_time": 45.162796,
+      "beat_phase": 0.324362,
+      "beat_delta": 0.139336,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 45.97551,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.278079,
+        "drums": 0.602607,
+        "combined": 0.679352
+      },
+      "beat_index": 101,
+      "beat_time": 46.021934,
+      "beat_phase": 0.891929,
+      "beat_delta": -0.046424,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 46.625669,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.04462,
+        "drums": 1.0,
+        "combined": 0.505446
+      },
+      "beat_index": 102,
+      "beat_time": 46.451503,
+      "beat_phase": 0.405444,
+      "beat_delta": 0.174166,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 47.136508,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.379011,
+        "drums": 0.0,
+        "combined": 0.579913
+      },
+      "beat_index": 104,
+      "beat_time": 47.310641,
+      "beat_phase": 0.594633,
+      "beat_delta": -0.174133,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 47.728617,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.449729,
+        "drums": 0.227304,
+        "combined": 0.709125
+      },
+      "beat_index": 105,
+      "beat_time": 47.74021,
+      "beat_phase": 0.973012,
+      "beat_delta": -0.011593,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 48.320726,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.05231,
+        "drums": 0.443172,
+        "combined": 0.540095
+      },
+      "beat_index": 106,
+      "beat_time": 48.169779,
+      "beat_phase": 0.351392,
+      "beat_delta": 0.150947,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 49.017324,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.980741,
+        "drums": 0.226792,
+        "combined": 0.708466
+      },
+      "beat_index": 108,
+      "beat_time": 49.028917,
+      "beat_phase": 0.973012,
+      "beat_delta": -0.011593,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 49.621043,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 1.0,
+        "combined": 0.432811
+      },
+      "beat_index": 109,
+      "beat_time": 49.458486,
+      "beat_phase": 0.378419,
+      "beat_delta": 0.162557,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 50.178322,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.504229,
+        "drums": 0.004598,
+        "combined": 0.584279
+      },
+      "beat_index": 111,
+      "beat_time": 50.317624,
+      "beat_phase": 0.675717,
+      "beat_delta": -0.139302,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 50.735601,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.231383,
+        "combined": 0.71437
+      },
+      "beat_index": 112,
+      "beat_time": 50.747193,
+      "beat_phase": 0.973015,
+      "beat_delta": -0.011592,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 51.3161,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.011618,
+        "drums": 0.132883,
+        "combined": 0.0
+      },
+      "beat_index": 113,
+      "beat_time": 51.176762,
+      "beat_phase": 0.324367,
+      "beat_delta": 0.139338,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 52.035918,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.111487,
+        "combined": 0.560208
+      },
+      "beat_index": 115,
+      "beat_time": 52.0359,
+      "beat_phase": 4.2e-05,
+      "beat_delta": 1.8e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 52.639637,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.026437,
+        "drums": 0.92935,
+        "combined": 0.497866
+      },
+      "beat_index": 116,
+      "beat_time": 52.465469,
+      "beat_phase": 0.405448,
+      "beat_delta": 0.174168,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 53.313016,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.474866,
+        "drums": 0.71417,
+        "combined": 0.88795
+      },
+      "beat_index": 118,
+      "beat_time": 53.324607,
+      "beat_phase": 0.973017,
+      "beat_delta": -0.011591,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 54.009615,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.392605,
+        "drums": 0.005958,
+        "combined": 0.402854
+      },
+      "beat_index": 120,
+      "beat_time": 54.183745,
+      "beat_phase": 0.59464,
+      "beat_delta": -0.17413,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 54.578503,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.403282,
+        "combined": 1.0
+      },
+      "beat_index": 121,
+      "beat_time": 54.613314,
+      "beat_phase": 0.918963,
+      "beat_delta": -0.034811,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 55.159002,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.230773,
+        "drums": 0.246996,
+        "combined": 0.448635
+      },
+      "beat_index": 122,
+      "beat_time": 55.042883,
+      "beat_phase": 0.270315,
+      "beat_delta": 0.116119,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 55.762721,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.282113,
+        "drums": 0.0,
+        "combined": 0.428955
+      },
+      "beat_index": 124,
+      "beat_time": 55.902021,
+      "beat_phase": 0.675721,
+      "beat_delta": -0.1393,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 56.33161,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.455306,
+        "drums": 0.241638,
+        "combined": 0.919856
+      },
+      "beat_index": 125,
+      "beat_time": 56.33159,
+      "beat_phase": 4.7e-05,
+      "beat_delta": 2e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 56.865669,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.133222,
+        "drums": 0.165684,
+        "combined": 0.18486
+      },
+      "beat_index": 126,
+      "beat_time": 56.761159,
+      "beat_phase": 0.24329,
+      "beat_delta": 0.10451,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 57.388118,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.172544,
+        "drums": 0.006513,
+        "combined": 0.151492
+      },
+      "beat_index": 127,
+      "beat_time": 57.190728,
+      "beat_phase": 0.459507,
+      "beat_delta": 0.19739,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 57.898957,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.454125,
+        "drums": 0.039502,
+        "combined": 0.471453
+      },
+      "beat_index": 129,
+      "beat_time": 58.049866,
+      "beat_phase": 0.648697,
+      "beat_delta": -0.150909,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 58.560726,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.142404,
+        "drums": 0.068431,
+        "combined": 0.074801
+      },
+      "beat_index": 130,
+      "beat_time": 58.479435,
+      "beat_phase": 0.189239,
+      "beat_delta": 0.081291,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 59.257324,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.263378,
+        "drums": 0.022336,
+        "combined": 0.334924
+      },
+      "beat_index": 132,
+      "beat_time": 59.338573,
+      "beat_phase": 0.810859,
+      "beat_delta": -0.081249,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 59.802993,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.38447,
+        "drums": 0.019562,
+        "combined": 0.54588
+      },
+      "beat_index": 133,
+      "beat_time": 59.768142,
+      "beat_phase": 0.08113,
+      "beat_delta": 0.034851,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 61.823129,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.314566,
+        "drums": 0.028457,
+        "combined": 0.495654
+      },
+      "beat_index": 138,
+      "beat_time": 61.915987,
+      "beat_phase": 0.783834,
+      "beat_delta": -0.092858,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 63.878095,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.623629,
+        "drums": 0.023606,
+        "combined": 0.614579
+      },
+      "beat_index": 143,
+      "beat_time": 64.063832,
+      "beat_phase": 0.56762,
+      "beat_delta": -0.185737,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 65.387392,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.433193,
+        "drums": 0.001761,
+        "combined": 0.513212
+      },
+      "beat_index": 146,
+      "beat_time": 65.352539,
+      "beat_phase": 0.081135,
+      "beat_delta": 0.034853,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 66.014331,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.531944,
+        "drums": 0.066476,
+        "combined": 0.56277
+      },
+      "beat_index": 148,
+      "beat_time": 66.211677,
+      "beat_phase": 0.540595,
+      "beat_delta": -0.197346,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 66.66449,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.418165,
+        "drums": 0.184132,
+        "combined": 0.788753
+      },
+      "beat_index": 149,
+      "beat_time": 66.641246,
+      "beat_phase": 0.05411,
+      "beat_delta": 0.023244,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 67.221769,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.438547,
+        "drums": 0.007864,
+        "combined": 0.656217
+      },
+      "beat_index": 150,
+      "beat_time": 67.070815,
+      "beat_phase": 0.351408,
+      "beat_delta": 0.150954,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 67.744218,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.874504,
+        "drums": 0.005676,
+        "combined": 0.653403
+      },
+      "beat_index": 152,
+      "beat_time": 67.929953,
+      "beat_phase": 0.567625,
+      "beat_delta": -0.185735,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 68.336327,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.207985,
+        "drums": 0.093633,
+        "combined": 0.25865
+      },
+      "beat_index": 153,
+      "beat_time": 68.359522,
+      "beat_phase": 0.946004,
+      "beat_delta": -0.023195,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 68.847166,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.567432,
+        "drums": 0.032552,
+        "combined": 0.68796
+      },
+      "beat_index": 154,
+      "beat_time": 68.789091,
+      "beat_phase": 0.135194,
+      "beat_delta": 0.058075,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 69.485714,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.666156,
+        "drums": 0.039142,
+        "combined": 0.689784
+      },
+      "beat_index": 156,
+      "beat_time": 69.648229,
+      "beat_phase": 0.621679,
+      "beat_delta": -0.162515,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 70.124263,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.401696,
+        "drums": 0.096069,
+        "combined": 0.632333
+      },
+      "beat_index": 157,
+      "beat_time": 70.077798,
+      "beat_phase": 0.108167,
+      "beat_delta": 0.046465,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 70.786032,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.410467,
+        "drums": 0.047441,
+        "combined": 0.635506
+      },
+      "beat_index": 159,
+      "beat_time": 70.936936,
+      "beat_phase": 0.648708,
+      "beat_delta": -0.150904,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 71.320091,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.50547,
+        "drums": 0.120877,
+        "combined": 0.703031
+      },
+      "beat_index": 160,
+      "beat_time": 71.366505,
+      "beat_phase": 0.891952,
+      "beat_delta": -0.046414,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 71.87737,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.668258,
+        "drums": 0.060722,
+        "combined": 0.621265
+      },
+      "beat_index": 161,
+      "beat_time": 71.796074,
+      "beat_phase": 0.18925,
+      "beat_delta": 0.081296,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 72.434649,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.478217,
+        "drums": 0.008811,
+        "combined": 0.49458
+      },
+      "beat_index": 162,
+      "beat_time": 72.225643,
+      "beat_phase": 0.486548,
+      "beat_delta": 0.209006,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 73.189297,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.470668,
+        "drums": 0.25599,
+        "combined": 0.809322
+      },
+      "beat_index": 164,
+      "beat_time": 73.084781,
+      "beat_phase": 0.243304,
+      "beat_delta": 0.104516,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 73.793016,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.429182,
+        "drums": 0.591932,
+        "combined": 1.0
+      },
+      "beat_index": 166,
+      "beat_time": 73.943919,
+      "beat_phase": 0.648711,
+      "beat_delta": -0.150903,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 74.454785,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.389811,
+        "drums": 0.508091,
+        "combined": 1.0
+      },
+      "beat_index": 167,
+      "beat_time": 74.373488,
+      "beat_phase": 0.189252,
+      "beat_delta": 0.081297,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 75.023673,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.513055,
+        "drums": 0.023583,
+        "combined": 0.596283
+      },
+      "beat_index": 169,
+      "beat_time": 75.232626,
+      "beat_phase": 0.513575,
+      "beat_delta": -0.208953,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 75.557732,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.478181,
+        "drums": 0.228051,
+        "combined": 0.93933
+      },
+      "beat_index": 170,
+      "beat_time": 75.662195,
+      "beat_phase": 0.756819,
+      "beat_delta": -0.104463,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 76.184671,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.424616,
+        "drums": 0.149555,
+        "combined": 0.77595
+      },
+      "beat_index": 171,
+      "beat_time": 76.091764,
+      "beat_phase": 0.21628,
+      "beat_delta": 0.092907,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 76.83483,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.363488,
+        "drums": 0.156177,
+        "combined": 0.777724
+      },
+      "beat_index": 173,
+      "beat_time": 76.950902,
+      "beat_phase": 0.729794,
+      "beat_delta": -0.116072,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 77.473379,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.34531,
+        "drums": 0.655226,
+        "combined": 0.999514
+      },
+      "beat_index": 174,
+      "beat_time": 77.380471,
+      "beat_phase": 0.216282,
+      "beat_delta": 0.092908,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 78.135147,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.52938,
+        "drums": 0.349268,
+        "combined": 1.0
+      },
+      "beat_index": 176,
+      "beat_time": 78.239609,
+      "beat_phase": 0.756821,
+      "beat_delta": -0.104462,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 78.750476,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.591951,
+        "drums": 0.338103,
+        "combined": 0.915976
+      },
+      "beat_index": 177,
+      "beat_time": 78.669178,
+      "beat_phase": 0.189255,
+      "beat_delta": 0.081298,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 79.412245,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.421901,
+        "drums": 0.009043,
+        "combined": 0.57593
+      },
+      "beat_index": 179,
+      "beat_time": 79.528316,
+      "beat_phase": 0.729797,
+      "beat_delta": -0.116071,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 80.039184,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.499939,
+        "drums": 0.570568,
+        "combined": 0.969249
+      },
+      "beat_index": 180,
+      "beat_time": 79.957885,
+      "beat_phase": 0.189257,
+      "beat_delta": 0.081299,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 80.700952,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.389561,
+        "drums": 0.330624,
+        "combined": 1.0
+      },
+      "beat_index": 182,
+      "beat_time": 80.817023,
+      "beat_phase": 0.729797,
+      "beat_delta": -0.116071,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 81.351111,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.495832,
+        "drums": 0.173863,
+        "combined": 0.693359
+      },
+      "beat_index": 183,
+      "beat_time": 81.246592,
+      "beat_phase": 0.243311,
+      "beat_delta": 0.104519,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 81.90839,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.305965,
+        "drums": 0.039245,
+        "combined": 0.488154
+      },
+      "beat_index": 185,
+      "beat_time": 82.10573,
+      "beat_phase": 0.540609,
+      "beat_delta": -0.19734,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 83.963356,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.080767,
+        "drums": 0.270459,
+        "combined": 0.249335
+      },
+      "beat_index": 189,
+      "beat_time": 83.824006,
+      "beat_phase": 0.324395,
+      "beat_delta": 0.13935,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 85.937052,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.070717,
+        "drums": 0.084133,
+        "combined": 0.0
+      },
+      "beat_index": 194,
+      "beat_time": 85.971851,
+      "beat_phase": 0.918991,
+      "beat_delta": -0.034799,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 87.539229,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.312431,
+        "combined": 0.122532
+      },
+      "beat_index": 198,
+      "beat_time": 87.690127,
+      "beat_phase": 0.648722,
+      "beat_delta": -0.150898,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 88.061678,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.040125,
+        "combined": 0.475657
+      },
+      "beat_index": 199,
+      "beat_time": 88.119696,
+      "beat_phase": 0.864939,
+      "beat_delta": -0.058018,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 88.618957,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.470515,
+        "drums": 0.0,
+        "combined": 0.4163
+      },
+      "beat_index": 200,
+      "beat_time": 88.549265,
+      "beat_phase": 0.162237,
+      "beat_delta": 0.069692,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 89.245896,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.481523,
+        "drums": 0.28575,
+        "combined": 0.802368
+      },
+      "beat_index": 202,
+      "beat_time": 89.408403,
+      "beat_phase": 0.621698,
+      "beat_delta": -0.162507,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 89.872834,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.161648,
+        "drums": 0.89369,
+        "combined": 0.575321
+      },
+      "beat_index": 203,
+      "beat_time": 89.837972,
+      "beat_phase": 0.081156,
+      "beat_delta": 0.034862,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 90.546213,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.338692,
+        "drums": 0.466205,
+        "combined": 0.881236
+      },
+      "beat_index": 205,
+      "beat_time": 90.69711,
+      "beat_phase": 0.648725,
+      "beat_delta": -0.150897,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 91.207982,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.581721,
+        "drums": 0.050253,
+        "combined": 0.570397
+      },
+      "beat_index": 206,
+      "beat_time": 91.126679,
+      "beat_phase": 0.189266,
+      "beat_delta": 0.081303,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 91.858141,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.844581,
+        "drums": 0.071971,
+        "combined": 0.557318
+      },
+      "beat_index": 208,
+      "beat_time": 91.985817,
+      "beat_phase": 0.702781,
+      "beat_delta": -0.127676,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 92.519909,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.561588,
+        "drums": 0.034116,
+        "combined": 0.460726
+      },
+      "beat_index": 209,
+      "beat_time": 92.415386,
+      "beat_phase": 0.243321,
+      "beat_delta": 0.104523,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 93.030748,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.175893,
+        "drums": 0.620285,
+        "combined": 0.590319
+      },
+      "beat_index": 210,
+      "beat_time": 92.844955,
+      "beat_phase": 0.43251,
+      "beat_delta": 0.185793,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 93.564807,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.638968,
+        "drums": 0.006711,
+        "combined": 0.519968
+      },
+      "beat_index": 212,
+      "beat_time": 93.704093,
+      "beat_phase": 0.675754,
+      "beat_delta": -0.139286,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 94.191746,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.223686,
+        "drums": 0.0,
+        "combined": 0.109633
+      },
+      "beat_index": 213,
+      "beat_time": 94.133662,
+      "beat_phase": 0.135215,
+      "beat_delta": 0.058084,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 94.865125,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.147573,
+        "drums": 0.194083,
+        "combined": 0.281805
+      },
+      "beat_index": 215,
+      "beat_time": 94.9928,
+      "beat_phase": 0.702783,
+      "beat_delta": -0.127675,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 95.526893,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.046103,
+        "combined": 0.569823
+      },
+      "beat_index": 216,
+      "beat_time": 95.422369,
+      "beat_phase": 0.243323,
+      "beat_delta": 0.104524,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 96.049342,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.150903,
+        "drums": 0.22339,
+        "combined": 0.287918
+      },
+      "beat_index": 217,
+      "beat_time": 95.851938,
+      "beat_phase": 0.45954,
+      "beat_delta": 0.197404,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 96.699501,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.066906,
+        "drums": 0.273844,
+        "combined": 0.215689
+      },
+      "beat_index": 219,
+      "beat_time": 96.711076,
+      "beat_phase": 0.973054,
+      "beat_delta": -0.011575,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 97.24517,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.090244,
+        "drums": 0.380063,
+        "combined": 0.380621
+      },
+      "beat_index": 220,
+      "beat_time": 97.140645,
+      "beat_phase": 0.243325,
+      "beat_delta": 0.104525,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 97.883719,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.000736,
+        "drums": 0.30714,
+        "combined": 0.209245
+      },
+      "beat_index": 222,
+      "beat_time": 97.999783,
+      "beat_phase": 0.729813,
+      "beat_delta": -0.116064,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 98.429388,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.21067,
+        "drums": 0.348701,
+        "combined": 0.547464
+      },
+      "beat_index": 223,
+      "beat_time": 98.429352,
+      "beat_phase": 8.4e-05,
+      "beat_delta": 3.6e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 98.963447,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.163969,
+        "drums": 0.185993,
+        "combined": 0.263041
+      },
+      "beat_index": 224,
+      "beat_time": 98.858921,
+      "beat_phase": 0.243328,
+      "beat_delta": 0.104526,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 99.497506,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.799698,
+        "drums": 0.162635,
+        "combined": 0.625975
+      },
+      "beat_index": 225,
+      "beat_time": 99.28849,
+      "beat_phase": 0.486571,
+      "beat_delta": 0.209016,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 100.159274,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.07272,
+        "drums": 0.907832,
+        "combined": 0.555596
+      },
+      "beat_index": 227,
+      "beat_time": 100.147628,
+      "beat_phase": 0.027111,
+      "beat_delta": 0.011646,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 100.797823,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.906745,
+        "drums": 0.154443,
+        "combined": 0.615442
+      },
+      "beat_index": 229,
+      "beat_time": 101.006766,
+      "beat_phase": 0.513599,
+      "beat_delta": -0.208943,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 101.447982,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.150838,
+        "drums": 1.0,
+        "combined": 0.569028
+      },
+      "beat_index": 230,
+      "beat_time": 101.436335,
+      "beat_phase": 0.027113,
+      "beat_delta": 0.011647,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 102.074921,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.228805,
+        "drums": 0.342314,
+        "combined": 0.567982
+      },
+      "beat_index": 231,
+      "beat_time": 101.865904,
+      "beat_phase": 0.486574,
+      "beat_delta": 0.209017,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 102.713469,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.154427,
+        "drums": 0.738551,
+        "combined": 0.674748
+      },
+      "beat_index": 233,
+      "beat_time": 102.725042,
+      "beat_phase": 0.973059,
+      "beat_delta": -0.011573,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 103.375238,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.930901,
+        "drums": 0.481677,
+        "combined": 0.88795
+      },
+      "beat_index": 235,
+      "beat_time": 103.58418,
+      "beat_phase": 0.513601,
+      "beat_delta": -0.208942,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 104.013787,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.217934,
+        "drums": 0.381331,
+        "combined": 0.673614
+      },
+      "beat_index": 236,
+      "beat_time": 104.013749,
+      "beat_phase": 8.8e-05,
+      "beat_delta": 3.8e-05,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 104.536236,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.397648,
+        "drums": 0.015358,
+        "combined": 0.480315
+      },
+      "beat_index": 237,
+      "beat_time": 104.443318,
+      "beat_phase": 0.216305,
+      "beat_delta": 0.092918,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 105.128345,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.580828,
+        "combined": 0.88795
+      },
+      "beat_index": 239,
+      "beat_time": 105.302456,
+      "beat_phase": 0.594684,
+      "beat_delta": -0.174111,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 105.743673,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.260273,
+        "drums": 0.35143,
+        "combined": 0.707949
+      },
+      "beat_index": 240,
+      "beat_time": 105.732025,
+      "beat_phase": 0.027116,
+      "beat_delta": 0.011648,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 106.382222,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.668262,
+        "combined": 0.88795
+      },
+      "beat_index": 242,
+      "beat_time": 106.591163,
+      "beat_phase": 0.513603,
+      "beat_delta": -0.208941,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 107.043991,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.234523,
+        "drums": 0.422836,
+        "combined": 0.636117
+      },
+      "beat_index": 243,
+      "beat_time": 107.020732,
+      "beat_phase": 0.054145,
+      "beat_delta": 0.023259,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 107.68254,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.319745,
+        "drums": 1.0,
+        "combined": 0.747361
+      },
+      "beat_index": 245,
+      "beat_time": 107.87987,
+      "beat_phase": 0.540633,
+      "beat_delta": -0.19733,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 108.263039,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.139202,
+        "drums": 0.623837,
+        "combined": 0.452677
+      },
+      "beat_index": 246,
+      "beat_time": 108.309439,
+      "beat_phase": 0.891985,
+      "beat_delta": -0.0464,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 108.994467,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.453835,
+        "drums": 0.743676,
+        "combined": 0.88795
+      },
+      "beat_index": 248,
+      "beat_time": 109.168577,
+      "beat_phase": 0.594687,
+      "beat_delta": -0.17411,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 109.621406,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.163471,
+        "drums": 0.298996,
+        "combined": 0.455913
+      },
+      "beat_index": 249,
+      "beat_time": 109.598146,
+      "beat_phase": 0.054147,
+      "beat_delta": 0.02326,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 110.283175,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.838861,
+        "drums": 0.595744,
+        "combined": 0.88795
+      },
+      "beat_index": 251,
+      "beat_time": 110.457284,
+      "beat_phase": 0.594689,
+      "beat_delta": -0.174109,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 111.014603,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.23416,
+        "drums": 0.0,
+        "combined": 0.263943
+      },
+      "beat_index": 252,
+      "beat_time": 110.886853,
+      "beat_phase": 0.297391,
+      "beat_delta": 0.12775,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 111.571882,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.358367,
+        "combined": 1.0
+      },
+      "beat_index": 254,
+      "beat_time": 111.745991,
+      "beat_phase": 0.594689,
+      "beat_delta": -0.174109,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 112.210431,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.980256,
+        "combined": 0.339878
+      },
+      "beat_index": 255,
+      "beat_time": 112.17556,
+      "beat_phase": 0.081177,
+      "beat_delta": 0.034871,
+      "downbeat": false
+    },
+    {
+      "type": "jump",
+      "time": 112.84898,
+      "lane": 0,
+      "lanes": [
+        0,
+        3
+      ],
+      "energy_class": "jump",
+      "lane_mode": "jump_wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.785188,
+        "combined": 1.0
+      },
+      "beat_index": 257,
+      "beat_time": 113.034698,
+      "beat_phase": 0.567664,
+      "beat_delta": -0.185718,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 113.533968,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 1.0,
+        "combined": 0.400805
+      },
+      "beat_index": 258,
+      "beat_time": 113.464267,
+      "beat_phase": 0.162258,
+      "beat_delta": 0.069701,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 114.207347,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.530104,
+        "drums": 0.056168,
+        "combined": 0.489081
+      },
+      "beat_index": 260,
+      "beat_time": 114.323405,
+      "beat_phase": 0.729827,
+      "beat_delta": -0.116058,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 114.787846,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.025211,
+        "drums": 0.582172,
+        "combined": 0.413418
+      },
+      "beat_index": 261,
+      "beat_time": 114.752974,
+      "beat_phase": 0.081179,
+      "beat_delta": 0.034872,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 115.496054,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.862809,
+        "drums": 0.144808,
+        "combined": 0.603053
+      },
+      "beat_index": 263,
+      "beat_time": 115.612112,
+      "beat_phase": 0.729827,
+      "beat_delta": -0.116058,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 116.088163,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.129175,
+        "drums": 0.22997,
+        "combined": 0.42247
+      },
+      "beat_index": 264,
+      "beat_time": 116.041681,
+      "beat_phase": 0.108206,
+      "beat_delta": 0.046482,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 116.738322,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.53961,
+        "drums": 0.419027,
+        "combined": 0.971273
+      },
+      "beat_index": 266,
+      "beat_time": 116.900819,
+      "beat_phase": 0.621721,
+      "beat_delta": -0.162497,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 117.400091,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.145211,
+        "drums": 0.843936,
+        "combined": 0.550128
+      },
+      "beat_index": 267,
+      "beat_time": 117.330388,
+      "beat_phase": 0.162263,
+      "beat_delta": 0.069703,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 118.050249,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.39463,
+        "drums": 0.599011,
+        "combined": 0.869588
+      },
+      "beat_index": 269,
+      "beat_time": 118.189526,
+      "beat_phase": 0.675775,
+      "beat_delta": -0.139277,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 118.688798,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.100677,
+        "drums": 1.0,
+        "combined": 0.56361
+      },
+      "beat_index": 270,
+      "beat_time": 118.619095,
+      "beat_phase": 0.162263,
+      "beat_delta": 0.069703,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 119.257687,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.427783,
+        "drums": 0.173167,
+        "combined": 0.770073
+      },
+      "beat_index": 271,
+      "beat_time": 119.048664,
+      "beat_phase": 0.486588,
+      "beat_delta": 0.209023,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 119.838186,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.605343,
+        "drums": 0.048662,
+        "combined": 0.565544
+      },
+      "beat_index": 273,
+      "beat_time": 119.907802,
+      "beat_phase": 0.83794,
+      "beat_delta": -0.069616,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 120.441905,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.070044,
+        "drums": 1.0,
+        "combined": 0.453139
+      },
+      "beat_index": 274,
+      "beat_time": 120.337371,
+      "beat_phase": 0.243346,
+      "beat_delta": 0.104534,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 120.952744,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.417799,
+        "drums": 0.029744,
+        "combined": 0.596959
+      },
+      "beat_index": 275,
+      "beat_time": 120.76694,
+      "beat_phase": 0.432536,
+      "beat_delta": 0.185804,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 121.510023,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.399487,
+        "drums": 0.246174,
+        "combined": 0.788247
+      },
+      "beat_index": 277,
+      "beat_time": 121.626078,
+      "beat_phase": 0.729834,
+      "beat_delta": -0.116055,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 122.136961,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.112305,
+        "drums": 0.2654,
+        "combined": 0.508178
+      },
+      "beat_index": 278,
+      "beat_time": 122.055647,
+      "beat_phase": 0.189292,
+      "beat_delta": 0.081314,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 122.79873,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.519057,
+        "drums": 0.33568,
+        "combined": 0.886568
+      },
+      "beat_index": 280,
+      "beat_time": 122.914785,
+      "beat_phase": 0.729834,
+      "beat_delta": -0.116055,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 123.460499,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.186939,
+        "drums": 1.0,
+        "combined": 0.62563
+      },
+      "beat_index": 281,
+      "beat_time": 123.344354,
+      "beat_phase": 0.270376,
+      "beat_delta": 0.116145,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 124.099048,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.472684,
+        "drums": 0.70235,
+        "combined": 1.0
+      },
+      "beat_index": 283,
+      "beat_time": 124.203492,
+      "beat_phase": 0.756863,
+      "beat_delta": -0.104444,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 124.725986,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.030844,
+        "drums": 0.791917,
+        "combined": 0.275814
+      },
+      "beat_index": 284,
+      "beat_time": 124.633061,
+      "beat_phase": 0.216321,
+      "beat_delta": 0.092925,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 125.283265,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.120575,
+        "drums": 0.029417,
+        "combined": 0.0
+      },
+      "beat_index": 286,
+      "beat_time": 125.492199,
+      "beat_phase": 0.513619,
+      "beat_delta": -0.208934,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 125.805714,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.483088,
+        "combined": 1.0
+      },
+      "beat_index": 287,
+      "beat_time": 125.921768,
+      "beat_phase": 0.729836,
+      "beat_delta": -0.116054,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 126.479093,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.055246,
+        "drums": 0.457938,
+        "combined": 0.335259
+      },
+      "beat_index": 288,
+      "beat_time": 126.351337,
+      "beat_phase": 0.297405,
+      "beat_delta": 0.127756,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 127.106032,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.709271,
+        "drums": 0.049378,
+        "combined": 0.56965
+      },
+      "beat_index": 290,
+      "beat_time": 127.210475,
+      "beat_phase": 0.756866,
+      "beat_delta": -0.104443,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 127.686531,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.13837,
+        "drums": 0.093817,
+        "combined": 0.190876
+      },
+      "beat_index": 291,
+      "beat_time": 127.640044,
+      "beat_phase": 0.108218,
+      "beat_delta": 0.046487,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 128.20898,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.601087,
+        "drums": 0.090432,
+        "combined": 0.662767
+      },
+      "beat_index": 292,
+      "beat_time": 128.069613,
+      "beat_phase": 0.324434,
+      "beat_delta": 0.139367,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 128.719819,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.364347,
+        "drums": 0.092299,
+        "combined": 0.655227
+      },
+      "beat_index": 294,
+      "beat_time": 128.928751,
+      "beat_phase": 0.513624,
+      "beat_delta": -0.208932,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 129.381587,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.201925,
+        "drums": 0.034077,
+        "combined": 0.12778
+      },
+      "beat_index": 295,
+      "beat_time": 129.35832,
+      "beat_phase": 0.054164,
+      "beat_delta": 0.023267,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 129.904036,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.635052,
+        "drums": 0.065144,
+        "combined": 0.729866
+      },
+      "beat_index": 296,
+      "beat_time": 129.787889,
+      "beat_phase": 0.27038,
+      "beat_delta": 0.116147,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 130.484535,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.320797,
+        "drums": 0.105891,
+        "combined": 0.628824
+      },
+      "beat_index": 298,
+      "beat_time": 130.647027,
+      "beat_phase": 0.621732,
+      "beat_delta": -0.162492,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 131.239184,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.457664,
+        "drums": 0.068104,
+        "combined": 0.581294
+      },
+      "beat_index": 299,
+      "beat_time": 131.076596,
+      "beat_phase": 0.378491,
+      "beat_delta": 0.162588,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 131.842902,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.601408,
+        "drums": 0.176464,
+        "combined": 0.873
+      },
+      "beat_index": 301,
+      "beat_time": 131.935734,
+      "beat_phase": 0.783895,
+      "beat_delta": -0.092832,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 132.632381,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.430627,
+        "drums": 0.171191,
+        "combined": 0.859418
+      },
+      "beat_index": 303,
+      "beat_time": 132.794872,
+      "beat_phase": 0.621735,
+      "beat_delta": -0.162491,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 133.28254,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.396357,
+        "drums": 0.072252,
+        "combined": 0.678637
+      },
+      "beat_index": 304,
+      "beat_time": 133.224441,
+      "beat_phase": 0.13525,
+      "beat_delta": 0.058099,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 133.886259,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.101403,
+        "drums": 0.012771,
+        "combined": 0.0
+      },
+      "beat_index": 306,
+      "beat_time": 134.083579,
+      "beat_phase": 0.540656,
+      "beat_delta": -0.19732,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 134.431927,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.282642,
+        "drums": 0.11496,
+        "combined": 0.420597
+      },
+      "beat_index": 307,
+      "beat_time": 134.513148,
+      "beat_phase": 0.810924,
+      "beat_delta": -0.081221,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 134.942766,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.163788,
+        "drums": 0.045453,
+        "combined": 0.080161
+      },
+      "beat_index": 308,
+      "beat_time": 134.942717,
+      "beat_phase": 0.000114,
+      "beat_delta": 4.9e-05,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 135.558095,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.325091,
+        "drums": 0.083325,
+        "combined": 0.621379
+      },
+      "beat_index": 309,
+      "beat_time": 135.372286,
+      "beat_phase": 0.432548,
+      "beat_delta": 0.185809,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 136.161814,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.36585,
+        "drums": 0.223797,
+        "combined": 0.868525
+      },
+      "beat_index": 311,
+      "beat_time": 136.231424,
+      "beat_phase": 0.837954,
+      "beat_delta": -0.06961,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 136.835193,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.381611,
+        "drums": 0.103058,
+        "combined": 0.739005
+      },
+      "beat_index": 312,
+      "beat_time": 136.660993,
+      "beat_phase": 0.405523,
+      "beat_delta": 0.1742,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 137.485351,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.586983,
+        "drums": 0.136088,
+        "combined": 0.681832
+      },
+      "beat_index": 314,
+      "beat_time": 137.520131,
+      "beat_phase": 0.919035,
+      "beat_delta": -0.03478,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 138.34449,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.43071,
+        "drums": 0.081671,
+        "combined": 0.603514
+      },
+      "beat_index": 316,
+      "beat_time": 138.379269,
+      "beat_phase": 0.919037,
+      "beat_delta": -0.034779,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 138.971429,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.298754,
+        "drums": 0.124592,
+        "combined": 0.402208
+      },
+      "beat_index": 317,
+      "beat_time": 138.808838,
+      "beat_phase": 0.378498,
+      "beat_delta": 0.162591,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 139.551927,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.500088,
+        "drums": 0.049907,
+        "combined": 0.710275
+      },
+      "beat_index": 319,
+      "beat_time": 139.667976,
+      "beat_phase": 0.729848,
+      "beat_delta": -0.116049,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 140.062766,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.418862,
+        "drums": 0.209222,
+        "combined": 0.91512
+      },
+      "beat_index": 320,
+      "beat_time": 140.097545,
+      "beat_phase": 0.919037,
+      "beat_delta": -0.034779,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 140.573605,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.320046,
+        "drums": 0.11333,
+        "combined": 0.576048
+      },
+      "beat_index": 321,
+      "beat_time": 140.527114,
+      "beat_phase": 0.108227,
+      "beat_delta": 0.046491,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 141.130884,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.428672,
+        "drums": 0.658975,
+        "combined": 1.0
+      },
+      "beat_index": 322,
+      "beat_time": 140.956683,
+      "beat_phase": 0.405525,
+      "beat_delta": 0.174201,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 141.676553,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.615944,
+        "drums": 0.13599,
+        "combined": 0.772242
+      },
+      "beat_index": 324,
+      "beat_time": 141.815821,
+      "beat_phase": 0.675796,
+      "beat_delta": -0.139268,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 142.245442,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.677772,
+        "drums": 0.142475,
+        "combined": 0.829298
+      },
+      "beat_index": 325,
+      "beat_time": 142.24539,
+      "beat_phase": 0.000121,
+      "beat_delta": 5.2e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 142.860771,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.532966,
+        "drums": 0.606375,
+        "combined": 1.0
+      },
+      "beat_index": 326,
+      "beat_time": 142.674959,
+      "beat_phase": 0.432554,
+      "beat_delta": 0.185812,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 143.51093,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.595908,
+        "drums": 0.134691,
+        "combined": 0.770895
+      },
+      "beat_index": 328,
+      "beat_time": 143.534097,
+      "beat_phase": 0.946069,
+      "beat_delta": -0.023167,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 144.079819,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.480915,
+        "drums": 0.070542,
+        "combined": 0.736807
+      },
+      "beat_index": 329,
+      "beat_time": 143.963666,
+      "beat_phase": 0.270394,
+      "beat_delta": 0.116153,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 144.590658,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.471967,
+        "drums": 0.462605,
+        "combined": 1.0
+      },
+      "beat_index": 330,
+      "beat_time": 144.393235,
+      "beat_phase": 0.459584,
+      "beat_delta": 0.197423,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 145.136327,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.498723,
+        "drums": 0.294697,
+        "combined": 1.0
+      },
+      "beat_index": 332,
+      "beat_time": 145.252373,
+      "beat_phase": 0.729855,
+      "beat_delta": -0.116046,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 145.681995,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.427315,
+        "drums": 0.258849,
+        "combined": 0.89355
+      },
+      "beat_index": 333,
+      "beat_time": 145.681942,
+      "beat_phase": 0.000123,
+      "beat_delta": 5.3e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 146.320544,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.43716,
+        "drums": 0.295081,
+        "combined": 1.0
+      },
+      "beat_index": 334,
+      "beat_time": 146.111511,
+      "beat_phase": 0.486611,
+      "beat_delta": 0.209033,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 146.959093,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.605713,
+        "drums": 0.15904,
+        "combined": 0.694671
+      },
+      "beat_index": 336,
+      "beat_time": 146.970649,
+      "beat_phase": 0.973099,
+      "beat_delta": -0.011556,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 147.609252,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.149472,
+        "drums": 0.585577,
+        "combined": 0.572551
+      },
+      "beat_index": 337,
+      "beat_time": 147.400218,
+      "beat_phase": 0.486613,
+      "beat_delta": 0.209034,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 148.3639,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.493845,
+        "drums": 0.109431,
+        "combined": 0.656828
+      },
+      "beat_index": 339,
+      "beat_time": 148.259356,
+      "beat_phase": 0.24337,
+      "beat_delta": 0.104544,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 148.909569,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.660962,
+        "drums": 0.317165,
+        "combined": 0.921816
+      },
+      "beat_index": 341,
+      "beat_time": 149.118494,
+      "beat_phase": 0.51364,
+      "beat_delta": -0.208925,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 149.582948,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.469379,
+        "drums": 0.051232,
+        "combined": 0.532289
+      },
+      "beat_index": 342,
+      "beat_time": 149.548063,
+      "beat_phase": 0.081209,
+      "beat_delta": 0.034885,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 150.314376,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.416598,
+        "drums": 0.043462,
+        "combined": 0.701988
+      },
+      "beat_index": 344,
+      "beat_time": 150.407201,
+      "beat_phase": 0.783911,
+      "beat_delta": -0.092825,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 150.836825,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.486826,
+        "drums": 0.175158,
+        "combined": 0.70945
+      },
+      "beat_index": 345,
+      "beat_time": 150.83677,
+      "beat_phase": 0.000128,
+      "beat_delta": 5.5e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 152.984671,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.267598,
+        "combined": 0.080956
+      },
+      "beat_index": 350,
+      "beat_time": 152.984615,
+      "beat_phase": 0.00013,
+      "beat_delta": 5.6e-05,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 154.969977,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.128549,
+        "drums": 0.441823,
+        "combined": 0.489768
+      },
+      "beat_index": 355,
+      "beat_time": 155.13246,
+      "beat_phase": 0.621753,
+      "beat_delta": -0.162483,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 156.444444,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.159996,
+        "drums": 0.112299,
+        "combined": 0.159919
+      },
+      "beat_index": 358,
+      "beat_time": 156.421167,
+      "beat_phase": 0.054187,
+      "beat_delta": 0.023277,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 156.978503,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.212075,
+        "drums": 0.050321,
+        "combined": 0.165234
+      },
+      "beat_index": 359,
+      "beat_time": 156.850736,
+      "beat_phase": 0.297431,
+      "beat_delta": 0.127767,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 157.640272,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.078013,
+        "drums": 0.039236,
+        "combined": 0.0
+      },
+      "beat_index": 361,
+      "beat_time": 157.709874,
+      "beat_phase": 0.837972,
+      "beat_delta": -0.069602,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 158.360091,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.118251,
+        "drums": 0.050974,
+        "combined": 0.012956
+      },
+      "beat_index": 363,
+      "beat_time": 158.569012,
+      "beat_phase": 0.51365,
+      "beat_delta": -0.208921,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 158.96381,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 0.772605,
+        "drums": 0.0,
+        "combined": 0.413492
+      },
+      "beat_index": 364,
+      "beat_time": 158.998581,
+      "beat_phase": 0.919056,
+      "beat_delta": -0.034771,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 159.660408,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "heavy",
+      "lane_mode": "wide",
+      "stem_energy": {
+        "bass": 1.0,
+        "drums": 0.009598,
+        "combined": 0.429201
+      },
+      "beat_index": 366,
+      "beat_time": 159.857719,
+      "beat_phase": 0.540677,
+      "beat_delta": -0.197311,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 160.368617,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.08079,
+        "drums": 0.00827,
+        "combined": 0.0
+      },
+      "beat_index": 367,
+      "beat_time": 160.287288,
+      "beat_phase": 0.189327,
+      "beat_delta": 0.081329,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 161.216145,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.135888,
+        "drums": 0.218684,
+        "combined": 0.280065
+      },
+      "beat_index": 369,
+      "beat_time": 161.146426,
+      "beat_phase": 0.1623,
+      "beat_delta": 0.069719,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 161.877914,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.753115,
+        "combined": 0.28394
+      },
+      "beat_index": 371,
+      "beat_time": 162.005564,
+      "beat_phase": 0.702842,
+      "beat_delta": -0.12765,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 162.504853,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.180068,
+        "drums": 0.246968,
+        "combined": 0.3767
+      },
+      "beat_index": 372,
+      "beat_time": 162.435133,
+      "beat_phase": 0.162302,
+      "beat_delta": 0.06972,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 163.178231,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.050015,
+        "drums": 0.432537,
+        "combined": 0.331973
+      },
+      "beat_index": 374,
+      "beat_time": 163.294271,
+      "beat_phase": 0.729869,
+      "beat_delta": -0.11604,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 163.71229,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.04322,
+        "drums": 0.206688,
+        "combined": 0.106167
+      },
+      "beat_index": 375,
+      "beat_time": 163.72384,
+      "beat_phase": 0.973113,
+      "beat_delta": -0.01155,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 164.362449,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.067336,
+        "drums": 0.436585,
+        "combined": 0.335377
+      },
+      "beat_index": 376,
+      "beat_time": 164.153409,
+      "beat_phase": 0.486627,
+      "beat_delta": 0.20904,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 164.896508,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.109626,
+        "drums": 0.66561,
+        "combined": 0.601783
+      },
+      "beat_index": 378,
+      "beat_time": 165.012547,
+      "beat_phase": 0.729871,
+      "beat_delta": -0.116039,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 165.546667,
+      "lane": 0,
+      "lanes": [
+        0
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.235024,
+        "drums": 0.36061,
+        "combined": 0.65744
+      },
+      "beat_index": 379,
+      "beat_time": 165.442116,
+      "beat_phase": 0.243386,
+      "beat_delta": 0.104551,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 166.080726,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.210243,
+        "drums": 0.25451,
+        "combined": 0.424786
+      },
+      "beat_index": 380,
+      "beat_time": 165.871685,
+      "beat_phase": 0.48663,
+      "beat_delta": 0.209041,
+      "downbeat": true
+    },
+    {
+      "type": "note",
+      "time": 166.626395,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.0,
+        "drums": 0.473227,
+        "combined": 0.256772
+      },
+      "beat_index": 382,
+      "beat_time": 166.730823,
+      "beat_phase": 0.756901,
+      "beat_delta": -0.104428,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 167.276553,
+      "lane": 3,
+      "lanes": [
+        3
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.063047,
+        "drums": 0.234852,
+        "combined": 0.159257
+      },
+      "beat_index": 383,
+      "beat_time": 167.160392,
+      "beat_phase": 0.270413,
+      "beat_delta": 0.116161,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 167.810612,
+      "lane": 2,
+      "lanes": [
+        2
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.214283,
+        "drums": 0.424192,
+        "combined": 0.575224
+      },
+      "beat_index": 385,
+      "beat_time": 168.01953,
+      "beat_phase": 0.513657,
+      "beat_delta": -0.208918,
+      "downbeat": false
+    },
+    {
+      "type": "note",
+      "time": 168.344671,
+      "lane": 1,
+      "lanes": [
+        1
+      ],
+      "energy_class": "normal",
+      "lane_mode": "inner",
+      "stem_energy": {
+        "bass": 0.019329,
+        "drums": 0.653929,
+        "combined": 0.425863
+      },
+      "beat_index": 386,
+      "beat_time": 168.449099,
+      "beat_phase": 0.756901,
+      "beat_delta": -0.104428,
+      "downbeat": false
+    }
+  ],
+  "events": [
+    {
+      "type": "wall_right",
+      "time": 18.099949,
+      "start": 18.099949,
+      "duration": 3.436552,
+      "end": 21.536501,
+      "lanes": [
+        2,
+        3
+      ],
+      "safe_lanes": [
+        0,
+        1
+      ],
+      "anticipation": 1.2,
+      "beat_index": 36,
+      "beat_time": 18.099949,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "source": "auto_sustained_low_onset_energy_phrase",
+      "selection": {
+        "score": 0.521507,
+        "strict_low": true,
+        "analysis_start": 16.899949,
+        "analysis_end": 22.536501,
+        "preparation_window": 0.9,
+        "recovery_window": 0.85,
+        "rest_window": 1.0,
+        "onset_count": 17,
+        "quiet_onset_count": 29,
+        "onset_density": 4.946819,
+        "quiet_onset_density": 5.144989,
+        "onset_mean": 0.23248,
+        "quiet_onset_mean": 0.228307,
+        "prep_onset_mean": 0.232214,
+        "recovery_onset_mean": 0.21614,
+        "rms_mean": 0.039374,
+        "quiet_rms_mean": 0.039536,
+        "onset_max": 0.992606,
+        "rms_max": 0.06974
+      }
+    },
+    {
+      "type": "hold",
+      "time": 27.550467,
+      "start": 27.550467,
+      "duration": 1.288707,
+      "end_time": 28.839174,
+      "end": 28.839174,
+      "lane": 0,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 58,
+      "beat_time": 27.550467,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.551147,
+        "rms_mean": 0.001903,
+        "rms_std": 0.001308,
+        "onset_mean": 0.061982,
+        "onset_count": 1,
+        "onset_density": 0.775972,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "wall_left",
+      "time": 61.056849,
+      "start": 61.056849,
+      "duration": 3.436552,
+      "end": 64.493401,
+      "lanes": [
+        0,
+        1
+      ],
+      "safe_lanes": [
+        2,
+        3
+      ],
+      "anticipation": 1.2,
+      "beat_index": 136,
+      "beat_time": 61.056849,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "source": "auto_sustained_low_onset_energy_phrase",
+      "selection": {
+        "score": 0.828186,
+        "strict_low": true,
+        "analysis_start": 59.856849,
+        "analysis_end": 65.493401,
+        "preparation_window": 0.9,
+        "recovery_window": 0.85,
+        "rest_window": 1.0,
+        "onset_count": 15,
+        "quiet_onset_count": 27,
+        "onset_density": 4.36484,
+        "quiet_onset_density": 4.790162,
+        "onset_mean": 0.153382,
+        "quiet_onset_mean": 0.153553,
+        "prep_onset_mean": 0.141462,
+        "recovery_onset_mean": 0.166778,
+        "rms_mean": 0.056437,
+        "quiet_rms_mean": 0.049088,
+        "onset_max": 0.786406,
+        "rms_max": 0.086198
+      }
+    },
+    {
+      "type": "hold",
+      "time": 68.789091,
+      "start": 68.789091,
+      "duration": 1.288707,
+      "end_time": 70.077798,
+      "end": 70.077798,
+      "lane": 2,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 154,
+      "beat_time": 68.789091,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.512387,
+        "rms_mean": 0.063289,
+        "rms_std": 0.00797,
+        "onset_mean": 0.168988,
+        "onset_count": 6,
+        "onset_density": 4.655829,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "wall_right",
+      "time": 83.394437,
+      "start": 83.394437,
+      "duration": 3.436552,
+      "end": 86.830989,
+      "lanes": [
+        2,
+        3
+      ],
+      "safe_lanes": [
+        0,
+        1
+      ],
+      "anticipation": 1.2,
+      "beat_index": 188,
+      "beat_time": 83.394437,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "source": "auto_sustained_low_onset_energy_phrase",
+      "selection": {
+        "score": 1.0,
+        "strict_low": true,
+        "analysis_start": 82.194437,
+        "analysis_end": 87.830989,
+        "preparation_window": 0.9,
+        "recovery_window": 0.85,
+        "rest_window": 1.0,
+        "onset_count": 17,
+        "quiet_onset_count": 27,
+        "onset_density": 4.946819,
+        "quiet_onset_density": 4.790162,
+        "onset_mean": 0.118847,
+        "quiet_onset_mean": 0.11636,
+        "prep_onset_mean": 0.119975,
+        "recovery_onset_mean": 0.089665,
+        "rms_mean": 0.020909,
+        "quiet_rms_mean": 0.015945,
+        "onset_max": 0.603605,
+        "rms_max": 0.0962
+      }
+    },
+    {
+      "type": "hold",
+      "time": 99.718059,
+      "start": 99.718059,
+      "duration": 1.0,
+      "end_time": 100.718059,
+      "end": 100.718059,
+      "lane": 1,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 226,
+      "beat_time": 99.718059,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.560178,
+        "rms_mean": 0.078376,
+        "rms_std": 0.014877,
+        "onset_mean": 0.252288,
+        "onset_count": 4,
+        "onset_density": 4.0,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 107.450301,
+      "start": 107.450301,
+      "duration": 1.0,
+      "end_time": 108.450301,
+      "end": 108.450301,
+      "lane": 3,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 244,
+      "beat_time": 107.450301,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.537339,
+        "rms_mean": 0.076404,
+        "rms_std": 0.012723,
+        "onset_mean": 0.275492,
+        "onset_count": 5,
+        "onset_density": 5.0,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 110.027715,
+      "start": 110.027715,
+      "duration": 1.288707,
+      "end_time": 111.316422,
+      "end": 111.316422,
+      "lane": 0,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 250,
+      "beat_time": 110.027715,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.681401,
+        "rms_mean": 0.086762,
+        "rms_std": 0.009654,
+        "onset_mean": 0.23751,
+        "onset_count": 6,
+        "onset_density": 4.655829,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 113.464267,
+      "start": 113.464267,
+      "duration": 1.0,
+      "end_time": 114.464267,
+      "end": 114.464267,
+      "lane": 1,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 258,
+      "beat_time": 113.464267,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.519183,
+        "rms_mean": 0.075019,
+        "rms_std": 0.015227,
+        "onset_mean": 0.261739,
+        "onset_count": 6,
+        "onset_density": 6.0,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 116.041681,
+      "start": 116.041681,
+      "duration": 1.288707,
+      "end_time": 117.330388,
+      "end": 117.330388,
+      "lane": 3,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 264,
+      "beat_time": 116.041681,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.511691,
+        "rms_mean": 0.075519,
+        "rms_std": 0.016255,
+        "onset_mean": 0.270928,
+        "onset_count": 7,
+        "onset_density": 5.431801,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 119.478233,
+      "start": 119.478233,
+      "duration": 1.288707,
+      "end_time": 120.76694,
+      "end": 120.76694,
+      "lane": 0,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 272,
+      "beat_time": 119.478233,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.521205,
+        "rms_mean": 0.077299,
+        "rms_std": 0.015113,
+        "onset_mean": 0.291309,
+        "onset_count": 8,
+        "onset_density": 6.207773,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 131.506165,
+      "start": 131.506165,
+      "duration": 1.0,
+      "end_time": 132.506165,
+      "end": 132.506165,
+      "lane": 3,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 300,
+      "beat_time": 131.506165,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.590782,
+        "rms_mean": 0.077465,
+        "rms_std": 0.010886,
+        "onset_mean": 0.228675,
+        "onset_count": 6,
+        "onset_density": 6.0,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 136.660993,
+      "start": 136.660993,
+      "duration": 1.288707,
+      "end_time": 137.9497,
+      "end": 137.9497,
+      "lane": 2,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 312,
+      "beat_time": 136.660993,
+      "beat_phase": 1.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.530446,
+        "rms_mean": 0.076302,
+        "rms_std": 0.014811,
+        "onset_mean": 0.271507,
+        "onset_count": 5,
+        "onset_density": 3.879858,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "hold",
+      "time": 146.970649,
+      "start": 146.970649,
+      "duration": 1.0,
+      "end_time": 147.970649,
+      "end": 147.970649,
+      "lane": 2,
+      "side": "right",
+      "foot": "right",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 336,
+      "beat_time": 146.970649,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "selection": {
+        "score": 0.563088,
+        "rms_mean": 0.079127,
+        "rms_std": 0.013438,
+        "onset_mean": 0.270345,
+        "onset_count": 4,
+        "onset_density": 4.0,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    },
+    {
+      "type": "wall_left",
+      "time": 152.125477,
+      "start": 152.125477,
+      "duration": 3.436552,
+      "end": 155.562029,
+      "lanes": [
+        0,
+        1
+      ],
+      "safe_lanes": [
+        2,
+        3
+      ],
+      "anticipation": 1.2,
+      "beat_index": 348,
+      "beat_time": 152.125477,
+      "beat_phase": 1.0,
+      "beat_delta": 0.0,
+      "downbeat": true,
+      "source": "auto_sustained_low_onset_energy_phrase",
+      "selection": {
+        "score": 0.980912,
+        "strict_low": true,
+        "analysis_start": 150.925477,
+        "analysis_end": 156.562029,
+        "preparation_window": 0.9,
+        "recovery_window": 0.85,
+        "rest_window": 1.0,
+        "onset_count": 14,
+        "quiet_onset_count": 27,
+        "onset_density": 4.073851,
+        "quiet_onset_density": 4.790162,
+        "onset_mean": 0.125552,
+        "quiet_onset_mean": 0.139412,
+        "prep_onset_mean": 0.129669,
+        "recovery_onset_mean": 0.163837,
+        "rms_mean": 0.010455,
+        "quiet_rms_mean": 0.014039,
+        "onset_max": 0.679268,
+        "rms_max": 0.104883
+      }
+    },
+    {
+      "type": "hold",
+      "time": 159.857719,
+      "start": 159.857719,
+      "duration": 1.288707,
+      "end_time": 161.146426,
+      "end": 161.146426,
+      "lane": 1,
+      "side": "left",
+      "foot": "left",
+      "source": "auto_sustained_rms_low_onset_lane_gap",
+      "beat_index": 366,
+      "beat_time": 159.857719,
+      "beat_phase": 0.0,
+      "beat_delta": 0.0,
+      "downbeat": false,
+      "selection": {
+        "score": 0.528384,
+        "rms_mean": 0.00064,
+        "rms_std": 0.001556,
+        "onset_mean": 0.036867,
+        "onset_count": 2,
+        "onset_density": 1.551943,
+        "blocked_lane_checked": true,
+        "same_foot_notes_clear": true,
+        "wall_volume_clearance": 1.2,
+        "same_lane_note_gap": 1.35
+      }
+    }
+  ]
+}

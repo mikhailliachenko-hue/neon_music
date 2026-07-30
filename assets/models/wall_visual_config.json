@@ -1,0 +1,156 @@
+{
+  "wall_height": 4.8,
+  "wall_width_x": 3.9,
+  "wall_length_z": 24.0,
+  "wall_opacity": 0.18,
+  "wall_emission_strength": 2.1,
+  "wall_edge_glow": 6.4,
+  "wall_segment_count": 18.0,
+  "wall_segment_spacing": 1.25,
+  "wall_strip_emission": 4.8,
+  "wall_edge_emission": 12.0,
+  "safe_lane_emission": 3.8,
+  "safe_lane_opacity": 0.18,
+  "safe_lane_pulse": 0.35,
+  "next_cell_ring_lead_time": 1.25,
+  "next_cell_ring_brightness": 0.9,
+  "next_cell_ring_fade_duration": 0.32,
+  "camera_dodge_distance": 1.05,
+  "camera_dodge_in_duration": 0.55,
+  "camera_dodge_hold": 0.25,
+  "camera_dodge_return_duration": 0.7,
+  "camera_dodge_easing": "sine",
+  "global_audio_offset_ms": 28.0,
+  "visual_hit_offset_ms": 0.0,
+  "wall_left_color": [
+    0.196,
+    1.0,
+    1.0
+  ],
+  "wall_right_color": [
+    0.49,
+    0.0,
+    0.9
+  ],
+  "safe_lane_color": [
+    1.0,
+    0.78,
+    0.12
+  ],
+  "next_cell_ring_color": [
+    0.72,
+    1.0,
+    1.0
+  ],
+  "schema": "neon_music.wall_visual.v1",
+  "anticipation_duration": 1.2,
+  "safe_ranges": {
+    "wall_height": [
+      2.4,
+      6.2
+    ],
+    "wall_width_x": [
+      3.2,
+      4.4
+    ],
+    "wall_length_z": [
+      8.0,
+      36.0
+    ],
+    "wall_opacity": [
+      0.06,
+      0.55
+    ],
+    "wall_emission_strength": [
+      0.8,
+      6.0
+    ],
+    "wall_edge_glow": [
+      1.5,
+      14.0
+    ],
+    "wall_segment_count": [
+      6.0,
+      36.0
+    ],
+    "wall_segment_spacing": [
+      0.45,
+      2.6
+    ],
+    "wall_strip_emission": [
+      0.8,
+      10.0
+    ],
+    "wall_edge_emission": [
+      2.0,
+      24.0
+    ],
+    "safe_lane_emission": [
+      0.8,
+      8.0
+    ],
+    "safe_lane_opacity": [
+      0.04,
+      0.42
+    ],
+    "safe_lane_pulse": [
+      0.0,
+      1.0
+    ],
+    "next_cell_ring_lead_time": [
+      0.2,
+      3.0
+    ],
+    "next_cell_ring_brightness": [
+      0.0,
+      1.8
+    ],
+    "next_cell_ring_fade_duration": [
+      0.03,
+      1.2
+    ],
+    "camera_dodge_distance": [
+      0.0,
+      1.8
+    ],
+    "camera_dodge_in_duration": [
+      0.05,
+      2.5
+    ],
+    "camera_dodge_hold": [
+      0.0,
+      2.0
+    ],
+    "camera_dodge_return_duration": [
+      0.05,
+      3.0
+    ],
+    "global_audio_offset_ms": [
+      -150.0,
+      150.0
+    ],
+    "visual_hit_offset_ms": [
+      -80.0,
+      80.0
+    ]
+  },
+  "calibration_frames": [
+    {
+      "time": 25.0,
+      "role": "right wall / cyan-magenta full-height reference"
+    },
+    {
+      "time": 75.0,
+      "role": "left wall / high cyan span reference"
+    },
+    {
+      "time": 86.0,
+      "role": "left wall / magenta-blue glow reference"
+    },
+    {
+      "time": 96.0,
+      "role": "right wall / blue-violet glow reference"
+    }
+  ],
+  "calibration_notes": "Updated from the user-provided wall frame, local background/reference_fullhd.mp4 frames near 25s, 75s, 86s, and 96s, and the user screen recording from 2026-07-28 22:15:55. Recording audio cross-correlation places source audio at +3.900s in the capture; current listening passes bracketed the comfortable sync point between the previous +56ms late-feeling setting and the 0ms early-feeling setting, so global_audio_offset_ms defaults to +28.0 as the midpoint. Frame-locked Movie Maker timing remains based on exact frame time. Use [/] in graphical runs for live 5ms nudges: [ makes steps earlier, ] makes steps later; Shift uses 1ms nudges. visual_hit_offset_ms remains 0.0 for fine calibration. Gameplay SFX are intentionally disabled/removed; music audio is the only timing master."
+}

@@ -1,0 +1,77 @@
+{
+  "video": "output\\renders\\timing_audio_smoke.avi",
+  "beatmap": "output\\beatmaps\\beatmap.json",
+  "source_audio": "input\\music\\Iron & Ash.mp3",
+  "video_probe": {
+    "width": 1280,
+    "height": 720,
+    "fps": 60.0,
+    "duration": 92.016667
+  },
+  "crop": [
+    0,
+    287,
+    1069,
+    433,
+    800
+  ],
+  "audio_start_offset_s": 0.0,
+  "audio_alignment": {
+    "recording_time_for_source_zero_s": 0.0,
+    "correlation": 6755.966177681457,
+    "lag_frames": 0.0,
+    "env_fps": 200.0
+  },
+  "visual_peak_count": 192,
+  "expected_hit_count": 129,
+  "paired_count": 122,
+  "stats": {
+    "count": 122,
+    "median_error_ms": 8.666833333336399,
+    "median_abs_error_ms": 8.666833333336399,
+    "p95_abs_error_ms": 15.999999999997883,
+    "mean_error_ms": 8.7172650273224,
+    "std_error_ms": 4.55643942033066,
+    "min_error_ms": 0.4923333333408664,
+    "max_error_ms": 16.666333333333228
+  },
+  "segment_stats": {
+    "start": {
+      "count": 51,
+      "median_error_ms": 7.999999999999119,
+      "median_abs_error_ms": 7.999999999999119,
+      "p95_abs_error_ms": 15.333333333336086,
+      "mean_error_ms": 8.06533333333302,
+      "std_error_ms": 3.921352312203885,
+      "min_error_ms": 0.6663333333278842,
+      "max_error_ms": 15.999999999998238
+    },
+    "middle": {
+      "count": 56,
+      "median_error_ms": 10.666999999997984,
+      "median_abs_error_ms": 10.666999999997984,
+      "p95_abs_error_ms": 15.500000000006509,
+      "mean_error_ms": 9.339553571428587,
+      "std_error_ms": 4.590604179759223,
+      "min_error_ms": 1.3336666666674546,
+      "max_error_ms": 15.999999999998238
+    },
+    "end": {
+      "count": 15,
+      "median_error_ms": 7.999999999995566,
+      "median_abs_error_ms": 7.999999999995566,
+      "p95_abs_error_ms": 16.19990000000371,
+      "mean_error_ms": 8.610622222223205,
+      "std_error_ms": 5.915942994073836,
+      "min_error_ms": 0.4923333333408664,
+      "max_error_ms": 16.666333333333228
+    }
+  },
+  "criteria": {
+    "median_abs_error_ms_max": 16.7,
+    "p95_abs_error_ms_max": 33.4
+  },
+  "passes_60fps_criteria": true,
+  "recommended_global_audio_offset_ms": -8.666833333336399,
+  "csv": "output\\diagnostics\\timing_audio_smoke_timing_diagnostics.csv"
+}

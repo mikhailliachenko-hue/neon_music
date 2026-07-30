@@ -1,0 +1,20 @@
+﻿{
+  "schema": "neon_music.render_manifest.v2",
+  "renderer": "Godot 4.7.1 + viewport frame-sequence fallback + FFmpeg 8.1.2",
+  "fps": 30,
+  "duration_seconds": 56.0,
+  "expected_frames": 1680,
+  "qa_frames": 1680,
+  "clean_frames": 1680,
+  "renderer_capability": {"requested": "OpenGL compatibility", "fog_volume": false, "fallback": "WorldEnvironment/procedural tunnel"},
+  "classified_warnings": ["FOGVOLUME_CLASSIFIED", "SSR unavailable in Compatibility", "volumetric fog unavailable in Compatibility"],
+  "movie_writer_attempts": [
+    {"backend": "OpenGL Movie Maker", "success": false, "classification": "fatal_native_cow_crash", "accepted": false},
+    {"backend": "Vulkan Movie Maker", "success": false, "classification": "fatal_native_signal_11", "accepted": false},
+    {"backend": "viewport_frame_sequence", "success": true, "exit_code": 0}
+  ],
+  "outputs": {
+    "qa": {"path": "output/renders/vertical_slice_choreo_v3_qa.avi", "codec": "mjpeg", "width": 1280, "height": 720, "frames": 1680, "duration": 56.0},
+    "clean": {"path": "output/renders/vertical_slice_choreo_v3_clean.avi", "codec": "mjpeg", "width": 1280, "height": 720, "frames": 1680, "duration": 56.0}
+  }
+}

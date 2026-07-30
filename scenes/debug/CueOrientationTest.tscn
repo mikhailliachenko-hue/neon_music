@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/note.tscn" id="1_note"]
+
+[sub_resource type="Environment" id="Environment_debug"]
+background_mode = 1
+background_color = Color(0.006, 0.003, 0.02, 1)
+ambient_light_source = 3
+ambient_light_energy = 0.3
+glow_enabled = true
+
+[node name="CueOrientationTest" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_debug")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 6, 11)
+rotation_degrees = Vector3(-24, 0, 0)
+current = true
+
+[node name="StepLeft" parent="." instance=ExtResource("1_note")]
+position = Vector3(-3, -1.675, 0)
+lane = 0
+cue_archetype = "FOOT_PAD_LEFT"
+
+[node name="StepRight" parent="." instance=ExtResource("1_note")]
+position = Vector3(-1, -1.675, 0)
+lane = 3
+cue_archetype = "FOOT_PAD_RIGHT"
+
+[node name="SweepLeft" parent="." instance=ExtResource("1_note")]
+position = Vector3(1, -1.675, 0)
+lane = 1
+cue_archetype = "SIDE_SWEEP_FROM_RIGHT"
+
+[node name="SweepRight" parent="." instance=ExtResource("1_note")]
+position = Vector3(3, -1.675, 0)
+lane = 2
+cue_archetype = "SIDE_SWEEP_FROM_LEFT"
