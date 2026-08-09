@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Validate neon_music beatmap, lane metadata, and frame-clock smoke outputs."""
 from __future__ import annotations
 
@@ -14,8 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from validate_choreography_v3 import validate as validate_choreography_v3
+from choreography_v4 import validate_v4
+from neon_track_io import extract_beat_grid, extract_beatmap, load_neon_track
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
+TRACK_PATH = PROJECT_DIR / "output" / "neon_track.json"
 BEATMAP_PATH = PROJECT_DIR / "output" / "beatmap.json"
 BEAT_GRID_PATH = PROJECT_DIR / "output" / "beat_grid.json"
 REFERENCE_AUDIO = PROJECT_DIR / "assets" / "audio" / "Iron & Ash.mp3"
@@ -27,6 +30,8 @@ LANE_COUNT = 4
 LANE_NAMES = ["left_outer", "left_inner", "right_inner", "right_outer"]
 SCHEMA_BEATMAP = "neon_music.beatmap.v3"
 SCHEMA_BEAT_GRID = "neon_music.beat_grid.v1"
+SCHEMA_BEAT_GRID_V2 = "neon_music.beat_grid.v2"
+SCHEMA_BEATMAP_V4 = "neon_music.beatmap.v4"
 SCHEMA_LANE_ASSIGNMENT = "neon_music.lane_assignment.v1"
 SCHEMA_WALL_GENERATION = "neon_music.wall_generation.v1"
 SCHEMA_HOLD_GENERATION = "neon_music.hold_generation.v1"
@@ -124,12 +129,18 @@ def _assert_field(name: str, actual: Any, expected: Any) -> None:
 
 
 def _validate_reference_assets(reference_audio: Path, reference_movie: Path) -> None:
-    for asset in (reference_audio, reference_movie):
-        if not asset.is_file():
-            _fail(f"Missing reference asset: {asset}")
-        if asset.stat().st_size <= 0:
-            _fail(f"Reference asset is empty: {asset}")
-    print(f"Reference assets: OK ({reference_audio.name}, {reference_movie.name})")
+    if not reference_audio.is_file():
+        _fail(f"Missing reference audio: {reference_audio}")
+    if reference_audio.stat().st_size <= 0:
+        _fail(f"Reference audio is empty: {reference_audio}")
+    if reference_movie.is_file():
+        if reference_movie.stat().st_size <= 0:
+            _fail(f"Reference movie is empty: {reference_movie}")
+        print(f"Reference assets: OK ({reference_audio.name}, {reference_movie.name})")
+    else:
+        # Movie smoke explicitly uses --no-background-video, so a deleted
+        # visual reference must not block validation of the active track.
+        print(f"Reference audio: OK ({reference_audio.name}); optional movie absent, using procedural smoke.")
 
 
 def _validate_wall_visual_config(path: Path = WALL_VISUAL_CONFIG) -> None:
@@ -195,9 +206,9 @@ def _validate_wall_visual_config(path: Path = WALL_VISUAL_CONFIG) -> None:
 
 
 def _validate_production_artifacts(beatmap_payload: Any, timing: dict[str, Any]) -> None:
-    if timing.get("schema") != SCHEMA_BEAT_GRID:
+    if timing.get("schema") not in {SCHEMA_BEAT_GRID, SCHEMA_BEAT_GRID_V2}:
         _fail(f"beat_grid schema mismatch: {timing.get('schema')!r}")
-    if isinstance(beatmap_payload, dict) and beatmap_payload.get("schema") != SCHEMA_BEATMAP:
+    if isinstance(beatmap_payload, dict) and beatmap_payload.get("schema") not in {SCHEMA_BEATMAP, SCHEMA_BEATMAP_V4}:
         _fail(f"beatmap schema mismatch: {beatmap_payload.get('schema')!r}")
 
     beatmap = _beatmap_notes(beatmap_payload)
@@ -208,6 +219,7 @@ def _validate_production_artifacts(beatmap_payload: Any, timing: dict[str, Any])
         event for event in events
         if str(event.get("type", "")) not in WALL_EVENT_TYPES
         and str(event.get("type", "")) != HOLD_EVENT_TYPE
+        and str(event.get("type", "")) != "semantic_cue"
     ]
     if unknown_events:
         _fail(f"beatmap.events contains unknown event types: {[event.get('type') for event in unknown_events]!r}.")
@@ -693,9 +705,26 @@ def _validate_lane_metadata_replay(assignments: list[dict[str, Any]], lane_assig
 
 
 def _validate_beat_grid(timing: dict[str, Any]) -> None:
-    beat_grid = timing.get("beat_grid")
+    beat_grid = timing.get("canonical_beats") if timing.get("schema") == "neon_music.beat_grid.v2" else timing.get("beat_grid")
     if not isinstance(beat_grid, list) or not beat_grid:
         _fail("beat_grid must contain at least one beat entry.")
+    if timing.get("schema") == "neon_music.beat_grid.v2":
+        previous_time = -float("inf")
+        for position, actual in enumerate(beat_grid):
+            if not isinstance(actual, dict):
+                _fail(f"canonical_beats[{position}] is not an object.")
+            _assert_field(f"canonical_beats[{position}].index", actual.get("index"), position)
+            beat_time = float(actual.get("time", -1.0))
+            if beat_time + EPSILON < previous_time:
+                _fail("canonical_beats must be time-sorted.")
+            if bool(actual.get("downbeat")) != (position % 4 == 0):
+                _fail(f"canonical_beats[{position}].downbeat is inconsistent.")
+            previous_time = beat_time
+        quality = timing.get("quality", {})
+        if not isinstance(quality, dict) or float(quality.get("detected_coverage", 0.0)) <= 0.0:
+            _fail("beat_grid.v2 must contain detected coverage evidence.")
+        print(f"Beat grid V2: OK ({len(beat_grid)} canonical, {len(timing.get('raw_detected_beats', []))} detected)")
+        return
     anchor = timing.get("anchor")
     if not isinstance(anchor, dict):
         _fail("beat_grid anchor is missing.")
@@ -739,24 +768,18 @@ def _run_command(command: list[str], cwd: Path) -> subprocess.CompletedProcess[s
 
 
 def _validate_deterministic_regeneration(audio_path: Path) -> None:
-    outputs: list[tuple[bytes, bytes]] = []
+    outputs: list[bytes] = []
     for run_index in range(2):
         with tempfile.TemporaryDirectory(prefix=f".validator_analyzer_{run_index + 1}_", dir=str(PROJECT_DIR)) as temp_dir:
             temp_root = Path(temp_dir)
-            beatmap_out = temp_root / "beatmap.json"
-            beat_grid_out = temp_root / "beat_grid.json"
-            subtitles_out = temp_root / "combo.srt"
+            track_out = temp_root / "neon_track.json"
             command = [
                 sys.executable,
                 str(PROJECT_DIR / "scripts" / "python" / "audio_analyzer.py"),
                 "--audio",
                 str(audio_path),
-                "--beatmap",
-                str(beatmap_out),
-                "--metadata",
-                str(beat_grid_out),
-                "--subtitles",
-                str(subtitles_out),
+                "--track",
+                str(track_out),
             ]
             result = _run_command(command, PROJECT_DIR)
             if result.returncode != 0:
@@ -764,10 +787,10 @@ def _validate_deterministic_regeneration(audio_path: Path) -> None:
                     "Analyzer regeneration failed on run %d.\nSTDOUT:\n%s\nSTDERR:\n%s"
                     % (run_index + 1, result.stdout, result.stderr)
                 )
-            outputs.append((beatmap_out.read_bytes(), beat_grid_out.read_bytes()))
+            outputs.append(track_out.read_bytes())
     if outputs[0] != outputs[1]:
         _fail("Analyzer output is not byte-identical across two local runs.")
-    print("Deterministic regeneration: OK (two runs matched)")
+    print("Deterministic regeneration: OK (two unified runs matched)")
 
 
 def _resolve_godot(explicit: str | None) -> Path:
@@ -911,7 +934,7 @@ def _validate_wall_movie_smoke(godot: Path) -> None:
     if not movie_log_path.is_file() or not movie_log_path.read_text(encoding="utf-8").strip():
         _fail(f"Wall movie smoke did not produce hit timing diagnostics.\n{movie_output}")
     movie_log_text = movie_log_path.read_text(encoding="utf-8")
-    _validate_hit_timing_log(movie_log_text, 30.0, "wall/hold movie smoke", {"tap", "hold_start"})
+    _validate_hit_timing_log(movie_log_text, 30.0, "wall movie smoke", {"tap"})
     if "kind=hold_release" in movie_log_text:
         _fail("wall/hold movie smoke must not emit hold_release hit diagnostics.")
     movie_log_path.unlink(missing_ok=True)
@@ -941,24 +964,47 @@ def _validate_wall_movie_smoke(godot: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate neon_music production beatmap and diagnostics.")
-    parser.add_argument("--beatmap", type=Path, default=BEATMAP_PATH)
-    parser.add_argument("--metadata", type=Path, default=BEAT_GRID_PATH)
-    parser.add_argument("--audio", type=Path, default=REFERENCE_AUDIO)
+    parser.add_argument("--track", type=Path, default=TRACK_PATH)
+    parser.add_argument("--beatmap", type=Path, default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--metadata", type=Path, default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--audio", type=Path, default=None, help="Source audio; defaults to the audio embedded in --track.")
     parser.add_argument("--movie", type=Path, default=REFERENCE_MOVIE)
     parser.add_argument("--godot", type=str, default="")
     args = parser.parse_args()
 
-    _validate_reference_assets(args.audio, args.movie)
+    track = None
+    if args.beatmap is None and args.metadata is None:
+        track = load_neon_track(args.track)
+        beatmap = extract_beatmap(track)
+        timing = extract_beat_grid(track, beatmap)
+    else:
+        beatmap = _load_json(args.beatmap or BEATMAP_PATH)
+        timing = _load_json(args.metadata or BEAT_GRID_PATH)
+    audio_value = args.audio
+    if audio_value is None:
+        embedded = (track or {}).get("audio", beatmap.get("audio", timing.get("audio")))
+        audio_value = Path(str(embedded)) if isinstance(embedded, (str, Path)) and str(embedded) else REFERENCE_AUDIO
+    if not audio_value.is_absolute():
+        audio_value = PROJECT_DIR / audio_value
+    _validate_reference_assets(audio_value, args.movie)
     _validate_wall_visual_config()
-    beatmap = _load_json(args.beatmap)
-    timing = _load_json(args.metadata)
     _validate_beat_grid(timing)
-    _validate_production_artifacts(beatmap, timing)
-    choreography_report = validate_choreography_v3(beatmap, timing)
-    if choreography_report["hard_errors"]:
-        _fail("Phase 3/4 choreography hard errors: " + json.dumps(choreography_report["hard_errors"][:3], ensure_ascii=False))
-    print(f"Phase 3/4 choreography: OK ({choreography_report['summary']['warnings']} warnings)")
-    _validate_deterministic_regeneration(args.audio)
+    embedded_v4 = beatmap.get("choreography_v4") if isinstance(beatmap, dict) else None
+    if timing.get("schema") == SCHEMA_BEAT_GRID_V2 and (
+        beatmap.get("schema") == SCHEMA_BEATMAP_V4 or isinstance(embedded_v4, dict)
+    ):
+        v4_payload = embedded_v4 if isinstance(embedded_v4, dict) else beatmap
+        choreography_report = validate_v4(timing, v4_payload)
+        if choreography_report["hard_errors"]:
+            _fail("V4 choreography hard errors: " + json.dumps(choreography_report["hard_errors"][:3], ensure_ascii=False))
+        print(f"V4 choreography: OK ({len(choreography_report['warnings'])} warnings)")
+    else:
+        _validate_production_artifacts(beatmap, timing)
+        choreography_report = validate_choreography_v3(beatmap, timing)
+        if choreography_report["hard_errors"]:
+            _fail("Phase 3/4 choreography hard errors: " + json.dumps(choreography_report["hard_errors"][:3], ensure_ascii=False))
+        print(f"Phase 3/4 choreography: OK ({choreography_report['summary']['warnings']} warnings)")
+    _validate_deterministic_regeneration(audio_value)
     godot = _resolve_godot(args.godot or None)
     _validate_clock_smoke(godot)
     _validate_wall_movie_smoke(godot)

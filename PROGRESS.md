@@ -27,3 +27,22 @@
 - Added compact Phrase Editor V3 controls to the existing Analyzer GUI.
 - Added cue-specific Godot geometry, gameplay-corridor shift, expanded QA overlay, renderer capability/FogVolume handling, and frame-sequence movie fallback.
 - Generated 56-second QA/clean vertical slice: 1680 frames each, 30 FPS, 0 hard validator errors, byte-identical same-seed debug JSON.
+
+## 2026-07-31 — V6-A
+
+- V6-A complete: explicit lane-centered footprint selection retained without semantic negative-scale mirroring; coordinate audit and orientation preview added.
+- Preview: `output/previews/vertical_slice_visual_v6/01_footprint_left_close.png`, `02_footprint_right_close.png`.
+
+## 2026-07-31 — V6-B
+
+- V6-B complete: hand-target sphere replaced by an emissive icon cube with deterministic shard burst and scene-reset behavior.
+- Preview/contact sheet updated with cube reference state in `output/previews/assets_v6/v6_abc_contact_sheet.png`.
+
+## 2026-07-31 — V6-C
+
+- V6-C complete: side-wall visual cleanup waits for the full wall bounding length to pass the camera plane plus margin; event timing/JSON semantics remain unchanged.
+- Preview/contact sheet updated with approach/crossing/passing evidence in `output/previews/vertical_slice_visual_v6/`.
+
+## 2026-07-31 — V6 acceptance smoke
+
+- Validator acceptance fixed/confirmed: wall-preview movie smoke now produces runtime `hit_trigger` diagnostics for `tap` and `hold_start`; preview/contact sheet paths remain in `output/previews/vertical_slice_visual_v6/` and `output/previews/assets_v6/v6_abc_contact_sheet.png`.

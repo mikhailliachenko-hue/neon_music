@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import csv
@@ -192,6 +192,11 @@ def _pair_visual_to_expected(
             "error_ms": float(error_ms),
             "visual_strength": float(visual_strengths[visual_index]),
         })
+    if rows:
+        median_error = float(np.median(np.asarray([row["error_ms"] for row in rows], dtype=float)))
+        for row in rows:
+            row["calibration_offset_ms"] = -median_error
+            row["calibrated_error_ms"] = float(row["error_ms"]) + float(row["calibration_offset_ms"])
     return rows
 
 
@@ -264,7 +269,7 @@ def main() -> int:
     rows = _pair_visual_to_expected(visual_times, visual_strengths, expected, audio_start_offset, float(probe["fps"]), args.max_pair_ms)
 
     csv_path = args.out_dir / f"{args.prefix}_timing_diagnostics.csv"
-    fieldnames = ["event_index", "kind", "lane", "source_time", "expected_beat", "receptor_cross_time", "receptor_cross_frame", "error_ms", "visual_strength"]
+    fieldnames = ["event_index", "kind", "lane", "source_time", "expected_beat", "receptor_cross_time", "receptor_cross_frame", "error_ms", "calibration_offset_ms", "calibrated_error_ms", "visual_strength"]
     with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -288,6 +293,7 @@ def main() -> int:
         "criteria": {"median_abs_error_ms_max": 16.7, "p95_abs_error_ms_max": 33.4},
         "passes_60fps_criteria": bool(errors.size and np.median(np.abs(errors)) <= 16.7 and np.percentile(np.abs(errors), 95.0) <= 33.4),
         "recommended_global_audio_offset_ms": float(-np.median(errors)) if errors.size else 0.0,
+        "calibrated_stats": _stats(np.asarray([row["calibrated_error_ms"] for row in rows], dtype=float)) if rows else {"count": 0},
         "csv": str(csv_path),
     }
     summary_path = args.out_dir / f"{args.prefix}_timing_summary.json"

@@ -1,4 +1,4 @@
-﻿extends Node3D
+extends Node3D
 
 const NOTE_SCENE := preload("res://scenes/note.tscn")
 const BEATMAP_PARSER := preload("res://scripts/beatmap_parser.gd")
@@ -14,7 +14,18 @@ const FRAME_BACK_Z := -110.0
 const FRAME_FRONT_Z := 5.0
 const ENABLE_TUNNEL_FRAMES := false
 const DEFAULT_RENDER_FPS := 60.0
+const DEFAULT_RECORDING_RESOLUTION := "2560x1440"
+const HUD_BAR_GLOSS_PATH := "res://assets/ui/kenney_sci_fi/bar_round_gloss_large.png"
+const HUD_BAR_OUTLINE_PATH := "res://assets/ui/kenney_sci_fi/bar_shadow_round_outline_large.png"
+const HUD_MARKER_BITMAP_PATH := "res://assets/ui/silhouettes/dancer_marker_glow.png"
+const HUD_READY_BAR_FRAME_PATH := "res://assets/ui/opengameart_progress_bars/bar_empty_frame.png"
+const HUD_READY_BAR_FILL_PATH := "res://assets/ui/opengameart_progress_bars/bar_blue_fill.png"
+const HUD_FONT_PATH := "res://assets/ui/kenney_sci_fi/Kenney Future Narrow.ttf"
+const HUD_BAR_SIDE_MARGIN := 178.0
+const HUD_BAR_INNER_MARGIN := 192.0
 const BACKGROUND_VIDEO_DISTANCE := 220.0
+const ENABLE_BACKGROUND_VIDEO := true
+const DODGE_OBSTACLE_PATH := "res://assets/models/obstacles/kenney/fence-straight.glb"
 const BACKGROUND_VIDEO_BASE_SIZE := Vector2(16.0, 9.0)
 const BACKGROUND_MP4_BACKEND_SCRIPT := preload("res://scripts/godot/background_mp4_backend.gd")
 const GHOST_CUE_CENTER_Z := -8.75
@@ -22,6 +33,8 @@ const GHOST_CUE_LENGTH := 17.5
 const GHOST_CUE_WIDTH := 1.55
 const GHOST_CUE_BASE_ALPHA := 0.16
 const WALL_EVENT_TYPES := ["wall_left", "wall_right"]
+const WALL_PANEL_SCENE := preload("res://assets/models/wall_obstacle/template-wall-detail-a-imported.tscn")
+const WALL_LED_SHADER := preload("res://assets/models/wall_led_wave.gdshader")
 const HOLD_EVENT_TYPE := "hold"
 const WALL_VISUAL_CONFIG_PATH := "res://assets/models/wall_visual_config.json"
 const DEFAULT_WALL_WIDTH_X := 3.9
@@ -59,9 +72,12 @@ const HOLD_STRIP_WIDTH := 1.34
 const HOLD_STRIP_MIN_LENGTH := 0.32
 const HOLD_DISSOLVE_DURATION := 0.48
 const HOLD_START_PAD_SIZE := Vector2(1.72, 2.92)
-const HOLD_START_FOOT_SIZE := Vector2(1.18, 2.28)
+const HOLD_START_FOOT_SIZE := Vector2(1.5, 2.64)
 const DEFAULT_GLOBAL_AUDIO_OFFSET_MS := 28.0
 const DEFAULT_VISUAL_HIT_OFFSET_MS := 0.0
+const COMBO_LANE_CENTERS := [-3.0, -1.0, 1.0, 3.0]
+const COMBO_LINK_MAX_GAP := 1.65
+const MAX_ACTIVE_PUNCH_TRAILS := 12
 
 @export var scroll_speed: float = 20.0
 @export var time_to_hit: float = 4.0
@@ -79,6 +95,7 @@ var beatmap: Array = []
 var movement_events: Array = []
 var wall_events: Array = []
 var hold_events: Array = []
+var lane_layout := "4_lanes"
 var next_note_index := 0
 var next_wall_event_index := 0
 var next_hold_event_index := 0
@@ -92,6 +109,8 @@ var silent_clock := 0.0
 var render_clock_mode := false
 var render_clock_fps := DEFAULT_RENDER_FPS
 var render_frame_index := 0
+var selected_audio_path := ""
+var recording_export_pid := 0
 var last_song_time := 0.0
 var clock_diagnostic_seconds := -1.0
 var clock_stop_after_seconds := -1.0
@@ -105,6 +124,7 @@ var background_video_player
 var background_video_plane: MeshInstance3D
 var background_video_material: StandardMaterial3D
 var background_video_backend := "none"
+var background_video_texture_seen := false
 var tuning_values := {}
 var tuning_defaults := {}
 var tuning_labels := {}
@@ -126,9 +146,23 @@ var debug_timeline_enabled := false
 var debug_timeline_layer: CanvasLayer
 var debug_timeline_label: Label
 var frame_sequence_dir := ""
+var render_clock_start_at := 0.0
 var execution_deck_root: Node3D
 var lane_pad_materials: Array[StandardMaterial3D] = []
 var last_section_profile := ""
+var dance_hud_layer: CanvasLayer
+var dance_hud_progress_material: ShaderMaterial
+var dance_hud_elapsed_label: Label
+var dance_hud_remaining_label: Label
+var dance_hud_frame: TextureRect
+var dance_hud_fill_clip: Control
+var dance_hud_fill_texture: TextureRect
+var dance_hud_marker_shell: TextureRect
+var dance_hud_marker_icon: TextureRect
+var hit_feedback_label: Label
+var dance_hud_next_pulse_index := 0
+var combo_trails_root: Node3D
+var active_combo_trails: Array[Node3D] = []
 
 
 func _ready() -> void:
@@ -142,8 +176,9 @@ func _ready() -> void:
 	_build_retrowave_environment()
 	_build_tunnel()
 	_build_execution_deck()
+	_build_combo_trail_layer()
 	_init_tuning_values()
-	_build_ghost_cue_layer()
+	# Ghost brackets disabled: they read as extra gameplay objects.
 	_build_wall_anticipation_layer()
 	_apply_tuning_values()
 	if not _tuning_gui_disabled_by_args():
@@ -152,11 +187,37 @@ func _ready() -> void:
 		return
 	if debug_timeline_enabled:
 		_build_debug_timeline_overlay()
+	if not _is_headless_runtime():
+		_build_dance_hud()
 	if not silent_mode:
 		_print_audio_timing_config()
 		audio.play()
 	_start_background_video()
 	started = true
+
+func _seek_runtime_indices_for_song_time(song_time: float) -> void:
+	if song_time <= 0.0:
+		return
+	var note_cutoff := maxf(0.0, song_time - 0.15)
+	next_note_index = 0
+	while next_note_index < beatmap.size():
+		var beat := beatmap[next_note_index] as Dictionary
+		if float(beat.get("time", beat.get("hit_time", 0.0))) >= note_cutoff:
+			break
+		next_note_index += 1
+	next_wall_event_index = 0
+	while next_wall_event_index < wall_events.size():
+		var wall_event := wall_events[next_wall_event_index] as Dictionary
+		if _wall_start(wall_event) + _wall_duration(wall_event) >= note_cutoff:
+			break
+		next_wall_event_index += 1
+	next_hold_event_index = 0
+	while next_hold_event_index < hold_events.size():
+		var hold_event := hold_events[next_hold_event_index] as Dictionary
+		var hold_end := float(hold_event.get("end_time", hold_event.get("end", hold_event.get("time", 0.0))))
+		if hold_end >= note_cutoff:
+			break
+		next_hold_event_index += 1
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_headless_runtime():
@@ -170,6 +231,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_soft_restart()
 		elif key_event.keycode == KEY_F11:
 			_toggle_fullscreen()
+		elif key_event.keycode == KEY_F10:
+			_launch_recording_export()
 		elif key_event.keycode == KEY_BRACKETLEFT:
 			_nudge_global_audio_offset(-1.0 if key_event.shift_pressed else -5.0)
 		elif key_event.keycode == KEY_BRACKETRIGHT:
@@ -194,6 +257,10 @@ func _soft_restart() -> void:
 		child.queue_free()
 	for child in effects_root.get_children():
 		child.queue_free()
+	for trail in active_combo_trails:
+		if is_instance_valid(trail):
+			trail.queue_free()
+	active_combo_trails.clear()
 	for wall in active_walls:
 		if is_instance_valid(wall):
 			wall.queue_free()
@@ -237,10 +304,12 @@ func _process(delta: float) -> void:
 	last_song_time = song_time
 	_apply_camera_transform(song_time)
 	_update_visual_profile(song_time)
+	_update_dance_hud(song_time)
+	_update_combo_trails(song_time)
 	_update_background_video_texture()
 	_move_retrowave_fog(frame_delta)
 	_update_wall_anticipation_cue(song_time)
-	_update_ghost_lane_cue(song_time)
+	# No predictive brackets/rings in warm-up mode.
 	_spawn_due_wall_events(song_time)
 	_update_active_walls(song_time)
 	_spawn_due_hold_events(song_time)
@@ -257,9 +326,24 @@ func _process(delta: float) -> void:
 		var note := active_notes[index]
 		note.sync_to_song_time(song_time, scroll_speed)
 		if song_time >= _hit_trigger_time(note.hit_time):
-			_trigger_hit_event("tap", int(note.get_meta("note_index", -1)), note.lane, note.hit_time, song_time, note.emission_color, true)
+			_trigger_hit_event(
+				"tap",
+				int(note.get_meta("note_index", -1)),
+				note.lane,
+				note.hit_time,
+				song_time,
+				note.emission_color,
+				true,
+				note.cue_archetype,
+				String(note.get_meta("movement", "")),
+				int(note.get_meta("combo_index", 0))
+			)
 			active_notes.remove_at(index)
-			note.queue_free()
+			if note.cue_archetype.begins_with("HAND_TARGET"):
+				note.trigger_shatter()
+				get_tree().create_timer(0.24).timeout.connect(note.queue_free)
+			else:
+				note.queue_free()
 
 	if _should_quit(song_time):
 		_shutdown_and_quit()
@@ -292,12 +376,22 @@ func _load_inputs() -> bool:
 		return true
 	var beatmap_path := _find_beatmap_path()
 	if beatmap_path.is_empty():
-		push_error("beatmap.json is missing. Generate output/beatmap.json with scripts/python/audio_analyzer.py first.")
+		push_error("neon_track.json is missing. Generate output/neon_track.json with scripts/python/audio_analyzer.py first.")
 		_shutdown_and_quit()
 		return false
 
 	var file := FileAccess.open(beatmap_path, FileAccess.READ)
 	var parsed = JSON.parse_string(file.get_as_text())
+	lane_layout = "4_lanes"
+	if parsed is Dictionary:
+		var track_document := parsed as Dictionary
+		lane_layout = String(track_document.get("lane_layout", lane_layout))
+		if track_document.has("beatmap"):
+			var embedded_beatmap = track_document.get("beatmap", {})
+			if embedded_beatmap is Dictionary:
+				lane_layout = String((embedded_beatmap as Dictionary).get("lane_layout", lane_layout))
+			parsed = embedded_beatmap
+	_apply_lane_layout()
 	var normalized: Dictionary = BEATMAP_PARSER.normalize_document(parsed)
 	var parse_errors: Array = normalized.get("errors", [])
 	if not parse_errors.is_empty():
@@ -338,7 +432,7 @@ func _load_inputs() -> bool:
 	var audio_candidates := []
 	if not cli_audio.is_empty():
 		audio_candidates.append(cli_audio)
-	audio_candidates.append_array(["res://assets/audio/audio.mp3", "res://assets/audio/audio.wav", "res://assets/audio/Iron & Ash.mp3"])
+	audio_candidates.append_array(["res://assets/audio/audio.wav", "res://assets/audio/audio.mp3"])
 	if OS.get_cmdline_user_args().has("--silent-render"):
 		audio_candidates.clear()
 	for audio_path in audio_candidates:
@@ -348,6 +442,7 @@ func _load_inputs() -> bool:
 		if audio.stream != null:
 			song_duration = audio.stream.get_length()
 			silent_mode = false
+			selected_audio_path = audio_path
 			print("Loaded audio: ", audio_path)
 			break
 
@@ -359,8 +454,23 @@ func _load_inputs() -> bool:
 		for event in hold_events:
 			song_duration = maxf(song_duration, float(event.get("end_time", float(event.get("start", event.get("time", 0.0))) + float(event.get("duration", 0.0)))))
 		song_duration += 1.0
+		if selected_audio_path.is_empty():
+			selected_audio_path = cli_audio if not cli_audio.is_empty() else "res://assets/audio/audio.wav"
 		print("Silent render mode: add music in CapCut.")
 	return true
+
+func _apply_lane_layout() -> void:
+	var two_cells := lane_layout == "2_cells"
+	for index in range(receptors.size()):
+		var receptor := receptors[index] as Node3D
+		if receptor == null:
+			continue
+		var active := (not two_cells) or index == 0 or index == 3
+		receptor.visible = active
+		receptor.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+		receptor.position.x = -3.0 if index == 0 else (-1.0 if index == 1 else (1.0 if index == 2 else 3.0))
+	print("Lane layout: %s" % lane_layout)
+
 
 func _wall_preview_requested() -> bool:
 	for arg in OS.get_cmdline_user_args():
@@ -448,13 +558,18 @@ func _find_beatmap_path() -> String:
 				requested = "res://" + requested.replace("\\", "/")
 			if FileAccess.file_exists(requested):
 				return requested
-	for path in ["res://output/beatmap.json"]:
+	for path in ["res://output/neon_track.json"]:
 		if FileAccess.file_exists(path):
 			return path
 	return ""
 
 
 func _configure_background_video() -> void:
+	if not ENABLE_BACKGROUND_VIDEO:
+		background_video_requested = false
+		background_video_enabled = false
+		background_video_reason = "disabled_for_reference_style"
+		return
 	if _background_video_disabled_by_args():
 		background_video_requested = false
 		background_video_enabled = false
@@ -485,11 +600,12 @@ func _configure_background_video() -> void:
 
 	var native_player := VideoStreamPlayer.new()
 	native_player.name = "BackgroundVideoPlayer"
-	native_player.visible = false
+	native_player.visible = true
+	native_player.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	native_player.autoplay = false
 	native_player.expand = true
-	native_player.loop = false
-	add_child(native_player)
+	native_player.loop = true
+	native_player.volume_db = -80.0
 	background_video_player = native_player
 
 	var stream := load(background_video_path)
@@ -503,6 +619,7 @@ func _configure_background_video() -> void:
 		return
 
 	native_player.stream = stream
+	add_child(native_player)
 	background_video_material = _create_background_video_material()
 	_attach_background_video_plane()
 	background_video_enabled = true
@@ -572,6 +689,7 @@ func _clear_background_video_nodes() -> void:
 	background_video_player = null
 	background_video_material = null
 	background_video_backend = "none"
+	background_video_texture_seen = false
 
 func _background_video_disabled_by_args() -> bool:
 	for arg in OS.get_cmdline_user_args():
@@ -581,20 +699,33 @@ func _background_video_disabled_by_args() -> bool:
 
 
 func _find_background_video_path() -> String:
-	var candidate_names := ["reference_fullhd.mp4", "0727.mp4"]
-	for folder_path in ["res://assets/images/background"]:
+	var newest_mp4 := ""
+	var newest_mp4_time := -1
+	var newest_ogv := ""
+	var newest_ogv_time := -1
+	for folder_path in ["res://assets/images/background", "res://backgrounds", "res://background"]:
 		var dir := DirAccess.open(folder_path)
 		if dir == null:
 			continue
 		dir.list_dir_begin()
 		var file_name := dir.get_next()
 		while file_name != "":
-			if not dir.current_is_dir() and file_name.get_extension().to_lower() == "mp4":
-				if file_name in candidate_names:
-					dir.list_dir_end()
-					return folder_path.path_join(file_name)
+			if not dir.current_is_dir():
+				var extension := file_name.get_extension().to_lower()
+				var candidate_path: String = folder_path.path_join(file_name)
+				var modified_time := FileAccess.get_modified_time(candidate_path)
+				if extension == "mp4" and modified_time > newest_mp4_time:
+					newest_mp4 = candidate_path
+					newest_mp4_time = modified_time
+				elif extension == "ogv" and modified_time > newest_ogv_time:
+					newest_ogv = candidate_path
+					newest_ogv_time = modified_time
 			file_name = dir.get_next()
 		dir.list_dir_end()
+	if not newest_mp4.is_empty():
+		return newest_mp4
+	if not newest_ogv.is_empty():
+		return newest_ogv
 	return ""
 
 
@@ -629,15 +760,20 @@ func _background_plane_size() -> Vector2:
 func _update_background_video_texture() -> void:
 	if not background_video_enabled or background_video_player == null or background_video_material == null:
 		return
-	if background_video_backend == "godot_video_stream" and background_video_player is VideoStreamPlayer:
+	if background_video_backend == "ffmpeg_frame_backend":
+		return
+	if background_video_player is VideoStreamPlayer:
 		var texture := (background_video_player as VideoStreamPlayer).get_video_texture()
 		if texture != null:
 			background_video_material.albedo_texture = texture
 
-
 func _on_background_video_texture_changed(texture: Texture2D) -> void:
 	if background_video_material != null and texture != null:
 		background_video_material.albedo_texture = texture
+		if not background_video_texture_seen:
+			background_video_texture_seen = true
+			print("Background video: texture_ready backend=%s" % background_video_backend)
+
 
 func get_background_video_status() -> Dictionary:
 	return {
@@ -695,6 +831,7 @@ func _init_tuning_values() -> void:
 	wall_right_color = _color_from_config(wall_config.get("wall_right_color", []), DEFAULT_WALL_RIGHT_COLOR)
 	safe_lane_color = _color_from_config(wall_config.get("safe_lane_color", []), DEFAULT_SAFE_LANE_COLOR)
 	next_cell_ring_color = _color_from_config(wall_config.get("next_cell_ring_color", []), DEFAULT_NEXT_CELL_RING_COLOR)
+	_apply_tuning_cli_overrides()
 	_clamp_wall_tuning_values()
 	tuning_defaults = tuning_values.duplicate()
 
@@ -755,6 +892,26 @@ func _apply_timing_cli_overrides(config: Dictionary) -> void:
 		elif arg.begins_with("--visual-hit-offset-ms="):
 			config["visual_hit_offset_ms"] = float(arg.trim_prefix("--visual-hit-offset-ms="))
 
+
+func _apply_tuning_cli_overrides() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with("--tuning-"):
+			continue
+		var payload := arg.trim_prefix("--tuning-")
+		var separator := payload.find("=")
+		if separator <= 0:
+			continue
+		var key := payload.substr(0, separator).replace("-", "_")
+		if not tuning_values.has(key):
+			continue
+		var raw_value := payload.substr(separator + 1)
+		var current_value = tuning_values[key]
+		if current_value is bool:
+			tuning_values[key] = raw_value.to_lower() in ["1", "true", "yes", "on"]
+		elif current_value is int or current_value is float:
+			tuning_values[key] = float(raw_value)
+		else:
+			tuning_values[key] = raw_value
 
 func _color_from_config(value, fallback: Color) -> Color:
 	if value is Array and value.size() >= 3:
@@ -1072,10 +1229,117 @@ func _configure_frame_sequence_capture() -> void:
 			print("Frame sequence capture: %s" % frame_sequence_dir)
 
 
+func _launch_recording_export() -> void:
+	if recording_export_pid > 0:
+		print("F10 recording export already launched pid=%d" % recording_export_pid)
+		return
+	if _movie_writer_is_active():
+		print("F10 recording export skipped because movie writer is already active.")
+		return
+
+	var executable := OS.get_executable_path()
+	if executable.is_empty():
+		push_error("F10 recording export failed: executable path is empty.")
+		return
+
+	var project_path := ProjectSettings.globalize_path("res://")
+	var output_dir := ProjectSettings.globalize_path("res://output/renders")
+	DirAccess.make_dir_recursive_absolute(output_dir)
+
+	var audio_path := _recording_audio_path()
+	var output_path := "%s/%s_f10_%s.avi" % [output_dir, _sanitize_filename(_recording_output_basename(audio_path)), str(Time.get_unix_time_from_system())]
+	var args := PackedStringArray()
+	args.append("--path")
+	args.append(project_path)
+	args.append("--write-movie")
+	args.append(output_path)
+	args.append("--fixed-fps")
+	args.append(str(int(render_clock_fps)))
+	args.append("--resolution")
+	args.append(DEFAULT_RECORDING_RESOLUTION)
+	args.append("--")
+	for arg in _recording_passthrough_args():
+		args.append(arg)
+	for arg in _recording_tuning_args():
+		args.append(arg)
+	if not audio_path.is_empty():
+		args.append("--audio=%s" % audio_path)
+	args.append("--render-clock=frame")
+	args.append("--clock-fps=%.3f" % render_clock_fps)
+	args.append("--clock-stop-after=%.3f" % song_duration)
+
+	recording_export_pid = OS.create_process(executable, args, false)
+	if recording_export_pid <= 0:
+		recording_export_pid = 0
+		push_error("F10 recording export failed to launch.")
+		return
+	print("F10 recording export launched pid=%d output=%s" % [recording_export_pid, output_path])
+
+
+func _recording_audio_path() -> String:
+	if not selected_audio_path.is_empty():
+		return selected_audio_path
+	var cli_audio := _audio_path_from_args()
+	if not cli_audio.is_empty():
+		return cli_audio
+	return "res://assets/audio/audio.wav"
+
+
+func _recording_output_basename(audio_path: String) -> String:
+	if audio_path.is_empty():
+		return "neon_music"
+	return audio_path.get_file().get_basename()
+
+
+func _sanitize_filename(text: String) -> String:
+	var sanitized := ""
+	for character in text:
+		var code := character.unicode_at(0)
+		if (code >= 48 and code <= 57) or (code >= 65 and code <= 90) or (code >= 97 and code <= 122):
+			sanitized += character
+		else:
+			sanitized += "_"
+	if sanitized.is_empty():
+		return "neon_music"
+	return sanitized
+
+
+func _recording_passthrough_args() -> PackedStringArray:
+	var args := PackedStringArray()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--write-movie") or arg.begins_with("--frame-sequence-dir=") or arg.begins_with("--clock-stop-after=") or arg.begins_with("--clock-start-at=") or arg.begins_with("--clock-fps=") or arg.begins_with("--render-clock=") or arg.begins_with("--audio=") or arg.begins_with("--tuning-"):
+			continue
+		args.append(arg)
+	return args
+
+
+func _recording_tuning_args() -> PackedStringArray:
+	var args := PackedStringArray()
+	var keys := tuning_values.keys()
+	keys.sort()
+	for key in keys:
+		var value = tuning_values[key]
+		var arg_key := String(key).replace("_", "-")
+		if value is bool:
+			args.append("--tuning-%s=%s" % [arg_key, "true" if bool(value) else "false"])
+		elif value is int or value is float:
+			args.append("--tuning-%s=%.6f" % [arg_key, float(value)])
+		elif value is String:
+			args.append("--tuning-%s=%s" % [arg_key, String(value)])
+	return args
+
+
 func _capture_frame_sequence() -> void:
 	if frame_sequence_dir.is_empty():
 		return
-	var image := get_viewport().get_texture().get_image()
+	if _is_headless_runtime():
+		return
+	var viewport_texture := get_viewport().get_texture()
+	if viewport_texture == null:
+		return
+	var image := viewport_texture.get_image()
+	if image == null:
+		return
 	var path := "%s/frame_%06d.jpg" % [frame_sequence_dir, render_frame_index]
 	var error := image.save_jpg(path, 0.94)
 	if error != OK:
@@ -1151,6 +1415,8 @@ func _configure_render_clock() -> void:
 			clock_diagnostic_seconds = maxf(0.0, float(arg.trim_prefix("--clock-diagnostic=")))
 		elif arg.begins_with("--clock-stop-after="):
 			clock_stop_after_seconds = maxf(0.0, float(arg.trim_prefix("--clock-stop-after=")))
+		elif arg.begins_with("--clock-start-at="):
+			render_clock_start_at = maxf(0.0, float(arg.trim_prefix("--clock-start-at=")))
 		elif arg.begins_with("--clock-diagnostic-file="):
 			clock_diagnostic_file_path = arg.trim_prefix("--clock-diagnostic-file=")
 
@@ -1161,12 +1427,13 @@ func _configure_render_clock() -> void:
 	else:
 		render_clock_mode = _movie_writer_is_active() or _is_headless_runtime()
 	var mode_label := "frame" if render_clock_mode else "audio/silent"
-	print("Render clock: mode=%s fps=%.3f movie=%s headless=%s diagnostic=%.3f stop_after=%.3f file=%s debug_timeline=%s" % [
+	print("Render clock: mode=%s fps=%.3f movie=%s headless=%s diagnostic=%.3f start_at=%.3f stop_after=%.3f file=%s debug_timeline=%s" % [
 		mode_label,
 		render_clock_fps,
 		str(_movie_writer_is_active()),
 		str(_is_headless_runtime()),
 		clock_diagnostic_seconds,
+		render_clock_start_at,
 		clock_stop_after_seconds,
 		clock_diagnostic_file_path,
 		str(_debug_timeline_requested()),
@@ -1210,11 +1477,44 @@ func _apply_camera_transform(song_time: float) -> void:
 		return
 	camera.rotation_degrees.x = float(tuning_values["camera_pitch"])
 	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + _camera_dodge_offset(song_time)
-	camera.position.y = float(tuning_values["camera_y"])
+	camera.position.y = float(tuning_values["camera_y"]) + _camera_duck_y_offset(song_time)
 	camera.position.z = float(tuning_values["camera_z"])
 	if not _movie_writer_is_active() and frame_sequence_dir.is_empty():
 		camera.set_perspective(float(tuning_values["camera_fov"]), camera.near, camera.far)
 
+
+func _camera_duck_y_offset(song_time: float) -> float:
+	var best_offset := 0.0
+	for raw_event in movement_events:
+		if not raw_event is Dictionary:
+			continue
+		var event := raw_event as Dictionary
+		if not _is_camera_duck_event(event):
+			continue
+		var hit_time := float(event.get("hit_time", event.get("time", 0.0)))
+		var duration := maxf(0.45, float(event.get("duration", 0.9)))
+		var instruction_time := float(event.get("instruction_time", hit_time - 0.72))
+		var dip_in_start := minf(instruction_time, hit_time - 0.18)
+		var dip_full_start := hit_time - 0.10
+		var dip_full_end := hit_time + duration * 0.56
+		var return_end := dip_full_end + 0.42
+		if song_time < dip_in_start or song_time > return_end:
+			continue
+		var strength := 1.0
+		if song_time < dip_full_start:
+			strength = _camera_dodge_ease((song_time - dip_in_start) / maxf(0.001, dip_full_start - dip_in_start))
+		elif song_time > dip_full_end:
+			strength = 1.0 - _camera_dodge_ease((song_time - dip_full_end) / maxf(0.001, return_end - dip_full_end))
+		var offset := -0.72 * clampf(strength, 0.0, 1.0)
+		if absf(offset) > absf(best_offset):
+			best_offset = offset
+	return best_offset
+
+
+func _is_camera_duck_event(event: Dictionary) -> bool:
+	var movement := String(event.get("movement", "")).to_upper()
+	var cue := String(event.get("cue_archetype", "")).to_upper()
+	return movement == "DUCK" or cue == "LOW_CLEARANCE_GATE"
 
 func _camera_dodge_offset(song_time: float) -> float:
 	var best_offset := 0.0
@@ -1283,6 +1583,8 @@ func _spawn_due_hold_events(song_time: float) -> void:
 
 
 func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
+	# Holds are not part of the reference warm-up vocabulary.
+	return
 	var lane := clampi(int(event.get("lane", 0)), 0, 3)
 	var start := float(event.get("start", event.get("time", 0.0)))
 	var end_time := float(event.get("end_time", event.get("end", start + float(event.get("duration", 0.0)))))
@@ -1308,6 +1610,39 @@ func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
 	strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(strip)
 
+	var core := MeshInstance3D.new()
+	core.name = "HoldEnergyCore"
+	var core_mesh := QuadMesh.new()
+	core_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.68, HOLD_STRIP_MIN_LENGTH)
+	core.mesh = core_mesh
+	core.position.y = 0.018
+	core.rotation_degrees.x = -90.0
+	core.material_override = _create_hold_core_material(color)
+	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	hold.add_child(core)
+
+	for side in [-1.0, 1.0]:
+		var rail := MeshInstance3D.new()
+		rail.name = "HoldRailLeft" if side < 0.0 else "HoldRailRight"
+		var rail_mesh := BoxMesh.new()
+		rail_mesh.size = Vector3(0.055, 0.04, HOLD_STRIP_MIN_LENGTH)
+		rail.mesh = rail_mesh
+		rail.position = Vector3(side * HOLD_STRIP_WIDTH * 0.47, 0.035, 0.0)
+		rail.material_override = _create_hold_rail_material(color)
+		rail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		hold.add_child(rail)
+
+	var end_marker := MeshInstance3D.new()
+	end_marker.name = "HoldEndMarker"
+	var end_mesh := QuadMesh.new()
+	end_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.82, 0.34)
+	end_marker.mesh = end_mesh
+	end_marker.position.y = 0.028
+	end_marker.rotation_degrees.x = -90.0
+	end_marker.material_override = _create_hold_end_material(color)
+	end_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	hold.add_child(end_marker)
+
 	var cap := _create_hold_start_pad(lane, color)
 	hold.add_child(cap)
 
@@ -1329,7 +1664,7 @@ func _update_active_holds(song_time: float) -> void:
 		var color := hold.get_meta("emission_color") as Color
 		var fade := 1.0
 		if not bool(hold.get_meta("start_hit_triggered", false)) and song_time >= _hit_trigger_time(start):
-			_trigger_hit_event("hold_start", int(hold.get_meta("event_index", -1)), lane, start, song_time, color, true)
+			_trigger_hit_event("hold_start", int(hold.get_meta("event_index", -1)), lane, start, song_time, color, true, "HOLD_RING", "HOLD", 0)
 			hold.set_meta("start_hit_triggered", true)
 		if song_time >= end_time:
 			if not bool(hold.get_meta("end_fx_spawned", false)):
@@ -1362,9 +1697,36 @@ func _update_hold_geometry(hold: Node3D, song_time: float, fade: float) -> void:
 			(strip.mesh as QuadMesh).size = Vector2(HOLD_STRIP_WIDTH, length)
 		var material := strip.material_override as StandardMaterial3D
 		if material != null:
-			var color := hold.get_meta("emission_color") as Color
-			material.albedo_color = Color(color.r, color.g, color.b, 0.34 * fade)
-			material.emission_energy_multiplier = 8.0 * fade
+			material.albedo_color.a = 0.82 * fade
+			material.emission_energy_multiplier = 0.8 * fade
+	var core := hold.get_node_or_null("HoldEnergyCore") as MeshInstance3D
+	if core != null:
+		core.position.z = center_z
+		if core.mesh is QuadMesh:
+			(core.mesh as QuadMesh).size = Vector2(HOLD_STRIP_WIDTH * 0.68, length)
+		var core_material := core.material_override as StandardMaterial3D
+		if core_material != null:
+			core_material.albedo_color.a = 0.22 * fade
+			core_material.emission_energy_multiplier = 3.8 * fade
+	for rail_name in ["HoldRailLeft", "HoldRailRight"]:
+		var rail := hold.get_node_or_null(rail_name) as MeshInstance3D
+		if rail != null:
+			rail.position.z = center_z
+			if rail.mesh is BoxMesh:
+				var rail_size := (rail.mesh as BoxMesh).size
+				rail_size.z = length
+				(rail.mesh as BoxMesh).size = rail_size
+			var rail_material := rail.material_override as StandardMaterial3D
+			if rail_material != null:
+				rail_material.albedo_color.a = fade
+				rail_material.emission_energy_multiplier = 7.2 * fade
+	var end_marker := hold.get_node_or_null("HoldEndMarker") as MeshInstance3D
+	if end_marker != null:
+		end_marker.position.z = tail_z
+		var end_material := end_marker.material_override as StandardMaterial3D
+		if end_material != null:
+			end_material.albedo_color.a = 0.78 * fade
+			end_material.emission_energy_multiplier = 5.4 * fade
 	var cap := hold.get_node_or_null("HoldFrontCap") as Node3D
 	if cap != null:
 		cap.position.z = front_z
@@ -1375,12 +1737,44 @@ func _create_hold_strip_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_color = Color(0.008 + color.r * 0.035, 0.012 + color.g * 0.035, 0.02 + color.b * 0.035, 0.82)
+	material.emission_enabled = true
+	material.emission = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12)
+	material.emission_energy_multiplier = 0.8
+	return material
+
+
+func _create_hold_core_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_color = Color(color.r, color.g, color.b, 0.34)
+	material.albedo_color = Color(color.r, color.g, color.b, 0.22)
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 8.0
+	material.emission_energy_multiplier = 3.8
+	return material
+
+
+func _create_hold_rail_material(color: Color) -> StandardMaterial3D:
+	var material := _emissive_material(Color.WHITE.lerp(color, 0.42), 7.2)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color.a = 1.0
+	return material
+
+
+func _create_hold_end_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_color = Color(color.r, color.g, color.b, 0.78)
+	material.emission_enabled = true
+	material.emission = Color.WHITE.lerp(color, 0.58)
+	material.emission_energy_multiplier = 5.4
 	return material
 
 
@@ -1486,7 +1880,7 @@ func _create_hold_cap_material(lane: int, color: Color) -> StandardMaterial3D:
 	var texture := _load_runtime_texture(texture_path)
 	if texture != null:
 		material.albedo_texture = texture
-	material.albedo_color = Color(0.15, 0.15, 0.15, 1.0)
+	material.albedo_color = Color.WHITE
 	material.emission_enabled = false
 	return material
 
@@ -1514,24 +1908,46 @@ func _hit_trigger_time(hit_time: float) -> float:
 	return hit_time + float(tuning_values.get("visual_hit_offset_ms", DEFAULT_VISUAL_HIT_OFFSET_MS)) / 1000.0
 
 
-func _trigger_hit_event(kind: String, source_index: int, lane: int, hit_time: float, actual_trigger_time: float, color: Color, visual_enabled: bool) -> void:
+func _trigger_hit_event(
+	kind: String,
+	source_index: int,
+	lane: int,
+	hit_time: float,
+	actual_trigger_time: float,
+	color: Color,
+	visual_enabled: bool,
+	cue_archetype: String = "",
+	movement: String = "",
+	combo_index: int = 0
+) -> void:
 	var clamped_lane := clampi(lane, 0, receptors.size() - 1)
 	var receptor := receptors[clamped_lane] as NoteReceptor
 	if visual_enabled:
 		_pulse_execution_lane(clamped_lane, color, _hit_strength_for_time(hit_time))
-		if _movie_writer_is_active():
-			pass # Godot 4.7 movie writer crashes on SceneTreeTimer-based hit FX.
-		else:
-			receptor.flash()
-			_spawn_hit_effect(receptor.global_position, color)
+		receptor.flash()
+		_spawn_hit_effect(receptor.global_position, color, cue_archetype, movement, combo_index)
+		_show_hit_feedback(hit_time, combo_index)
 	_print_hit_timing_diagnostic(kind, source_index, clamped_lane, hit_time, actual_trigger_time)
 
+
+func _show_hit_feedback(hit_time: float, combo_index: int) -> void:
+	if hit_feedback_label == null:
+		return
+	var strength := _hit_strength_for_time(hit_time)
+	var phrase_hit := strength >= 1.4
+	hit_feedback_label.text = "EXCELLENT" if phrase_hit else ("GREAT" if combo_index > 0 else "ON BEAT")
+	hit_feedback_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.98, 1.0) if phrase_hit else Color(0.72, 1.0, 1.0, 1.0))
+	hit_feedback_label.position = Vector2(0.0, 148.0 - (12.0 if phrase_hit else 0.0))
+	hit_feedback_label.scale = Vector2.ONE * (1.0 + 0.12 * strength)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(hit_feedback_label, "modulate:a", 1.0, 0.04)
+	tween.tween_property(hit_feedback_label, "modulate:a", 0.0, 0.30).set_delay(0.20)
 
 func _print_hit_timing_diagnostic(kind: String, source_index: int, lane: int, hit_time: float, actual_trigger_time: float) -> void:
 	if clock_diagnostic_seconds < 0.0 or actual_trigger_time > clock_diagnostic_seconds:
 		return
 	var error_ms := (actual_trigger_time - hit_time) * 1000.0
-	var line := "CLOCK_DIAG event=hit_trigger kind=%s frame=%06d receptor_cross_frame=%06d lane=%d source=%03d expected_beat=%.6f hit_time=%.6f actual_trigger_time=%.6f error_ms=%.3f" % [
+	var line := "CLOCK_DIAG event=hit_trigger kind=%s frame=%06d receptor_cross_frame=%06d lane=%d source=%03d expected_beat=%.6f hit_time=%.6f actual_trigger_time=%.6f vfx_onset_time=%.6f visual_hit_offset_ms=%.3f error_ms=%.3f" % [
 		kind,
 		render_frame_index,
 		render_frame_index,
@@ -1540,6 +1956,8 @@ func _print_hit_timing_diagnostic(kind: String, source_index: int, lane: int, hi
 		hit_time,
 		hit_time,
 		actual_trigger_time,
+		actual_trigger_time,
+		float(tuning_values.get("visual_hit_offset_ms", DEFAULT_VISUAL_HIT_OFFSET_MS)),
 		error_ms,
 	]
 	print(line)
@@ -1549,22 +1967,40 @@ func _print_hit_timing_diagnostic(kind: String, source_index: int, lane: int, hi
 
 
 func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
+	var cue_name := String(beat.get("cue_archetype", ""))
+	if cue_name == "POSE_FRAME":
+		return
 	var note := NOTE_SCENE.instantiate() as RhythmNote
 	var seconds_until_hit := maxf(0.0, float(beat.time) - song_time)
 	var spawn_z := -(seconds_until_hit * scroll_speed)
 	var lane := clampi(int(beat.get("lane", 0)), 0, 3)
-	note.setup(lane, float(beat.time), spawn_z, String(beat.get("cue_archetype", "FOOT_PAD_LEFT")))
+	var choreography_lanes = beat.get("lanes", [lane])
+	var visual_cue := _visual_cue_for_note(cue_name, choreography_lanes, lane)
+	note.setup(lane, float(beat.time), spawn_z, visual_cue)
 	if tuning_values.has("note_y"):
 		note.position.y = float(tuning_values["note_y"])
 	note.set_meta("note_index", int(beat.get("source_note_index", note_index)))
 	note.set_meta("choreography_type", String(beat.get("type", "step")))
 	note.set_meta("movement", String(beat.get("movement", "MARCH")))
-	note.set_meta("cue_archetype", String(beat.get("cue_archetype", "FOOT_PAD_LEFT")))
-	note.set_meta("choreography_lanes", beat.get("lanes", [lane]))
+	note.set_meta("cue_archetype", cue_name)
+	note.set_meta("visual_cue_archetype", visual_cue)
+	note.set_meta("choreography_lanes", choreography_lanes)
 	note.set_meta("foot", String(beat.get("foot", "left" if lane < 2 else "right")))
+	var combo_context := _combo_context_for_note(beat, note_index)
+	note.set_meta("combo_index", int(combo_context.get("index", 0)))
+	note.set_meta("combo_key", String(combo_context.get("key", "")))
 	notes_root.add_child(note)
 	active_notes.append(note)
+	if _punch_trail_allowed(beat, combo_context):
+		_spawn_combo_trail(combo_context, song_time)
 	_print_clock_diagnostic("spawn", song_time, note_index, note.lane, note.hit_time, spawn_z)
+
+
+func _visual_cue_for_note(cue_name: String, choreography_lanes: Variant, lane: int) -> String:
+	if choreography_lanes is Array and (choreography_lanes as Array).size() == 2:
+		if cue_name.begins_with("FLOOR_PULSE") or cue_name == "LOW_CLEARANCE_GATE" or cue_name == "OVERHEAD_BAR":
+			return "FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT"
+	return cue_name if not cue_name.is_empty() else ("FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT")
 
 
 func _print_clock_diagnostic(event_name: String, song_time: float, note_index: int, lane: int, hit_time: float, spawn_z: float = 0.0) -> void:
@@ -1599,17 +2035,21 @@ func _close_clock_diagnostic_file() -> void:
 		clock_diagnostic_file = null
 
 
-func _spawn_hit_effect(world_position: Vector3, color: Color) -> void:
+func _spawn_hit_effect(world_position: Vector3, color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0) -> void:
 	if _movie_writer_is_active():
-		_spawn_movie_safe_hit_effect(world_position, color)
+		_spawn_movie_safe_hit_effect(world_position, color, cue_archetype, movement)
 		return
 	var particle := HIT_PARTICLE_SCENE.instantiate()
 	effects_root.add_child(particle)
 	particle.global_position = world_position + Vector3(0.0, 0.16, 0.0)
 	particle.setup(color)
+	var layered := HIT_EFFECT_SCENE.instantiate()
+	effects_root.add_child(layered)
+	layered.global_position = world_position + Vector3(0.0, 0.10, 0.0)
+	layered.setup(color, cue_archetype, movement, combo_index)
 
 
-func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color) -> void:
+func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color, cue_archetype: String = "", movement: String = "") -> void:
 	var root := Node3D.new()
 	root.name = "MovieSafeHitEffect"
 	effects_root.add_child(root)
@@ -1628,7 +2068,16 @@ func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color) -> void
 	var flash := MeshInstance3D.new()
 	flash.name = "MovieSafeFlash"
 	var mesh := QuadMesh.new()
-	mesh.size = Vector2(2.25, 2.25)
+	var cue := cue_archetype.to_upper()
+	var move := movement.to_upper()
+	if cue.begins_with("FLOOR_PULSE") or "JUMP" in move or "HOP" in move:
+		mesh.size = Vector2(7.65, 1.0)
+	elif cue.begins_with("SIDE_SWEEP") or "DODGE" in move or "SQUAT" in move:
+		mesh.size = Vector2(3.8, 0.72)
+	elif cue.begins_with("HAND_TARGET") or "PUNCH" in move:
+		mesh.size = Vector2(2.45, 2.45)
+	else:
+		mesh.size = Vector2(1.82, 2.72)
 	flash.mesh = mesh
 	flash.rotation_degrees.x = -90.0
 	flash.position.y = 0.02
@@ -1640,20 +2089,34 @@ func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color) -> void
 
 func _build_ghost_cue_layer() -> void:
 	ghost_cue_root = Node3D.new()
-	ghost_cue_root.name = "NextCellRingLayer"
+	ghost_cue_root.name = "NextStepBracketLayer"
 	ghost_cue_materials.clear()
 	add_child(ghost_cue_root)
 	for lane in range(4):
 		var lane_ring := Node3D.new()
-		lane_ring.name = "NextCellRing%d" % lane
+		lane_ring.name = "NextStepBracket%d" % lane
 		var material := _create_ghost_cue_material(next_cell_ring_color)
 		ghost_cue_materials.append(material)
-		var ring := MeshInstance3D.new()
-		ring.name = "SolidRing"
-		ring.mesh = _create_next_cell_ring_mesh()
-		ring.material_override = material
-		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		lane_ring.add_child(ring)
+		# Four restrained corner brackets read as a landing zone. The old large
+		# circular predictor looked like another gameplay object flying at the
+		# player and competed with hold rings.
+		var corners := [
+			[Vector3(-0.72, 0.0, -1.14), 38.0],
+			[Vector3(0.72, 0.0, -1.14), -38.0],
+			[Vector3(-0.72, 0.0, 1.14), -38.0],
+			[Vector3(0.72, 0.0, 1.14), 38.0],
+		]
+		for corner_index in range(corners.size()):
+			var bracket := MeshInstance3D.new()
+			bracket.name = "Corner%02d" % corner_index
+			var bracket_mesh := BoxMesh.new()
+			bracket_mesh.size = Vector3(0.12, 0.028, 0.72)
+			bracket.mesh = bracket_mesh
+			bracket.position = corners[corner_index][0]
+			bracket.rotation_degrees.y = corners[corner_index][1]
+			bracket.material_override = material
+			bracket.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			lane_ring.add_child(bracket)
 		ghost_cue_root.add_child(lane_ring)
 	_clear_ghost_lane_cue()
 
@@ -1800,38 +2263,56 @@ func _wall_center_z_for_time(start: float, song_time: float) -> float:
 
 func _spawn_wall(event: Dictionary, event_index: int, song_time: float) -> void:
 	var wall := Node3D.new()
-	wall.name = "HalfLaneWall%03d" % event_index
+	wall.name = "PhysicalDodgeObstacle%03d" % event_index
 	wall.set_meta("start", _wall_start(event))
 	wall.set_meta("duration", _wall_duration(event))
 	wall.set_meta("event_index", event_index)
 	var color := _wall_color(event)
-	var wall_height := clampf(float(event.get("height", _wall_height())), 2.4, 6.2)
-	var wall_width := _wall_width_x()
-	var wall_length := _wall_length_z()
-	wall.position = Vector3(_wall_center_x(event), WALL_CENTER_Y, _wall_center_z_for_time(_wall_start(event), song_time))
-	wall.scale.z = 1.0
-
-	var panel_material := _create_wall_panel_material(color)
-	var strip_material := _create_wall_strip_material(color)
-	var edge_material := _create_wall_edge_material(color)
-	wall.set_meta("panel_material", panel_material)
-	wall.set_meta("strip_material", strip_material)
-	wall.set_meta("edge_material", edge_material)
-
-	var panel := MeshInstance3D.new()
-	panel.name = "Panel"
-	var box_mesh := BoxMesh.new()
-	box_mesh.size = Vector3(wall_width, wall_height, wall_length)
-	panel.mesh = box_mesh
-	panel.material_override = panel_material
-	panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	wall.add_child(panel)
-
-	_build_wall_gallery_segments(wall, wall_width, wall_height, wall_length, strip_material, edge_material)
-
+	var wall_length := 4.0
+	wall.position = Vector3(_wall_center_x(event), -1.05, -((_wall_start(event) - song_time) * scroll_speed) - wall_length * 0.5)
+	var obstacle_scene := load(DODGE_OBSTACLE_PATH) as PackedScene
+	if obstacle_scene == null:
+		push_warning("Dodge obstacle model unavailable: %s" % DODGE_OBSTACLE_PATH)
+		return
+	var model := obstacle_scene.instantiate() as Node3D
+	if model == null:
+		return
+	model.name = "KenneyFenceObstacle"
+	model.scale = Vector3(1.45, 1.45, 1.45)
+	model.rotation_degrees.y = 90.0 if String(event.get("type", "")) == "wall_left" else -90.0
+	wall.add_child(model)
+	var model_materials: Array[StandardMaterial3D] = []
+	for child in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := child as MeshInstance3D
+		if mesh_instance == null:
+			continue
+		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for surface in range(mesh_instance.mesh.get_surface_count()):
+			var source := mesh_instance.get_active_material(surface) as StandardMaterial3D
+			var material := source.duplicate() as StandardMaterial3D if source != null else StandardMaterial3D.new()
+			material.albedo_color = Color(color.r, color.g, color.b, 0.96)
+			material.emission_enabled = true
+			material.emission = color
+			material.emission_energy_multiplier = 2.6
+			mesh_instance.set_surface_override_material(surface, material)
+			model_materials.append(material)
+	wall.set_meta("model_materials", model_materials)
 	frames_root.add_child(wall)
 	active_walls.append(wall)
 	_print_wall_diagnostic("spawn_wall", song_time, event_index, event)
+
+
+func _add_wall_led_face(wall: Node3D, face_name: String, size: Vector2, position: Vector3, rotation: Vector3, material: ShaderMaterial) -> void:
+	var face := MeshInstance3D.new()
+	face.name = face_name
+	var mesh := QuadMesh.new()
+	mesh.size = size
+	face.mesh = mesh
+	face.position = position
+	face.rotation_degrees = rotation
+	face.material_override = material
+	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	wall.add_child(face)
 
 
 func _build_wall_gallery_segments(wall: Node3D, wall_width: float, wall_height: float, wall_length: float, strip_material: StandardMaterial3D, edge_material: StandardMaterial3D) -> void:
@@ -1849,32 +2330,50 @@ func _build_wall_gallery_segments(wall: Node3D, wall_width: float, wall_height: 
 			beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			wall.add_child(beam)
 
-	var segment_count := _wall_segment_count()
-	var spacing := _wall_segment_spacing()
-	var usable_length := maxf(0.01, wall_length - spacing * 0.8)
-	var segment_step := minf(spacing, usable_length / maxf(1.0, float(segment_count - 1)))
-	var total_span := segment_step * float(segment_count - 1)
-	var first_z := -total_span * 0.5
-	for index in range(segment_count):
-		var z := first_z + float(index) * segment_step
-		var strength := 0.72 + 0.28 * sin(float(index) * 1.618)
-		_create_wall_gate_segment(wall, wall_width, wall_height, z, strip_material, strength)
+	# Bright end frames make the obstacle volume obvious from the approach angle.
+	_create_wall_gate_segment(wall, wall_width, wall_height, -wall_length * 0.5, strip_material, 1.0)
+	_create_wall_gate_segment(wall, wall_width, wall_height, wall_length * 0.5, strip_material, 0.72)
 
-	var side_count: int = max(8, segment_count * 2)
-	var side_step := wall_length / float(side_count)
-	for index in range(side_count):
-		var z := -wall_length * 0.5 + side_step * (float(index) + 0.5)
-		var y := -wall_height * 0.34 if index % 2 == 0 else wall_height * 0.28
-		for edge_x in [-wall_width * 0.5, wall_width * 0.5]:
-			var dot := MeshInstance3D.new()
-			dot.name = "SideLed"
-			var dot_box := BoxMesh.new()
-			dot_box.size = Vector3(WALL_EDGE_THICKNESS * 1.65, WALL_EDGE_THICKNESS * 1.65, minf(0.32, side_step * 0.45))
-			dot.mesh = dot_box
-			dot.material_override = strip_material
-			dot.position = Vector3(edge_x, y, z)
-			dot.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			wall.add_child(dot)
+	var module_spacing := 3.1
+	var module_count := maxi(1, int(ceil(wall_length / module_spacing)))
+	var module_step := wall_length / float(module_count)
+	var model_materials: Array[StandardMaterial3D] = []
+	var wall_color := edge_material.emission
+	var inner_face_x := wall_width * 0.5 if wall.position.x < 0.0 else -wall_width * 0.5
+	for index in range(module_count):
+		var module := WALL_PANEL_SCENE.instantiate() as Node3D
+		if module == null:
+			continue
+		module.name = "SciFiWallModule%02d" % index
+		module.position = Vector3(
+			inner_face_x,
+			-wall_height * 0.5,
+			-wall_length * 0.5 + module_step * (float(index) + 0.5)
+		)
+		module.scale = Vector3(module_step / 4.0, wall_height / 4.25, 0.16)
+		module.rotation_degrees.y = 90.0 if wall.position.x < 0.0 else -90.0
+		for child in module.find_children("*", "MeshInstance3D", true, false):
+			var mesh_instance := child as MeshInstance3D
+			mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			for surface in range(mesh_instance.mesh.get_surface_count()):
+				var source := mesh_instance.get_active_material(surface) as StandardMaterial3D
+				var material := source.duplicate() as StandardMaterial3D if source != null else StandardMaterial3D.new()
+				material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				material.albedo_color = Color(
+					0.055 + wall_color.r * 0.18,
+					0.065 + wall_color.g * 0.18,
+					0.10 + wall_color.b * 0.18,
+					0.16
+				)
+				material.metallic = 0.68
+				material.roughness = 0.36
+				material.emission_enabled = true
+				material.emission = wall_color
+				material.emission_energy_multiplier = 0.62
+				mesh_instance.set_surface_override_material(surface, material)
+				model_materials.append(material)
+		wall.add_child(module)
+	wall.set_meta("model_materials", model_materials)
 
 
 func _create_wall_gate_segment(wall: Node3D, wall_width: float, wall_height: float, z: float, material: StandardMaterial3D, strength: float) -> void:
@@ -1899,16 +2398,14 @@ func _create_wall_gate_segment(wall: Node3D, wall_width: float, wall_height: flo
 		wall.add_child(strip)
 
 
-func _create_wall_panel_material(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_color = Color(color.r, color.g, color.b, _wall_opacity())
-	material.emission_enabled = true
-	material.emission = color
-	material.emission_energy_multiplier = _wall_emission_strength()
+func _create_wall_panel_material(color: Color) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = WALL_LED_SHADER
+	material.set_shader_parameter("side_color", color)
+	material.set_shader_parameter("wave_color", Color(1.0, 0.72, 0.18, 1.0))
+	material.set_shader_parameter("opacity", 0.76)
+	material.set_shader_parameter("brightness", 3.6)
+	material.set_shader_parameter("flow_speed", 1.35)
 	return material
 
 
@@ -1940,10 +2437,10 @@ func _update_active_walls(song_time: float) -> void:
 		var fade := clampf((song_time - start + 0.65) / 0.65, 0.32, 1.0)
 		if song_time > start + duration - 0.65:
 			fade = clampf((start + duration - song_time) / 0.65, 0.0, 1.0)
-		var panel_material = wall.get_meta("panel_material") as StandardMaterial3D
+		var panel_material = wall.get_meta("panel_material") as ShaderMaterial
 		if panel_material != null:
-			panel_material.albedo_color.a = _wall_opacity() * fade
-			panel_material.emission_energy_multiplier = _wall_emission_strength() * (0.5 + fade)
+			panel_material.set_shader_parameter("opacity", 0.76 * fade)
+			panel_material.set_shader_parameter("brightness", 3.6 * (0.45 + fade * 0.55))
 		var strip_material = wall.get_meta("strip_material") as StandardMaterial3D
 		if strip_material != null:
 			strip_material.albedo_color.a = 0.82 * fade
@@ -1952,7 +2449,15 @@ func _update_active_walls(song_time: float) -> void:
 		if edge_material != null:
 			edge_material.albedo_color.a = fade
 			edge_material.emission_energy_multiplier = _wall_edge_emission() * (0.42 + fade)
-		if song_time > start + duration + 0.8:
+		var model_materials := wall.get_meta("model_materials", []) as Array
+		for model_material in model_materials:
+			if model_material is StandardMaterial3D:
+				(model_material as StandardMaterial3D).albedo_color.a = 0.16 * fade
+				(model_material as StandardMaterial3D).emission_energy_multiplier = 0.62 * (0.45 + fade)
+		var pass_plane := _wall_length_z() * 0.5 + WALL_FRONT_OVERHANG_Z + 1.5
+		var fully_past_camera := wall.position.z - pass_plane > camera.global_position.z
+		wall.set_meta("passed_camera", fully_past_camera)
+		if fully_past_camera:
 			_print_wall_diagnostic("clear_wall", song_time, int(wall.get_meta("event_index", -1)), {})
 			active_walls.remove_at(index)
 			wall.queue_free()
@@ -2108,7 +2613,6 @@ func _print_wall_diagnostic(event_name: String, song_time: float, event_index: i
 
 
 func _build_tunnel() -> void:
-	_build_lane_rails()
 	if not ENABLE_TUNNEL_FRAMES:
 		return
 	for index in range(12):
@@ -2159,21 +2663,6 @@ func _create_square_frame(index: int) -> Node3D:
 	return root
 
 
-func _build_lane_rails() -> void:
-	for lane_edge in range(5):
-		var rail := MeshInstance3D.new()
-		rail.name = "LaneRail%d" % lane_edge
-		var box := BoxMesh.new()
-		var is_center := lane_edge == 2
-		var is_outer := lane_edge in [0, 4]
-		box.size = Vector3(0.06 if is_center else 0.045 if is_outer else 0.028, 0.028, 132.0)
-		var rail_color := CYAN if lane_edge <= 2 else MAGENTA
-		box.material = _emissive_material(rail_color, 5.6 if is_center else 4.4 if is_outer else 2.4)
-		rail.mesh = box
-		rail.position = Vector3((float(lane_edge) - 2.0) * 2.0, -1.58, -60.0)
-		frames_root.add_child(rail)
-
-
 func _emissive_material(color: Color, energy: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -2221,18 +2710,489 @@ func _configure_track_shader() -> void:
 	var material := track.material_override as ShaderMaterial
 	if material == null:
 		return
-	var grid_texture := _load_runtime_texture("res://assets/images/floor_grid.png")
+	var grid_texture := _load_runtime_texture("res://assets/images/track/neon_road_surface_v1.png")
 	if grid_texture != null:
 		material.set_shader_parameter("floor_grid_texture", grid_texture)
-	material.set_shader_parameter("scroll_speed", 0.72)
-	material.set_shader_parameter("grid_emission", 3.2)
-	material.set_shader_parameter("grid_tiling_y", 9.0)
+	material.set_shader_parameter("scroll_speed", 0.10)
+	material.set_shader_parameter("grid_emission", 0.82)
+	material.set_shader_parameter("grid_tiling_x", 1.4)
+	material.set_shader_parameter("grid_tiling_y", 17.0)
 	material.set_shader_parameter("depth_fade_power", 3.35)
 
 
 func _build_retrowave_environment() -> void:
-	_build_fog_banks()
+	# Keep the background and gameplay objects clear. The road shader owns the
+	# only intentional darkening in the scene.
+	retrowave_fog_banks.clear()
 
+
+func _build_dance_hud() -> void:
+	dance_hud_layer = CanvasLayer.new()
+	dance_hud_layer.name = "TrackProgressHUD"
+	dance_hud_layer.layer = 3
+	add_child(dance_hud_layer)
+
+	var hud_root := Control.new()
+	var hud_font := _load_hud_font()
+	hud_root.name = "ProgressRoot"
+	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_layer.add_child(hud_root)
+
+	var glow_back := ColorRect.new()
+	glow_back.name = "ProgressAssetGlow"
+	glow_back.color = Color(0.0, 0.52, 1.0, 0.16)
+	glow_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(glow_back)
+
+	dance_hud_frame = TextureRect.new()
+	dance_hud_frame.name = "ProgressReadyAssetFrame"
+	dance_hud_frame.texture = _load_hud_texture(HUD_READY_BAR_FRAME_PATH)
+	dance_hud_frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dance_hud_frame.stretch_mode = TextureRect.STRETCH_SCALE
+	dance_hud_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_frame.modulate = Color(0.88, 0.94, 1.0, 0.98)
+	hud_root.add_child(dance_hud_frame)
+
+	dance_hud_fill_clip = Control.new()
+	dance_hud_fill_clip.name = "ProgressFillClip"
+	dance_hud_fill_clip.clip_contents = true
+	dance_hud_fill_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_root.add_child(dance_hud_fill_clip)
+
+	dance_hud_fill_texture = TextureRect.new()
+	dance_hud_fill_texture.name = "ProgressReadyAssetBlueFill"
+	dance_hud_fill_texture.texture = _load_hud_texture(HUD_READY_BAR_FILL_PATH)
+	dance_hud_fill_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dance_hud_fill_texture.stretch_mode = TextureRect.STRETCH_SCALE
+	dance_hud_fill_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_fill_texture.modulate = Color(0.45, 0.88, 1.0, 1.0)
+	dance_hud_fill_clip.add_child(dance_hud_fill_texture)
+
+	var shine := ColorRect.new()
+	shine.name = "ProgressFillShine"
+	shine.color = Color(1.0, 1.0, 1.0, 0.11)
+	shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_fill_clip.add_child(shine)
+
+	dance_hud_marker_shell = TextureRect.new()
+	dance_hud_marker_shell.name = "MusicMarkerShell"
+	dance_hud_marker_shell.texture = _load_hud_texture(HUD_BAR_OUTLINE_PATH)
+	dance_hud_marker_shell.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dance_hud_marker_shell.stretch_mode = TextureRect.STRETCH_SCALE
+	dance_hud_marker_shell.size = Vector2(50.0, 50.0)
+	dance_hud_marker_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_marker_shell.modulate = Color(0.02, 0.90, 1.0, 0.88)
+	hud_root.add_child(dance_hud_marker_shell)
+
+	dance_hud_marker_icon = TextureRect.new()
+	dance_hud_marker_icon.name = "SilhouetteMarker"
+	dance_hud_marker_icon.texture = _load_hud_texture(HUD_MARKER_BITMAP_PATH)
+	dance_hud_marker_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dance_hud_marker_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dance_hud_marker_icon.size = Vector2(30.0, 30.0)
+	dance_hud_marker_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_marker_icon.modulate = Color(0.98, 0.99, 1.0, 0.98)
+	hud_root.add_child(dance_hud_marker_icon)
+
+	var feedback_label := Label.new()
+	feedback_label.name = "HitFeedback"
+	feedback_label.text = ""
+	feedback_label.size = Vector2(420.0, 64.0)
+	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	feedback_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	feedback_label.add_theme_font_override("font", hud_font)
+	feedback_label.add_theme_font_size_override("font_size", 28)
+	feedback_label.add_theme_color_override("font_color", Color(0.78, 1.0, 1.0, 0.0))
+	feedback_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	feedback_label.add_theme_constant_override("shadow_offset_x", 2)
+	feedback_label.add_theme_constant_override("shadow_offset_y", 2)
+	feedback_label.position = Vector2(0.0, 148.0)
+	hud_root.add_child(feedback_label)
+	hit_feedback_label = feedback_label
+
+	var stream_label := Label.new()
+	stream_label.name = "StreamLabel"
+	stream_label.text = "RHYTHM STREAM  //  LIVE"
+	stream_label.position = Vector2(0.0, 7.0)
+	stream_label.size = Vector2(280.0, 18.0)
+	stream_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stream_label.add_theme_font_override("font", hud_font)
+	stream_label.add_theme_font_size_override("font_size", 12)
+	stream_label.add_theme_color_override("font_color", Color(0.70, 0.95, 1.0, 0.92))
+	hud_root.add_child(stream_label)
+
+	dance_hud_elapsed_label = Label.new()
+	dance_hud_elapsed_label.text = "00:00"
+	dance_hud_elapsed_label.size = Vector2(96.0, 22.0)
+	dance_hud_elapsed_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_elapsed_label.add_theme_font_override("font", hud_font)
+	dance_hud_elapsed_label.add_theme_font_size_override("font_size", 13)
+	dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82, 0.98, 1.0, 0.98))
+	dance_hud_elapsed_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.82))
+	dance_hud_elapsed_label.add_theme_constant_override("shadow_offset_x", 1)
+	dance_hud_elapsed_label.add_theme_constant_override("shadow_offset_y", 1)
+	hud_root.add_child(dance_hud_elapsed_label)
+
+	dance_hud_remaining_label = Label.new()
+	dance_hud_remaining_label.text = "-00:00"
+	dance_hud_remaining_label.size = Vector2(96.0, 22.0)
+	dance_hud_remaining_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dance_hud_remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	dance_hud_remaining_label.add_theme_font_override("font", hud_font)
+	dance_hud_remaining_label.add_theme_font_size_override("font_size", 13)
+	dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.92, 0.96))
+	dance_hud_remaining_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.82))
+	dance_hud_remaining_label.add_theme_constant_override("shadow_offset_x", 1)
+	dance_hud_remaining_label.add_theme_constant_override("shadow_offset_y", 1)
+	hud_root.add_child(dance_hud_remaining_label)
+
+	_update_dance_hud(0.0)
+
+
+func _update_dance_hud(song_time: float) -> void:
+	var progress := clampf(song_time / maxf(song_duration, 0.001), 0.0, 1.0)
+	var pulse := _dance_hud_beat_pulse(song_time)
+	var viewport_width := get_viewport().get_visible_rect().size.x
+	var bar_width := clampf(viewport_width * 0.68, 720.0, 1120.0) + pulse * 20.0
+	var bar_height := 72.0 + pulse * 3.0
+	var bar_x := (viewport_width - bar_width) * 0.5
+	var bar_y := 27.0 - pulse * 1.5
+	var fill_left := 49.0
+	var fill_top := 21.0
+	var fill_width := maxf(bar_width - fill_left * 2.0, 1.0)
+	var fill_height := 35.0 + pulse * 1.5
+
+	var glow_back: ColorRect = null
+	if dance_hud_layer != null:
+		glow_back = dance_hud_layer.get_node_or_null("ProgressRoot/ProgressAssetGlow") as ColorRect
+	if glow_back != null:
+		glow_back.position = Vector2(bar_x + 8.0 - pulse * 5.0, bar_y + 11.0 - pulse * 2.0)
+		glow_back.size = Vector2(bar_width - 16.0 + pulse * 10.0, 42.0 + pulse * 7.0)
+		glow_back.color = Color(0.0, 0.52 + pulse * 0.18, 1.0, 0.13 + pulse * 0.18)
+	if dance_hud_frame != null:
+		dance_hud_frame.position = Vector2(bar_x, bar_y)
+		dance_hud_frame.size = Vector2(bar_width, bar_height)
+		dance_hud_frame.modulate = Color(0.88 + pulse * 0.08, 0.94 + pulse * 0.04, 1.0, 0.96 + pulse * 0.04)
+	if dance_hud_fill_clip != null:
+		dance_hud_fill_clip.position = Vector2(bar_x + fill_left, bar_y + fill_top)
+		dance_hud_fill_clip.size = Vector2(fill_width * progress, fill_height)
+	if dance_hud_fill_texture != null:
+		dance_hud_fill_texture.position = Vector2.ZERO
+		dance_hud_fill_texture.size = Vector2(fill_width, fill_height)
+		dance_hud_fill_texture.modulate = Color(0.45 + pulse * 0.16, 0.88 + pulse * 0.08, 1.0, 1.0)
+		var shine := dance_hud_fill_clip.get_node_or_null("ProgressFillShine") as ColorRect
+		if shine != null:
+			shine.position = Vector2(0.0, 2.0)
+			shine.size = Vector2(fill_width, 8.0 + pulse * 2.0)
+			shine.color = Color(1.0, 1.0, 1.0, 0.10 + pulse * 0.10)
+
+	var marker_x := bar_x + fill_left + fill_width * progress
+	if dance_hud_marker_shell != null:
+		dance_hud_marker_shell.position = Vector2(marker_x - 25.0, bar_y + 11.0)
+		dance_hud_marker_shell.scale = Vector2.ONE * (1.0 + pulse * 0.08)
+		dance_hud_marker_shell.modulate = Color(0.02 + pulse * 0.10, 0.90, 1.0, 0.82 + pulse * 0.16)
+	if dance_hud_marker_icon != null:
+		dance_hud_marker_icon.position = Vector2(marker_x - 15.0, bar_y + 20.5)
+		dance_hud_marker_icon.scale = Vector2.ONE * (1.0 + pulse * 0.12)
+		dance_hud_marker_icon.modulate = Color(0.98, 0.99, 1.0, 0.92 + pulse * 0.08)
+	if dance_hud_elapsed_label != null:
+		dance_hud_elapsed_label.position = Vector2(bar_x + fill_left, bar_y + bar_height + 2.0)
+		dance_hud_elapsed_label.text = _format_hud_time(song_time)
+		dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82 + pulse * 0.08, 0.98, 1.0, 0.98))
+	if dance_hud_remaining_label != null:
+		dance_hud_remaining_label.position = Vector2(bar_x + bar_width - fill_left - dance_hud_remaining_label.size.x, bar_y + bar_height + 2.0)
+		dance_hud_remaining_label.text = "-" + _format_hud_time(maxf(song_duration - song_time, 0.0))
+		dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72 + pulse * 0.08, 0.92 + pulse * 0.05, 0.96))
+	var stream_label: Label = null
+	if dance_hud_layer != null:
+		stream_label = dance_hud_layer.get_node_or_null("ProgressRoot/StreamLabel") as Label
+	if stream_label != null:
+		stream_label.position = Vector2(bar_x + fill_left, 7.0)
+		stream_label.add_theme_color_override("font_color", Color(0.70 + pulse * 0.10, 0.95, 1.0, 0.90 + pulse * 0.08))
+
+
+func _dance_hud_beat_pulse(song_time: float) -> float:
+	if beatmap.is_empty():
+		return 0.0
+	var pulse_window := 0.22
+	while dance_hud_next_pulse_index > 0:
+		var previous := beatmap[dance_hud_next_pulse_index - 1] as Dictionary
+		if float(previous.get("time", previous.get("hit_time", 0.0))) <= song_time:
+			break
+		dance_hud_next_pulse_index -= 1
+	while dance_hud_next_pulse_index < beatmap.size():
+		var passed := beatmap[dance_hud_next_pulse_index] as Dictionary
+		if _hit_trigger_time(float(passed.get("time", passed.get("hit_time", 0.0)))) >= song_time - pulse_window:
+			break
+		dance_hud_next_pulse_index += 1
+
+	var pulse := 0.0
+	var start_index := maxi(0, dance_hud_next_pulse_index - 3)
+	var end_index := mini(beatmap.size(), dance_hud_next_pulse_index + 4)
+	for index in range(start_index, end_index):
+		var beat := beatmap[index] as Dictionary
+		var beat_time := _hit_trigger_time(float(beat.get("time", beat.get("hit_time", 0.0))))
+		var age := song_time - beat_time
+		if age < 0.0 or age > pulse_window:
+			continue
+		var falloff := 1.0 - age / pulse_window
+		falloff = falloff * falloff
+		var strength := clampf(_hit_strength_for_time(beat_time), 0.75, 1.45)
+		var count8 := int(beat.get("count8_index", -1))
+		if count8 in [0, 4, 7]:
+			strength = maxf(strength, 1.18)
+		var role := String(beat.get("section_role", "")).to_upper()
+		if role in ["CHORUS", "DROP", "PEAK", "BUILD"]:
+			strength = maxf(strength, 1.12)
+		pulse = maxf(pulse, falloff * strength)
+	return clampf(pulse, 0.0, 1.0)
+
+func _load_hud_texture(path: String) -> Texture2D:
+	if ResourceLoader.exists(path, "Texture2D"):
+		var texture := ResourceLoader.load(path, "Texture2D") as Texture2D
+		if texture != null:
+			return texture
+	var image := Image.load_from_file(path)
+	if image == null or image.is_empty():
+		push_warning("HUD texture unavailable: %s" % path)
+		return null
+	return ImageTexture.create_from_image(image)
+
+
+func _load_hud_svg_texture(path: String, scale: float = 2.0) -> Texture2D:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_warning("HUD SVG unavailable: %s" % path)
+		return null
+	var image := Image.new()
+	var error := image.load_svg_from_string(file.get_as_text(), scale)
+	if error != OK or image.is_empty():
+		push_warning("HUD SVG failed to load: %s" % path)
+		return null
+	return ImageTexture.create_from_image(image)
+
+
+func _load_hud_font() -> Font:
+	var font := FontFile.new()
+	var error := font.load_dynamic_font(HUD_FONT_PATH)
+	if error != OK:
+		push_warning("HUD font unavailable: %s" % HUD_FONT_PATH)
+		return ThemeDB.fallback_font
+	return font
+
+func _format_hud_time(seconds: float) -> String:
+	var total_seconds := maxi(0, int(seconds))
+	return "%02d:%02d" % [total_seconds / 60, total_seconds % 60]
+
+func _build_combo_trail_layer() -> void:
+	combo_trails_root = Node3D.new()
+	combo_trails_root.name = "ChoreographyPhraseTrails"
+	add_child(combo_trails_root)
+	active_combo_trails.clear()
+
+
+func _movement_family_key(beat: Dictionary) -> String:
+	var movement := String(beat.get("movement", beat.get("cue_archetype", ""))).to_upper()
+	for suffix in ["_LEFT", "_RIGHT", "_DOUBLE", "_CENTER"]:
+		movement = movement.trim_suffix(suffix)
+	return "%s|%s" % [String(beat.get("phrase_id", "")), movement]
+
+
+func _combo_context_for_note(beat: Dictionary, note_index: int) -> Dictionary:
+	var context := {
+		"linked": false,
+		"index": 0,
+		"key": _movement_family_key(beat),
+		"movement": String(beat.get("movement", "")),
+		"cue_archetype": String(beat.get("cue_archetype", "")),
+		"section_role": String(beat.get("section_role", "")),
+	}
+	if note_index <= 0 or note_index >= beatmap.size():
+		return context
+	if not _is_punch_trail_note(beat):
+		return context
+	var previous := beatmap[note_index - 1] as Dictionary
+	if not _is_punch_trail_note(previous):
+		return context
+	var gap := float(beat.get("time", 0.0)) - float(previous.get("time", 0.0))
+	if gap <= 0.05 or gap > COMBO_LINK_MAX_GAP:
+		return context
+	var combo_index := 1
+	for candidate_index in range(note_index - 1, 0, -1):
+		var current := beatmap[candidate_index] as Dictionary
+		var before := beatmap[candidate_index - 1] as Dictionary
+		var candidate_gap := float(current.get("time", 0.0)) - float(before.get("time", 0.0))
+		if candidate_gap <= 0.05 or candidate_gap > COMBO_LINK_MAX_GAP:
+			break
+		if not _is_punch_trail_note(before):
+			break
+		combo_index += 1
+	context["linked"] = true
+	context["index"] = mini(combo_index, 7)
+	context["from_time"] = float(previous.get("time", 0.0))
+	context["to_time"] = float(beat.get("time", 0.0))
+	context["from_lane"] = clampi(int(previous.get("lane", 0)), 0, 3)
+	context["to_lane"] = clampi(int(beat.get("lane", 0)), 0, 3)
+	return context
+
+
+func _is_punch_trail_note(beat: Dictionary) -> bool:
+	var movement := String(beat.get("movement", "")).to_upper()
+	var cue := String(beat.get("cue_archetype", "")).to_upper()
+	return (
+		movement in ["PUNCH_LEFT", "PUNCH_RIGHT", "STEP_PUNCH_LEFT", "STEP_PUNCH_RIGHT"]
+		or cue.begins_with("HAND_TARGET")
+		or cue == "DOUBLE_TARGET"
+	)
+
+
+func _punch_trail_allowed(beat: Dictionary, context: Dictionary) -> bool:
+	if not bool(context.get("linked", false)):
+		return false
+	if not _is_punch_trail_note(beat):
+		return false
+	var movement := String(beat.get("movement", "")).to_upper()
+	if "DUCK" in movement or "JUMP" in movement:
+		return false
+	var cue := String(beat.get("cue_archetype", "")).to_upper()
+	if cue.begins_with("FLOOR_PULSE") or cue == "LOW_CLEARANCE_GATE":
+		return false
+	var role := String(beat.get("section_role", "")).to_upper()
+	var function := String(beat.get("cell_function", "")).to_upper()
+	var energetic := role in ["BUILD", "DROP", "CHORUS", "PEAK"] or function in ["BUILD", "POWER", "SIGNATURE", "PUNCH_RESPONSE"]
+	return energetic or int(context.get("index", 0)) >= 2
+
+
+func _create_punch_trail_material(color: Color, alpha: float, energy: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.albedo_color = Color(color.r, color.g, color.b, alpha)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = energy
+	return material
+
+
+func _spawn_combo_trail(context: Dictionary, song_time: float) -> void:
+	if combo_trails_root == null:
+		return
+	while active_combo_trails.size() >= MAX_ACTIVE_PUNCH_TRAILS:
+		var oldest := active_combo_trails.pop_front() as Node3D
+		if is_instance_valid(oldest):
+			oldest.queue_free()
+	var from_lane := int(context.get("from_lane", 0))
+	var to_lane := int(context.get("to_lane", 0))
+	var from_time := float(context.get("from_time", song_time))
+	var to_time := float(context.get("to_time", song_time))
+	var color_from := CYAN if from_lane < 2 else MAGENTA
+	var color_to := CYAN if to_lane < 2 else MAGENTA
+	var trail_color := color_from.lerp(color_to, 0.5)
+	if (from_lane < 2 and to_lane >= 2) or (from_lane >= 2 and to_lane < 2):
+		trail_color = Color(0.76, 0.92, 1.0)
+
+	var trail := Node3D.new()
+	trail.name = "PunchTrail_%03d" % active_combo_trails.size()
+	trail.set_meta("from_time", from_time)
+	trail.set_meta("to_time", to_time)
+	trail.set_meta("from_lane", from_lane)
+	trail.set_meta("to_lane", to_lane)
+	trail.set_meta("combo_index", int(context.get("index", 1)))
+	var materials: Array[StandardMaterial3D] = []
+	materials.append(_create_punch_trail_material(trail_color, 0.30, 3.4 + float(context.get("index", 1)) * 0.42))
+	materials.append(_create_punch_trail_material(trail_color, 0.16, 2.5))
+	materials.append(_create_punch_trail_material(trail_color, 0.10, 2.0))
+	trail.set_meta("materials", materials)
+
+	var ribbon := MeshInstance3D.new()
+	ribbon.name = "Ribbon"
+	var ribbon_mesh := BoxMesh.new()
+	ribbon_mesh.size = Vector3(0.28, 0.035, 1.0)
+	ribbon.mesh = ribbon_mesh
+	ribbon.material_override = materials[0]
+	ribbon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	trail.add_child(ribbon)
+
+	for ghost_index in range(2):
+		var ghost := MeshInstance3D.new()
+		ghost.name = "GhostLine%d" % ghost_index
+		var ghost_mesh := BoxMesh.new()
+		ghost_mesh.size = Vector3(0.08, 0.025, 1.0)
+		ghost.mesh = ghost_mesh
+		ghost.material_override = materials[ghost_index + 1]
+		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		trail.add_child(ghost)
+
+	var bead := MeshInstance3D.new()
+	bead.name = "FlowBead"
+	var bead_mesh := SphereMesh.new()
+	bead_mesh.radius = 0.13
+	bead_mesh.height = 0.26
+	bead_mesh.radial_segments = 12
+	bead_mesh.rings = 6
+	bead.mesh = bead_mesh
+	bead.material_override = materials[0]
+	bead.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	trail.add_child(bead)
+
+	combo_trails_root.add_child(trail)
+	active_combo_trails.append(trail)
+	_update_combo_trail_geometry(trail, song_time)
+
+
+func _update_combo_trail_geometry(trail: Node3D, song_time: float) -> void:
+	var from_time := float(trail.get_meta("from_time", song_time))
+	var to_time := float(trail.get_meta("to_time", song_time))
+	var from_lane := int(trail.get_meta("from_lane", 0))
+	var to_lane := int(trail.get_meta("to_lane", 0))
+	var hand_y := float(tuning_values.get("note_y", -1.68)) + 2.65
+	var from_point := Vector3(COMBO_LANE_CENTERS[from_lane], hand_y, -((from_time - song_time) * scroll_speed))
+	var to_point := Vector3(COMBO_LANE_CENTERS[to_lane], hand_y, -((to_time - song_time) * scroll_speed))
+	var delta := to_point - from_point
+	var length := maxf(0.01, Vector2(delta.x, delta.z).length())
+	var yaw := rad_to_deg(atan2(delta.x, delta.z))
+	var ribbon := trail.get_node("Ribbon") as MeshInstance3D
+	ribbon.position = (from_point + to_point) * 0.5
+	ribbon.rotation_degrees.y = yaw
+	ribbon.scale.z = length
+	for ghost_index in range(2):
+		var ghost := trail.get_node("GhostLine%d" % ghost_index) as MeshInstance3D
+		ghost.position = (from_point + to_point) * 0.5 + Vector3(0.0, 0.16 + float(ghost_index) * 0.16, 0.0)
+		ghost.rotation_degrees.y = yaw
+		ghost.scale.z = length * (0.92 - float(ghost_index) * 0.12)
+	var phase := clampf((song_time - from_time) / maxf(0.02, to_time - from_time), 0.0, 1.0)
+	var bead := trail.get_node("FlowBead") as MeshInstance3D
+	bead.position = from_point.lerp(to_point, phase)
+
+
+func _update_combo_trails(song_time: float) -> void:
+	for index in range(active_combo_trails.size() - 1, -1, -1):
+		var trail := active_combo_trails[index]
+		if not is_instance_valid(trail):
+			active_combo_trails.remove_at(index)
+			continue
+		var to_time := float(trail.get_meta("to_time", 0.0))
+		if song_time > to_time + 0.32:
+			active_combo_trails.remove_at(index)
+			trail.queue_free()
+			continue
+		_update_combo_trail_geometry(trail, song_time)
+		var approach := clampf((song_time - (to_time - 1.15)) / 1.15, 0.0, 1.0)
+		var fade := clampf((to_time + 0.32 - song_time) / 0.32, 0.0, 1.0)
+		var materials := trail.get_meta("materials") as Array
+		for material_index in range(materials.size()):
+			var material := materials[material_index] as StandardMaterial3D
+			if material == null:
+				continue
+			var base_alpha := 0.30
+			if material_index == 1:
+				base_alpha = 0.16
+			elif material_index == 2:
+				base_alpha = 0.10
+			material.albedo_color.a = (base_alpha * (0.45 + approach * 0.75)) * fade
+			material.emission_energy_multiplier = (2.0 + approach * (3.8 - float(material_index) * 0.7)) * fade
 
 func _build_execution_deck() -> void:
 	execution_deck_root = Node3D.new()
@@ -2321,7 +3281,8 @@ func _update_visual_profile(song_time: float) -> void:
 		material.set_shader_parameter("section_intensity", intensity)
 	var environment := $WorldEnvironment.environment as Environment
 	if environment != null:
-		environment.glow_intensity = 0.82 * intensity
+		# Keep a white highlight core while preserving cyan/magenta detail.
+		environment.glow_intensity = minf(0.84, 0.58 * intensity)
 
 
 func _build_fog_banks() -> void:

@@ -29,12 +29,22 @@ position = Vector3(-1, -1.675, 0)
 lane = 3
 cue_archetype = "FOOT_PAD_RIGHT"
 
-[node name="SweepLeft" parent="." instance=ExtResource("1_note")]
+[node name="HandLeft" parent="." instance=ExtResource("1_note")]
 position = Vector3(1, -1.675, 0)
+lane = 1
+cue_archetype = "HAND_TARGET_LEFT"
+
+[node name="HandRight" parent="." instance=ExtResource("1_note")]
+position = Vector3(3, -1.675, 0)
+lane = 2
+cue_archetype = "HAND_TARGET_RIGHT"
+
+[node name="SweepLeft" parent="." instance=ExtResource("1_note")]
+position = Vector3(1, -1.675, -4)
 lane = 1
 cue_archetype = "SIDE_SWEEP_FROM_RIGHT"
 
 [node name="SweepRight" parent="." instance=ExtResource("1_note")]
-position = Vector3(3, -1.675, 0)
+position = Vector3(3, -1.675, -4)
 lane = 2
 cue_archetype = "SIDE_SWEEP_FROM_LEFT"

@@ -7,6 +7,7 @@ import argparse
 import json
 import random
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,8 @@ from lane_assignment import (
     DEFAULT_WALL_DENSITY_MULTIPLIER,
     DEFAULT_WALL_DURATION_BEATS,
     DEFAULT_WALL_ENABLED,
+    DEFAULT_LANE_LAYOUT,
+    LANE_LAYOUTS,
     DEFAULT_WALL_MIN_GAP_BARS,
     DEFAULT_WALL_PREPARATION_WINDOW,
     DEFAULT_WALL_RATE_BARS,
@@ -45,6 +48,13 @@ from lane_assignment import (
     build_generation_settings,
 )
 from phrase_grid import attach_phrase_metadata, choreography_config
+from neon_track_io import build_neon_track, write_neon_track
+from music_expression import (
+    analyze_music_expression,
+    analyze_neural_meter,
+    apply_neural_meter,
+)
+from choreography_v4 import WARMUP_PROFILE, build_full_track, migrate_beat_grid_v1, validate_v4
 
 # NOTE DENSITY:
 # Decrease to generate more notes (faster), Increase to generate fewer notes (slower).
@@ -56,9 +66,17 @@ LOW_BAND_MELS = 16
 TEMPO_MIN_BPM = 60.0
 TEMPO_MAX_BPM = 200.0
 TEMPO_CANDIDATE_COUNT = 6
-PRAISE_WORDS = [
-    "PERFECT!", "AWESOME!", "WELL DONE!", "FLAWLESS!", "EPIC!",
-    "VICTORY!", "NICE!", "HEAT!", "THAT'S INCREDIBLE!",
+COMBO_PRAISE_TIERS = [
+    "NICE!",
+    "WELL DONE!",
+    "GREAT!",
+    "AWESOME!",
+    "PERFECT!",
+    "FLAWLESS!",
+    "EPIC!",
+    "VICTORY!",
+    "LEGENDARY!",
+    "THAT'S INCREDIBLE!",
 ]
 BEATMAP_SCHEMA = "neon_music.beatmap.v3"
 WALL_GENERATION_SCHEMA = "neon_music.wall_generation.v1"
@@ -188,6 +206,68 @@ def _beatmap_events(beatmap: object) -> list[dict[str, object]]:
     return []
 
 
+def _attach_v4_projection(
+    beatmap: dict[str, object],
+    timing: dict[str, object],
+    profile: str,
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Attach the canonical V4 plan while preserving the V3 renderer contract."""
+    try:
+        v4_grid = migrate_beat_grid_v1(timing)
+        # Difficulty names (Calm/Active/...) are not V4 choreography profiles.
+        # Only an explicit warmup_first request may select the teaching map;
+        # normal analyzer runs must keep the full dynamic candidate pool.
+        v4_profile = WARMUP_PROFILE if profile == WARMUP_PROFILE else "normal"
+        v4_plan = build_full_track(v4_grid, beatmap, profile=v4_profile)
+        report = validate_v4(v4_grid, v4_plan)
+        v4_plan["validation_summary"] = report["summary"]
+        legacy_notes = list(beatmap.get("notes", []))
+        legacy_events = list(beatmap.get("events", []))
+        legacy_movement_events = list(beatmap.get("movement_events", []))
+        runtime_movement_events = list(v4_plan.get("movement_events", []))
+        beatmap["legacy_notes"] = legacy_notes
+        beatmap["legacy_events"] = legacy_events
+        beatmap["legacy_movement_events"] = legacy_movement_events
+        beatmap["notes"] = list(v4_plan.get("notes", []))
+        beatmap["events"] = list(v4_plan.get("events", []))
+        beatmap["movement_events"] = runtime_movement_events
+        v4_grid["movement_events"] = runtime_movement_events
+        beatmap["runtime_choreography_source"] = "choreography_v4"
+        beatmap["runtime_note_count"] = len(beatmap["notes"])
+        beatmap["runtime_event_count"] = len(beatmap["events"])
+        beatmap["runtime_movement_event_count"] = len(runtime_movement_events)
+        beatmap["legacy_note_count"] = len(legacy_notes)
+        beatmap["legacy_event_count"] = len(legacy_events)
+        beatmap["legacy_movement_event_count"] = len(legacy_movement_events)
+        beatmap["choreography_v4"] = v4_plan
+        v4_grid["choreography_v4"] = {
+            "schema": "neon_music.choreography_bridge.v1",
+            "engine": "v4_full_track",
+            "runtime_contract": "v4_runtime_notes",
+            "profile": v4_profile,
+            "generation_mode": v4_plan.get("generation_mode", "full_track"),
+            "runtime_note_count": len(beatmap["notes"]),
+            "runtime_event_count": len(beatmap["events"]),
+            "runtime_movement_event_count": len(runtime_movement_events),
+            "legacy_note_count": len(legacy_notes),
+            "legacy_event_count": len(legacy_events),
+            "legacy_movement_event_count": len(legacy_movement_events),
+            "validation": report["summary"],
+            "hard_errors": report["hard_errors"],
+            "warnings": report["warnings"],
+        }
+        return beatmap, v4_grid
+    except (KeyError, TypeError, ValueError, statistics.StatisticsError) as exc:
+        timing["choreography_v4"] = {
+            "schema": "neon_music.choreography_bridge.v1",
+            "engine": "v4_full_track",
+            "runtime_contract": "v4_runtime_notes",
+            "status": "unavailable",
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+        return beatmap, timing
+
+
 def build_beatmap_document(
     notes: list[dict[str, object]],
     events: list[dict[str, object]],
@@ -200,6 +280,7 @@ def build_beatmap_document(
         "beat_interval": timing.get("beat_interval", 0.0),
         "notes": notes,
         "events": events,
+        "lane_layout": timing.get("generation_settings", {}).get("lane_layout", "4_lanes"),
     }
 
 
@@ -1113,20 +1194,38 @@ def _grid_annotation(
 ) -> dict[str, float | int | bool]:
     bpm = float(timing["bpm"])
     beat_interval = float(timing["beat_interval"]) if bpm > 0.0 else 0.5
-    anchor = timing["anchor"]
-    if not isinstance(anchor, dict):
-        raise TypeError("timing metadata anchor must be a dictionary")
-    anchor_time = float(anchor["time"])
-    raw_position = (onset_time - anchor_time) / beat_interval if beat_interval > 0.0 else 0.0
-    nearest_index = int(round(raw_position))
-    nearest_time = anchor_time + float(nearest_index) * beat_interval
-    phase = raw_position - np.floor(raw_position)
+    source_grid = timing.get("beat_grid", [])
+    grid = [beat for beat in source_grid if isinstance(beat, dict)] if isinstance(source_grid, list) else []
+    if grid:
+        nearest = min(grid, key=lambda beat: abs(float(beat.get("time", 0.0)) - onset_time))
+        nearest_index = int(nearest.get("index", 0))
+        nearest_time = float(nearest.get("time", 0.0))
+        position = next((index for index, beat in enumerate(grid) if beat is nearest), 0)
+        if onset_time >= nearest_time and position + 1 < len(grid):
+            local_interval = max(1e-6, float(grid[position + 1].get("time", nearest_time + beat_interval)) - nearest_time)
+        elif onset_time < nearest_time and position > 0:
+            previous_time = float(grid[position - 1].get("time", nearest_time - beat_interval))
+            local_interval = max(1e-6, nearest_time - previous_time)
+        else:
+            local_interval = beat_interval
+        phase = (onset_time - nearest_time) / local_interval
+        downbeat = bool(nearest.get("downbeat", nearest_index % 4 == 0))
+    else:
+        anchor = timing["anchor"]
+        if not isinstance(anchor, dict):
+            raise TypeError("timing metadata anchor must be a dictionary")
+        anchor_time = float(anchor["time"])
+        raw_position = (onset_time - anchor_time) / beat_interval if beat_interval > 0.0 else 0.0
+        nearest_index = int(round(raw_position))
+        nearest_time = anchor_time + float(nearest_index) * beat_interval
+        phase = raw_position - np.floor(raw_position)
+        downbeat = bool(nearest_index % 4 == 0)
     return {
         "beat_index": nearest_index,
         "beat_time": _round_time(nearest_time),
         "beat_phase": round(float(phase), 6),
         "beat_delta": _round_time(onset_time - nearest_time),
-        "downbeat": bool(nearest_index % 4 == 0),
+        "downbeat": downbeat,
     }
 
 
@@ -1155,10 +1254,13 @@ def analyze_with_metadata(
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
     bass_audio_path: Path | None = None,
     drums_audio_path: Path | None = None,
+    music_audio_path: Path | None = None,
+    neural_meter_enabled: bool = True,
     phrase_length_beats: int = 32,
     subphrase_length_beats: int = 8,
     manual_downbeat_offset_seconds: float = 0.0,
     allow_crooked_phrase: bool = False,
+    lane_layout: str = DEFAULT_LANE_LAYOUT,
 ) -> tuple[dict[str, object], dict[str, object]]:
     generation_settings = build_generation_settings(
         difficulty=difficulty,
@@ -1181,6 +1283,7 @@ def analyze_with_metadata(
         hold_min_duration=hold_min_duration,
         hold_max_duration=hold_max_duration,
         hold_min_gap=hold_min_gap,
+        lane_layout=lane_layout,
     )
 
     if not audio_path.is_file():
@@ -1199,12 +1302,13 @@ def analyze_with_metadata(
         metadata["wall_event_count"] = 0
         metadata["hold_count"] = 0
         beatmap = build_beatmap_document([], [], metadata)
-        return attach_phrase_metadata(beatmap, metadata, choreography_config(
+        beatmap, metadata = attach_phrase_metadata(beatmap, metadata, choreography_config(
             phrase_length_beats=phrase_length_beats,
             subphrase_length_beats=subphrase_length_beats,
             manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
             allow_crooked_phrase=allow_crooked_phrase,
         ))
+        return _attach_v4_projection(beatmap, metadata, difficulty)
 
     duration = float(librosa.get_duration(y=samples, sr=sample_rate))
     bass_samples = None
@@ -1220,6 +1324,25 @@ def analyze_with_metadata(
         drum_samples=drum_samples,
     )
     timing = _estimate_timing_metadata(audio_path, sample_rate, duration, onset_envelope)
+    music_samples = samples
+    if music_audio_path is not None and music_audio_path.is_file():
+        music_samples, _ = librosa.load(music_audio_path, sr=sample_rate, mono=True)
+    neural_evidence = analyze_neural_meter(music_audio_path or audio_path) if neural_meter_enabled else {
+        "schema": "neon_music.neural_meter.v1",
+        "backend": "madmom_rnn_dbn",
+        "available": False,
+        "used": False,
+        "beats": [],
+        "reason": "disabled",
+    }
+    apply_neural_meter(timing, neural_evidence)
+    analyze_music_expression(
+        timing,
+        music_samples,
+        sample_rate,
+        bass_samples=bass_samples,
+        drum_samples=drum_samples,
+    )
     timing["generation_settings"] = generation_settings
     if isinstance(timing.get("analysis"), dict):
         timing["analysis"]["note_min_time_between"] = generation_settings["profile"]["min_time_between_notes"]
@@ -1253,19 +1376,30 @@ def analyze_with_metadata(
         peak_features=peak_features,
     )
     notes: list[dict[str, object]] = []
+    two_cell_layout = str(generation_settings.get("lane_layout", "4_lanes")) == "2_cells"
     for assignment in lane_assignments:
         onset_time = float(assignment["time"])
         lane = int(assignment["lane"])
-        lanes = [0, 3] if str(assignment.get("energy_class", "normal")) == "jump" else [lane]
+        energy_class = str(assignment.get("energy_class", "normal"))
+        strength = float(assignment.get("strength", 0.0))
+        music_accent = float(assignment.get("music_accent", 0.0))
+        beat_phase = int(assignment.get("beat_phase", 0))
+        two_cell_accent = two_cell_layout and (
+            energy_class in {"jump", "heavy"}
+            or music_accent >= 0.78
+            or (beat_phase == 0 and strength >= 0.72)
+        )
+        lanes = [0, 3] if energy_class == "jump" or two_cell_accent else [lane]
         note_type = "jump" if len(lanes) > 1 else "note"
         notes.append(
             {
                 "type": note_type,
                 "time": _round_time(onset_time),
-                "lane": lane,
+                "lane": 0 if len(lanes) > 1 else lane,
                 "lanes": lanes,
-                "energy_class": str(assignment.get("energy_class", "normal")),
+                "energy_class": energy_class,
                 "lane_mode": str(assignment.get("lane_mode", "inner")),
+                "two_cell_accent": bool(two_cell_accent),
                 "stem_energy": {
                     "bass": float(assignment.get("bass_energy", 0.0)),
                     "drums": float(assignment.get("drum_energy", 0.0)),
@@ -1293,12 +1427,13 @@ def analyze_with_metadata(
     timing["wall_event_count"] = len(wall_events)
     timing["hold_count"] = len(hold_events)
     beatmap = build_beatmap_document(notes, events, timing)
-    return attach_phrase_metadata(beatmap, timing, choreography_config(
+    beatmap, timing = attach_phrase_metadata(beatmap, timing, choreography_config(
         phrase_length_beats=phrase_length_beats,
         subphrase_length_beats=subphrase_length_beats,
         manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
         allow_crooked_phrase=allow_crooked_phrase,
     ))
+    return _attach_v4_projection(beatmap, timing, difficulty)
 
 
 def analyze(
@@ -1328,6 +1463,7 @@ def analyze(
     subphrase_length_beats: int = 8,
     manual_downbeat_offset_seconds: float = 0.0,
     allow_crooked_phrase: bool = False,
+    neural_meter_enabled: bool = True,
 ) -> dict[str, object]:
     beatmap, _timing = analyze_with_metadata(
         audio_path,
@@ -1356,28 +1492,37 @@ def analyze(
         subphrase_length_beats=subphrase_length_beats,
         manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
         allow_crooked_phrase=allow_crooked_phrase,
+        music_audio_path=audio_path,
+        neural_meter_enabled=neural_meter_enabled,
     )
     return beatmap
 
 
-def write_srt(beatmap: object, path: Path) -> None:
-    rng = random.Random(0)
+def _combo_praise(combo_counter: int) -> str:
+    tier_index = min(max(0, int(combo_counter) // 10), len(COMBO_PRAISE_TIERS) - 1)
+    return COMBO_PRAISE_TIERS[tier_index]
+
+
+def write_srt(beatmap: object, path: Path | None = None) -> str:
     blocks: list[str] = []
     for combo_counter, beat in enumerate(_beatmap_notes(beatmap), start=1):
         start = float(beat["time"])
         end = start + 0.5
-        word = rng.choice(PRAISE_WORDS)
+        word = _combo_praise(combo_counter)
         blocks.append(
             f"{combo_counter}\n"
             f"{srt_timestamp(start)} --> {srt_timestamp(end)}\n"
             f"{combo_counter}\n"
             f"{word}\n"
         )
-    path.write_text("\n".join(blocks), encoding="utf-8")
+    text = "\n".join(blocks)
+    if path is not None:
+        path.write_text(text, encoding="utf-8")
+    return text
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate beatmap.json, beat_grid.json, and combo.srt from audio.")
+    parser = argparse.ArgumentParser(description="Generate output/neon_track.json from audio.")
     project_dir = Path(__file__).resolve().parents[2]
     output_dir = project_dir / "output"
     parser.add_argument("--audio", type=Path, default=project_dir / "assets" / "audio" / "audio.mp3")
@@ -1404,12 +1549,20 @@ def main() -> int:
     parser.add_argument("--hold-min-gap", type=float, default=DEFAULT_HOLD_MIN_GAP)
     parser.add_argument("--beatmap", type=Path, default=output_dir / "beatmap.json")
     parser.add_argument("--metadata", type=Path, default=output_dir / "beat_grid.json")
-    parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt")
+    parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt", help=argparse.SUPPRESS)
+    parser.add_argument("--track", type=Path, default=output_dir / "neon_track.json")
+    parser.add_argument("--lane-layout", choices=list(LANE_LAYOUTS), default=DEFAULT_LANE_LAYOUT, help="Gameplay layout: 4_lanes or 2_cells.")
     parser.add_argument("--demucs-device", default="auto", help="Demucs device for PyTorch separation: auto tries cuda then cpu.")
     parser.add_argument("--phrase-length-beats", type=int, default=32)
     parser.add_argument("--subphrase-length-beats", type=int, default=8)
     parser.add_argument("--manual-downbeat-offset-seconds", type=float, default=0.0)
     parser.add_argument("--allow-crooked-phrase", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--neural-meter",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Use optional madmom joint beat/downbeat/meter tracking when available.",
+    )
     args = parser.parse_args()
 
     with isolated_rhythm_stems(args.audio, demucs_device=args.demucs_device) as stems:
@@ -1438,36 +1591,62 @@ def main() -> int:
             hold_min_gap=args.hold_min_gap,
             bass_audio_path=stems["bass"],
             drums_audio_path=stems["drums"],
+            music_audio_path=args.audio,
+            neural_meter_enabled=args.neural_meter,
             phrase_length_beats=args.phrase_length_beats,
             subphrase_length_beats=args.subphrase_length_beats,
             manual_downbeat_offset_seconds=args.manual_downbeat_offset_seconds,
             allow_crooked_phrase=args.allow_crooked_phrase,
+            lane_layout=args.lane_layout,
         )
-        args.beatmap.parent.mkdir(parents=True, exist_ok=True)
-        args.metadata.parent.mkdir(parents=True, exist_ok=True)
-        args.subtitles.parent.mkdir(parents=True, exist_ok=True)
-        timing["audio"] = str(args.audio.resolve())
+        args.track.parent.mkdir(parents=True, exist_ok=True)
+        resolved_audio = args.audio.resolve()
+        try:
+            timing["audio"] = resolved_audio.relative_to(project_dir.resolve()).as_posix()
+        except ValueError:
+            timing["audio"] = str(resolved_audio)
         beatmap["audio"] = timing["audio"]
+        embedded_v4 = beatmap.get("choreography_v4")
+        if isinstance(embedded_v4, dict):
+            # Never leak the randomized temporary Demucs mix path into the
+            # persistent contract; it breaks byte-identical regeneration.
+            embedded_v4["audio"] = timing["audio"]
         if isinstance(timing.get("analysis"), dict):
             timing["analysis"]["source_separation"] = "demucs"
             timing["analysis"]["separation_model"] = DEMUCS_MODEL
             timing["analysis"]["separation_device"] = str(stems.get("device", args.demucs_device))
             timing["analysis"]["analyzed_stems"] = ["bass.wav", "drums.wav"]
             timing["analysis"]["analyzed_mix"] = RHYTHM_MIX_FILENAME
-        args.beatmap.write_text(
-            json.dumps(beatmap, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        combo_srt = write_srt(beatmap, args.subtitles)
+        write_neon_track(
+            args.track,
+            build_neon_track(
+                beatmap=beatmap,
+                beat_grid=timing,
+                combo_srt=combo_srt,
+                source="audio_analyzer",
+            ) | {"lane_layout": str(timing.get("generation_settings", {}).get("lane_layout", "4_lanes"))},
         )
-        args.metadata.write_text(
-            json.dumps(timing, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        write_srt(beatmap, args.subtitles)
     notes = _beatmap_notes(beatmap)
     events = _beatmap_events(beatmap)
     wall_events = [event for event in events if str(event.get("type", "")) in WALL_EVENT_TYPES]
     hold_events = [event for event in events if str(event.get("type", "")) == "hold"]
     print(f"Detected {len(notes)} notes, {len(wall_events)} wall events, and {len(hold_events)} hold events.")
     diagnostics = timing.get("lane_assignment", {}).get("diagnostics", {})
-    print(f"BPM {timing['bpm']} with {len(timing['beat_grid'])} grid beats.")
+    grid_beats = timing.get("canonical_beats", timing.get("beat_grid", []))
+    print(f"BPM {timing['bpm']} with {len(grid_beats)} grid beats.")
+    neural_meter = timing.get("neural_meter", {})
+    expression_summary = timing.get("music_expression", {}).get("summary", {})
+    print(
+        "Meter backend {backend}; neural used={used}; sections={sections}; peak accents={peaks}; drops={drops}; breaks={breaks}.".format(
+            backend=neural_meter.get("backend", "signal"),
+            used=bool(neural_meter.get("used", False)),
+            sections=len(timing.get("sections", [])),
+            peaks=expression_summary.get("peak_accent_count", 0),
+            drops=expression_summary.get("drop_count", 0),
+            breaks=expression_summary.get("break_count", 0),
+        )
+    )
     print(
         "Difficulty {difficulty}; ramp {duration}s/{strength}; accepted {accepted}, filtered {filtered}, shifted {shifted}, softened {softened}.".format(
             difficulty=timing["generation_settings"]["difficulty"],
@@ -1492,10 +1671,9 @@ def main() -> int:
         events=len(hold_events),
         candidates=hold_summary.get("candidate_count", 0),
     ))
-    print(f"Wrote {args.beatmap}, {args.metadata}, and {args.subtitles}.")
+    print(f"Wrote {args.track}.")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

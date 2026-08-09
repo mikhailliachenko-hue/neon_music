@@ -137,26 +137,47 @@ def build_phrase_grid(timing: dict[str, Any], config: dict[str, Any] | None = No
     duration = max(0.0, float(timing.get("duration", 0.0)))
     anchor = timing.get("anchor", {})
     anchor_time = float(anchor.get("time", 0.0)) if isinstance(anchor, dict) else 0.0
+    meter = int(anchor.get("meter", 4)) if isinstance(anchor, dict) else 4
+    meter = meter if meter in (3, 4) else 4
     phrase_anchor_time = anchor_time + float(config["manual_downbeat_offset_seconds"])
     phrase_length = int(config["phrase_length_beats"])
     subphrase_length = int(config["subphrase_length_beats"])
     source_beats = timing.get("beat_grid", [])
     if not isinstance(source_beats, list):
         source_beats = []
+    beat_feature_map = {
+        int(feature.get("index", 0)): feature
+        for feature in timing.get("beat_features", [])
+        if isinstance(feature, dict)
+    }
+    source_time_by_index = {
+        int(source.get("index", 0)): float(source.get("time", 0.0))
+        for source in source_beats
+        if isinstance(source, dict)
+    }
+    manual_offset = float(config["manual_downbeat_offset_seconds"])
+    manual_shift_beats = int(round(manual_offset / beat_interval))
+    manual_remainder = manual_offset - manual_shift_beats * beat_interval
+
+    def phrase_time(index: int, fallback: float) -> float:
+        if index in source_time_by_index:
+            return source_time_by_index[index] + manual_remainder
+        return fallback
 
     beats: list[dict[str, Any]] = []
     for source in source_beats:
         if not isinstance(source, dict):
             continue
         beat_time = float(source.get("time", 0.0))
-        phrase_position = int(round((beat_time - phrase_anchor_time) / beat_interval))
+        source_index = int(source.get("index", round((beat_time - anchor_time) / beat_interval)))
+        phrase_position = source_index - manual_shift_beats
         phrase_index = math.floor(phrase_position / phrase_length)
         phrase_beat = phrase_position % phrase_length
         subphrase_index = math.floor(phrase_beat / subphrase_length)
         subphrase_beat = phrase_beat % subphrase_length
-        bar_index = math.floor(phrase_position / 4)
-        beat_in_bar = (phrase_position % 4) + 1
-        beats.append({
+        bar_index = math.floor(phrase_position / meter)
+        beat_in_bar = (phrase_position % meter) + 1
+        beat_payload = {
             **source,
             "bar_index": int(bar_index),
             "beat_in_bar": int(beat_in_bar),
@@ -168,35 +189,83 @@ def build_phrase_grid(timing: dict[str, Any], config: dict[str, Any] | None = No
             "is_phrase_start": bool(phrase_beat == 0),
             "is_subphrase_start": bool(subphrase_beat == 0),
             "manual_downbeat_offset_seconds": round(float(config["manual_downbeat_offset_seconds"]), 6),
-        })
+        }
+        feature = beat_feature_map.get(source_index)
+        if feature:
+            beat_payload["music"] = {
+                key: feature[key]
+                for key in (
+                    "energy", "energy_delta", "accent", "accent_level",
+                    "accent_type", "syncopation", "complexity",
+                    "movement_intensity", "subdivision_groove",
+                )
+                if key in feature
+            }
+        beats.append(beat_payload)
 
     phrases: list[dict[str, Any]] = []
     if beats:
         first_phrase = min(int(beat["phrase_index"]) for beat in beats)
         last_phrase = max(int(beat["phrase_index"]) for beat in beats)
         for phrase_index in range(first_phrase, last_phrase + 1):
-            start_time = phrase_anchor_time + float(phrase_index * phrase_length) * beat_interval
-            end_time = start_time + float(phrase_length) * beat_interval
+            start_beat_index = phrase_index * phrase_length + manual_shift_beats
+            end_beat_index = start_beat_index + phrase_length
+            start_time = phrase_time(
+                start_beat_index,
+                phrase_anchor_time + float(phrase_index * phrase_length) * beat_interval,
+            )
+            end_time = phrase_time(
+                end_beat_index,
+                start_time + float(phrase_length) * beat_interval,
+            )
             if end_time < 0.0 or start_time > duration + beat_interval:
                 continue
             phrase_beats = [beat for beat in beats if int(beat["phrase_index"]) == phrase_index]
+            blocks = _count8_blocks(
+                phrase_index, start_time, beat_interval, subphrase_length,
+                phrase_length, duration,
+            )
+            for block in blocks:
+                block_start_index = int(block["start_beat_index"]) + manual_shift_beats
+                block_end_index = block_start_index + subphrase_length
+                block["start_time"] = round(max(
+                    0.0, phrase_time(block_start_index, float(block["start_time"]))
+                ), 6)
+                block["end_time"] = round(min(
+                    duration, phrase_time(block_end_index, float(block["end_time"]))
+                ), 6)
+                selected = [
+                    beat_feature_map[index]
+                    for index in range(block_start_index, block_end_index)
+                    if index in beat_feature_map
+                ]
+                block["music_targets"] = _aggregate_music_targets(selected)
+            section = _section_for_time(timing, start_time)
             phrases.append({
                 "id": _phrase_id(phrase_index),
                 "index": int(phrase_index),
-                "start_beat_index": int(phrase_index * phrase_length),
+                "start_beat_index": int(start_beat_index),
                 "start_time": round(max(0.0, start_time), 6),
                 "end_time": round(min(duration, end_time), 6),
                 "duration_beats": int(phrase_length),
-                "count8_blocks": _count8_blocks(phrase_index, start_time, beat_interval, subphrase_length, phrase_length, duration),
-                "section_id": _section_id_for_time(timing, start_time),
+                "count8_blocks": blocks,
+                "section_id": str(section.get("id", "full_track")),
+                "section_role": str(section.get("role", "unknown")),
+                "section_energy_role": str(section.get("energy_role", "stable_groove")),
+                "section_confidence": float(section.get("confidence", 0.0)),
+                "section_movement_targets": section.get("movement_targets", {}),
+                "music_targets": _aggregate_music_targets(
+                    [beat_feature_map[int(beat.get("index", 0))] for beat in phrase_beats if int(beat.get("index", 0)) in beat_feature_map]
+                ),
                 "beat_count": len(phrase_beats),
-                "aligned_to_downbeat": bool((phrase_index * phrase_length) % 4 == 0),
+                "aligned_to_downbeat": bool(start_beat_index % meter == 0),
             })
 
     return {
         "schema": PHRASE_GRID_SCHEMA,
         "config": config,
         "beat_interval": round(beat_interval, 6),
+        "meter": meter,
         "anchor_time": round(anchor_time, 6),
         "phrase_anchor_time": round(phrase_anchor_time, 6),
         "phrases": phrases,
@@ -403,13 +472,38 @@ def _sections(timing: dict[str, Any], duration: float) -> list[dict[str, Any]]:
     }]
 
 
-def _section_id_for_time(timing: dict[str, Any], time: float) -> str:
+def _section_for_time(timing: dict[str, Any], time: float) -> dict[str, Any]:
     for section in _sections(timing, float(timing.get("duration", 0.0))):
         start = float(section.get("start_time", section.get("start", 0.0)))
         end = float(section.get("end_time", section.get("end", float("inf"))))
         if start <= time < end:
-            return str(section.get("id", "full_track"))
-    return "full_track"
+            return section
+    return {"id": "full_track", "role": "unknown", "energy_role": "stable_groove"}
+
+
+def _aggregate_music_targets(features: list[dict[str, Any]]) -> dict[str, Any]:
+    if not features:
+        return {
+            "intensity": 0.35, "energy": 0.35, "accent_density": 0.35,
+            "complexity": 0.25, "syncopation": 0.2, "peak_accent_count": 0,
+            "accent_curve": [],
+        }
+    def mean(key: str) -> float:
+        return sum(float(feature.get(key, 0.0)) for feature in features) / len(features)
+    return {
+        "intensity": round(mean("movement_intensity"), 6),
+        "energy": round(mean("energy"), 6),
+        "accent_density": round(mean("accent"), 6),
+        "complexity": round(mean("complexity"), 6),
+        "syncopation": round(mean("syncopation"), 6),
+        "peak_accent_count": sum(feature.get("accent_level") == "peak" for feature in features),
+        "accent_curve": [round(float(feature.get("accent", 0.0)), 6) for feature in features],
+        "accent_types": [str(feature.get("accent_type", "mixed")) for feature in features],
+    }
+
+
+def _section_id_for_time(timing: dict[str, Any], time: float) -> str:
+    return str(_section_for_time(timing, time).get("id", "full_track"))
 
 # Additive Phase 3 planner; Phase 1/2 grid helpers above remain compatible.
 from choreography_v3 import MOVEMENT_LIBRARY, attach_phrase_metadata, build_movement_events  # noqa: E402,F401

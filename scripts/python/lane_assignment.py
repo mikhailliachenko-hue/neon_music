@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Deterministic lane assignment helpers for neon_music beatmaps."""
 from __future__ import annotations
 
@@ -9,6 +9,8 @@ import numpy as np
 LANE_COUNT = 4
 MIN_TIME_BETWEEN_NOTES = 0.5
 LANE_NAMES = ["left_outer", "left_inner", "right_inner", "right_outer"]
+LANE_LAYOUTS = ("4_lanes", "2_cells")
+DEFAULT_LANE_LAYOUT = "4_lanes"
 WALL_EVENT_TYPES = ("wall_left", "wall_right")
 WALL_SCHEMA = "neon_music.wall_events.v1"
 DEFAULT_WALL_ENABLED = True
@@ -20,7 +22,7 @@ DEFAULT_WALL_DENSITY_MULTIPLIER = 2.6
 DEFAULT_WALL_PREPARATION_WINDOW = 0.9
 DEFAULT_WALL_RECOVERY_WINDOW = 0.85
 DEFAULT_WALL_REST_WINDOW = 1.0
-DEFAULT_HOLD_ENABLED = True
+DEFAULT_HOLD_ENABLED = False
 DEFAULT_HOLD_RATE_BARS = 8
 DEFAULT_HOLD_MIN_DURATION = 1.0
 DEFAULT_HOLD_MAX_DURATION = 2.4
@@ -196,9 +198,13 @@ def build_generation_settings(
     hold_min_duration: float = DEFAULT_HOLD_MIN_DURATION,
     hold_max_duration: float = DEFAULT_HOLD_MAX_DURATION,
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
+    lane_layout: str = DEFAULT_LANE_LAYOUT,
 ) -> dict[str, Any]:
     profile_name = normalize_difficulty_name(difficulty)
     profile = DIFFICULTY_PROFILES[profile_name]
+    normalized_lane_layout = str(lane_layout or DEFAULT_LANE_LAYOUT).strip().lower()
+    if normalized_lane_layout not in LANE_LAYOUTS:
+        raise ValueError(f"Unknown lane_layout {lane_layout!r}. Choose one of: {', '.join(LANE_LAYOUTS)}.")
     return {
         "difficulty": profile_name,
         "difficulty_profiles": {
@@ -234,6 +240,12 @@ def build_generation_settings(
             "recovery_window": max(0.0, float(wall_recovery_window)),
             "rest_window": max(0.0, float(wall_rest_window)),
         },
+        "lane_layout": normalized_lane_layout,
+        "layout": {
+            "mode": normalized_lane_layout,
+            "active_lanes": [0, 3] if normalized_lane_layout == "2_cells" else [0, 1, 2, 3],
+            "description": "two large left/right cells" if normalized_lane_layout == "2_cells" else "four lane foot grid",
+        },
         "holds": {
             "enabled": bool(holds_enabled),
             "rate_bars": max(1, int(hold_rate_bars)),
@@ -246,6 +258,19 @@ def build_generation_settings(
 
 def _grid_annotation_for_time(time: float, timing: dict[str, Any]) -> dict[str, Any]:
     beat_interval = float(timing.get("beat_interval", 0.5))
+    source_grid = timing.get("beat_grid", [])
+    grid = [beat for beat in source_grid if isinstance(beat, dict)] if isinstance(source_grid, list) else []
+    if grid:
+        nearest = min(grid, key=lambda beat: abs(float(beat.get("time", 0.0)) - time))
+        beat_index = int(nearest.get("index", 0))
+        beat_time = float(nearest.get("time", 0.0))
+        return {
+            "beat_index": beat_index,
+            "beat_time": round(beat_time, 6),
+            "beat_phase": round((time - beat_time) / max(beat_interval, 1e-6), 6),
+            "beat_delta": round(float(time - beat_time), 6),
+            "downbeat": bool(nearest.get("downbeat", beat_index % 4 == 0)),
+        }
     anchor = timing.get("anchor")
     anchor_time = float(anchor.get("time", 0.0)) if isinstance(anchor, dict) else 0.0
     raw_position = (time - anchor_time) / beat_interval if beat_interval > 0.0 else 0.0
@@ -286,6 +311,7 @@ def _build_summary(
     return {
         "schema": "neon_music.lane_assignment.v1",
         "strategy": "beat_phase_plus_feature_balance",
+        "lane_layout": "4_lanes",
         "lane_names": LANE_NAMES,
         "strength_bounds": {
             "p35": round(float(strength_bounds[0]), 6),
@@ -345,12 +371,13 @@ def assign_lanes(
     wall_density_multiplier = max(1.0, float(wall_settings.get("density_multiplier", DEFAULT_WALL_DENSITY_MULTIPLIER)))
     wall_preparation_window = max(0.0, float(wall_settings.get("preparation_window", DEFAULT_WALL_PREPARATION_WINDOW)))
     wall_recovery_window = max(0.0, float(wall_settings.get("recovery_window", DEFAULT_WALL_RECOVERY_WINDOW)))
+    lane_layout = str(settings.get("lane_layout", settings.get("layout", {}).get("mode", DEFAULT_LANE_LAYOUT))).lower()
+    two_cell_layout = lane_layout == "2_cells"
 
     anchor = timing.get("anchor")
     if not isinstance(anchor, dict):
         raise TypeError("timing metadata anchor must be a dictionary")
     beat_interval = float(timing.get("beat_interval", 0.5))
-    anchor_time = float(anchor.get("time", 0.0))
 
     onset_strengths = _frame_values(onset_envelope, onset_frames)
     centroid_samples = _frame_values(centroid, onset_frames) if centroid.size else []
@@ -390,12 +417,24 @@ def assign_lanes(
         "jump_notes": 0,
     }
     peak_features = peak_features or []
+    music_by_beat = {
+        int(feature.get("index", 0)): feature
+        for feature in timing.get("beat_features", [])
+        if isinstance(feature, dict)
+    }
 
     for onset_index, (frame, onset_time) in enumerate(zip(onset_frames, onset_times)):
         time = float(onset_time)
         diagnostics["candidate_notes"] += 1
+        grid_annotation = _grid_annotation_for_time(time, timing)
+        beat_index = int(grid_annotation["beat_index"])
+        music_feature = music_by_beat.get(beat_index, {})
+        target_intensity = float(music_feature.get("movement_intensity", 0.5))
+        music_interval_multiplier = max(0.82, min(1.18, 1.25 - 0.5 * target_intensity))
+        if str(music_feature.get("accent_level", "")) == "peak":
+            music_interval_multiplier *= 0.82
         ramp_factor = _ramp_multiplier(time, ramp_duration, ramp_strength)
-        effective_min_interval = base_min_interval * ramp_factor
+        effective_min_interval = base_min_interval * ramp_factor * music_interval_multiplier
         wall_state = _wall_state_at(time, wall_events, wall_anticipation, wall_preparation_window, wall_recovery_window)
         if wall_state is not None:
             phase = str(wall_state.get("phase", "active"))
@@ -418,10 +457,12 @@ def assign_lanes(
         peak_feature = peak_features[onset_index] if onset_index < len(peak_features) else {}
         energy_class = str(peak_feature.get("energy_class", "normal"))
         lane_mode = str(peak_feature.get("lane_mode", "inner"))
+        if energy_class == "normal" and str(music_feature.get("accent_level", "")) == "peak":
+            energy_class = "heavy"
+            lane_mode = "wide" if str(music_feature.get("accent_type", "")) in {"kick", "mixed"} else lane_mode
         side = 0 if centroid_norm < 0.5 else 1
         if lane_mode == "jump_wide":
             side = 0 if lane_counts[0] <= lane_counts[3] else 1
-        beat_index = int(round((time - anchor_time) / beat_interval)) if beat_interval > 0.0 else 0
         beat_phase = beat_index % 4
         side, choreographic_device = _choreographic_side(side, beat_index, centroid_norm, lane_mode)
         side_name = "left" if side == 0 else "right"
@@ -510,6 +551,13 @@ def assign_lanes(
                     lane = preferred_lane if lane_counts[preferred_lane] <= lane_counts[partner_lane] else partner_lane
                 wall_redirected = True
 
+        if two_cell_layout:
+            lane = 0 if side_name == "left" else 3
+            preferred_lane = lane
+            partner_lane = lane
+            preference = "cell"
+            lane_mode = "two_cell" if lane_mode not in ("jump_wide",) else lane_mode
+
         if wall_redirected:
             anti_burst_action = "wall_redirect" if anti_burst_action == "none" else f"{anti_burst_action}+wall_redirect"
             diagnostics["wall_lane_redirected_notes"] += 1
@@ -571,6 +619,11 @@ def assign_lanes(
                 "choreographic_variation": choreographic_variation,
                 "energy_class": energy_class,
                 "lane_mode": lane_mode,
+                "music_accent": float(music_feature.get("accent", 0.0)),
+                "music_accent_type": str(music_feature.get("accent_type", "mixed")),
+                "music_intensity": target_intensity,
+                "music_complexity": float(music_feature.get("complexity", 0.0)),
+                "music_interval_multiplier": round(music_interval_multiplier, 6),
                 "bass_energy": round(float(peak_feature.get("bass_energy", 0.0)), 6),
                 "drum_energy": round(float(peak_feature.get("drum_energy", 0.0)), 6),
                 "combined_energy": round(float(peak_feature.get("combined_energy", strength_norm)), 6),
@@ -589,7 +642,8 @@ def assign_lanes(
         (strength_low, strength_high),
         (centroid_low, centroid_high),
     )
-    summary["strategy"] = "stem_energy_phrase_devices_inner_wide_jump_balance"
+    summary["strategy"] = "stem_energy_phrase_devices_inner_wide_jump_balance" if not two_cell_layout else "stem_energy_two_cell_left_right_balance"
+    summary["lane_layout"] = lane_layout
     summary["generation_settings"] = settings
     summary["diagnostics"] = diagnostics
     return assignments, summary
