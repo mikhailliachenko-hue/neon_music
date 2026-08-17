@@ -23,6 +23,7 @@ func _run() -> void:
 	root.add_child(generator)
 	await process_frame
 	var initial_pool_size := int(generator.get_runtime_stats().get("pool_size", 0))
+	var verified_worlds := PackedStringArray()
 	var song_time := 0.0
 	generator.sync_to_song_time(song_time, {})
 	for world_case in WORLD_CASES:
@@ -59,9 +60,10 @@ func _run() -> void:
 		for segment in generator._segments:
 			for lane_error in segment.validate_active_safe_lane():
 				failures.append("%s: %s" % [level_name, lane_error])
+		verified_worlds.append("%s=%s" % [level_name, expected_world])
 	print("TUNNEL_WORLD_SMOKE cases=%d pool=%d asset_pool=%d worlds=%s" % [
 		WORLD_CASES.size(), initial_pool_size, int(generator.get_runtime_stats().get("asset_pool", 0)),
-		str(generator.get_runtime_stats().get("segment_worlds", PackedStringArray())),
+		str(verified_worlds),
 	])
 	for failure in failures:
 		push_error("TUNNEL_WORLD_SMOKE: %s" % failure)
