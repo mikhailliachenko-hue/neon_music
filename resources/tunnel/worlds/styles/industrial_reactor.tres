@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/industrial_reactor.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "industrial_reactor"
+display_name = "Industrial Reactor"
+spatial_profile = "IndustrialReactor"
+asset_set = ExtResource("2_assets")
+floor_probability = 1.0
+# The factory wall mesh is useful as a side module, but as a streamed ceiling it
+# becomes a giant slab in the near field. Industrial identity comes from frames,
+# pipes and machines, so the dance lane stays open overhead.
+ceiling_probability = 0.0
+wall_probability = 0.88
+ring_probability = 0.74
+arch_probability = 1.0
+decoration_scale = 0.9
+layout_weight_scale = {"Straight": 0.9, "Ring": 0.55, "DoubleRing": 0.7, "SidePanels": 0.65, "NeonGrid": 0.55, "EnergyGate": 1.65, "WideTunnel": 0.7, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.1}
+safe_lane_half_width = 4.85
+minimum_overhead_y = 4.5
+side_clearance_margin = 0.45
+fog_scale = 1.22
+background_depth = 0.82

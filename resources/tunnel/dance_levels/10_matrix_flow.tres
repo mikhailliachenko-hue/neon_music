@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="2_theme_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/neon_highway.tres" id="3_world"]
+
+[sub_resource type="Resource" id="Theme_level"]
+script = ExtResource("2_theme_script")
+theme_name = "Matrix"
+emission_color = Color(0.02, 1, 0.22, 1)
+accent_color = Color(0.05, 0.45, 0.1, 1)
+background_color = Color(0, 0.018, 0.004, 1)
+fog_color = Color(0.0092, 0.166, 0.0412, 1)
+fog_density = 0.0022
+glow_intensity = 0.62
+emission_energy = 5.866
+floor_color = Color(0.0012, 0.06, 0.0132, 1)
+floor_emission = 0.6976
+ambient_color = Color(0.0024, 0.12, 0.0264, 1)
+ambient_energy = 0.242
+ring_probability_scale = 0.55
+decoration_probability_scale = 0.7
+layout_weights = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 1.2,"NeonGrid": 1.4,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "MATRIX FLOW"
+description = "Цифровой зелёный поток с регулярной сеткой, строгими панелями и контролируемыми импульсами."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.02, 1, 0.22, 1, 0.05, 0.45, 0.1, 1, 0, 0.018, 0.004, 1)
+segment_types = PackedStringArray("Synthwave", "FutureClean", "Synthwave", "EnergyGate")
+asset_weights = {"Decoration": 0.65,"Panel": 1.65,"Pipe": 0.5,"Arch": 0.55}
+particle_settings = {"density": 0.88,"amount_scale": 0.85}
+lighting_settings = {"glow_intensity": 0.62,"glow_strength": 0.76,"bloom": 0.045,"ssr_enabled": false}
+fog_settings = {"density": 0.0022}
+camera_settings = {"step_impact": 0.58,"step_duration": 0.24,"fov_pulse": 0.7}
+music_reaction_settings = {"beat_strength": 0.86,"beat_decay": 0.23,"speed_boost": 0.02,"downbeat_multiplier": 1.38,"drop_strength": 2.45}
+preset_name = "MATRIX FLOW"
+style_id = "Synthwave"
+world_style = ExtResource("3_world")
+theme = SubResource("Theme_level")
+seed_offset = 79190
+ring_density = 0.55
+decoration_density = 0.7
+panel_density = 1.45
+pipe_density = 0.35
+fog_amount = 1.1
+glow_strength = 0.82
+camera_motion = 0.22
+speed_multiplier = 1
+atmosphere_density = 0.88
+floor_pattern = "NeonGrid"
+layout_weight_scale = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 1.2,"NeonGrid": 1.4,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+level_id = "10_matrix_flow"
+segment_sequence = PackedStringArray("Synthwave", "FutureClean", "Synthwave", "EnergyGate")

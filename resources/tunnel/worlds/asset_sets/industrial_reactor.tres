@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=28 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/floor.glb" id="2_floor"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/floor-large.glb" id="3_floor_large"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/structure-high.glb" id="4_structure_high"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/structure-tall.glb" id="5_structure_tall"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/structure-window-wide.glb" id="6_structure_window"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/building-a.glb" id="7_building_a"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/building-g.glb" id="8_building_g"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/building-m.glb" id="9_building_m"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/building-p.glb" id="10_building_p"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/structure-wall.glb" id="11_ceiling"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/structure-doorway-wide.glb" id="12_doorway"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/screen-hanging-wide.glb" id="13_screen_hanging"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/screen-panel-wide.glb" id="14_screen_panel"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/pipe-large-long.glb" id="15_pipe_long"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/pipe-large-bend.glb" id="16_pipe_bend"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/pipe-glass-large-long.glb" id="17_glass_long"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/pipe-glass-large-bend.glb" id="18_glass_bend"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/machine.glb" id="19_machine"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/machine-fortified.glb" id="20_machine_fortified"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/machine-window.glb" id="21_machine_window"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/hopper-high-round.glb" id="22_hopper_round"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/hopper-high-square.glb" id="23_hopper_square"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/crane.glb" id="24_crane"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/catwalk-straight.glb" id="25_catwalk"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/catwalk-cross.glb" id="26_catwalk_cross"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/chimney-large.glb" id="27_chimney"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_industrial/detail-tank.glb" id="28_tank"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "kenney_industrial_reactor"
+display_name = "Kenney Industrial Reactor"
+floor_assets = Array[PackedScene]([ExtResource("2_floor"), ExtResource("3_floor_large")])
+ceiling_assets = Array[PackedScene]([ExtResource("11_ceiling")])
+wall_assets = Array[PackedScene]([ExtResource("4_structure_high"), ExtResource("5_structure_tall"), ExtResource("6_structure_window"), ExtResource("7_building_a"), ExtResource("8_building_g"), ExtResource("9_building_m"), ExtResource("10_building_p")])
+arch_assets = Array[PackedScene]([ExtResource("12_doorway")])
+panel_assets = Array[PackedScene]([ExtResource("13_screen_hanging"), ExtResource("14_screen_panel")])
+pipe_assets = Array[PackedScene]([ExtResource("15_pipe_long"), ExtResource("16_pipe_bend"), ExtResource("17_glass_long"), ExtResource("18_glass_bend")])
+prop_assets = Array[PackedScene]([ExtResource("19_machine"), ExtResource("20_machine_fortified"), ExtResource("21_machine_window"), ExtResource("22_hopper_round"), ExtResource("23_hopper_square"), ExtResource("24_crane"), ExtResource("25_catwalk"), ExtResource("26_catwalk_cross"), ExtResource("27_chimney"), ExtResource("28_tank")])

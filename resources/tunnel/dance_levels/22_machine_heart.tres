@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="2_theme_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/industrial_reactor.tres" id="3_world"]
+
+[sub_resource type="Resource" id="Theme_level"]
+script = ExtResource("2_theme_script")
+theme_name = "MachineHeart"
+emission_color = Color(1, 0.13, 0.025, 1)
+accent_color = Color(0.04, 0.9, 1, 1)
+background_color = Color(0.025, 0.002, 0.001, 1)
+fog_color = Color(0.12, 0.018, 0.008, 1)
+fog_density = 0.0021
+glow_intensity = 0.96
+emission_energy = 6.4
+floor_color = Color(0.055, 0.006, 0.001, 1)
+floor_emission = 0.78
+ambient_color = Color(0.09, 0.018, 0.008, 1)
+ambient_energy = 0.27
+ring_probability_scale = 1.05
+decoration_probability_scale = 0.92
+layout_weights = {"Straight": 0.8, "Ring": 0.52, "DoubleRing": 0.72, "SidePanels": 0.62, "NeonGrid": 0.5, "EnergyGate": 1.65, "WideTunnel": 0.65, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.1}
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "MACHINE HEART"
+description = "Промышленное сердце из открытых фабричных рам, машин, труб и крупных реакторных ворот."
+difficulty = "Hard"
+color_palette = PackedColorArray(1, 0.13, 0.025, 1, 0.04, 0.9, 1, 1, 0.025, 0.002, 0.001, 1)
+segment_types = PackedStringArray("EnergyGate", "SpaceNeon", "EnergyGate", "Showcase")
+asset_weights = {"Decoration": 1.05, "Panel": 0.82, "Pipe": 1.35, "Arch": 1.42}
+particle_settings = {"density": 0.94, "amount_scale": 0.92}
+lighting_settings = {"glow_intensity": 0.96, "glow_strength": 1.04, "bloom": 0.086, "ssr_enabled": false}
+fog_settings = {"density": 0.0021}
+camera_settings = {"step_impact": 0.76, "step_duration": 0.21, "fov_pulse": 1.08}
+music_reaction_settings = {"beat_strength": 1.04, "beat_decay": 0.19, "speed_boost": 0.02, "downbeat_multiplier": 1.62, "drop_strength": 2.95}
+preset_name = "MACHINE HEART"
+style_id = "EnergyGate"
+world_style = ExtResource("3_world")
+theme = SubResource("Theme_level")
+seed_offset = 174218
+ring_density = 1.05
+decoration_density = 0.92
+panel_density = 0.82
+pipe_density = 1.25
+fog_amount = 1.08
+glow_strength = 1.18
+camera_motion = 0.42
+speed_multiplier = 1.04
+atmosphere_density = 0.96
+floor_pattern = "EnergyWaves"
+layout_weight_scale = {"Straight": 0.8, "Ring": 0.52, "DoubleRing": 0.72, "SidePanels": 0.62, "NeonGrid": 0.5, "EnergyGate": 1.65, "WideTunnel": 0.65, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.1}
+level_id = "22_machine_heart"
+segment_sequence = PackedStringArray("EnergyGate", "SpaceNeon", "EnergyGate", "Showcase")

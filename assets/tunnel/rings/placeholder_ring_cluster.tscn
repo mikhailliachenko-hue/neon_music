@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="TorusMesh" id="Torus_ring"]
+inner_radius = 4.72
+outer_radius = 4.84
+rings = 32
+ring_segments = 10
+
+[node name="PlaceholderRingCluster" type="Node3D"]
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2.3, 0)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.16, 0.9, 1)
+mesh = SubResource("Torus_ring")

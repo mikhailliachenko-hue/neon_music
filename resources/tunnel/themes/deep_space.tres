@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "DeepSpace"
+emission_color = Color(0.08, 0.32, 1, 1)
+accent_color = Color(0.38, 0.08, 0.95, 1)
+background_color = Color(0.0005, 0.001, 0.008, 1)
+fog_color = Color(0.008, 0.012, 0.055, 1)
+fog_density = 0.0029
+glow_intensity = 0.64
+emission_energy = 5.4
+floor_color = Color(0.003, 0.007, 0.025, 1)
+floor_emission = 0.55
+ambient_color = Color(0.01, 0.018, 0.07, 1)
+ambient_energy = 0.16
+ring_probability_scale = 1.3
+decoration_probability_scale = 0.55
+layout_weights = {"DecoratedTunnel": 0.35, "DoubleRing": 1.15, "EnergyGate": 0.35, "NarrowTunnel": 0.2, "NeonGrid": 0.55, "Ring": 1.55, "SidePanels": 0.4, "Straight": 0.7, "WideTunnel": 1.0}

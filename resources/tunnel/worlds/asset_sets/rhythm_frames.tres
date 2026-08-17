@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_A.gltf" id="3_frame_a"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_SquareTall.gltf" id="4_frame_square"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/light-square.glb" id="5_side_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="6_particles"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "rhythm_frames_reference"
+display_name = "Rhythm Frames — Quaternius/Kenney"
+floor_assets = Array[PackedScene]([ExtResource("2_road")])
+ring_assets = Array[PackedScene]([ExtResource("3_frame_a")])
+arch_assets = Array[PackedScene]([ExtResource("4_frame_square")])
+panel_assets = Array[PackedScene]([ExtResource("5_side_light")])
+particle_assets = Array[PackedScene]([ExtResource("6_particles")])

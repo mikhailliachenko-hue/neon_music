@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="NeonMaterialLibrary" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_material_library.gd" id="1_library"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_blue"]
+shading_mode = 0
+albedo_color = Color(0.03, 0.52, 1, 1)
+emission_enabled = true
+emission = Color(0.03, 0.52, 1, 1)
+emission_energy_multiplier = 3.4
+
+[sub_resource type="StandardMaterial3D" id="Mat_purple"]
+shading_mode = 0
+albedo_color = Color(0.67, 0.13, 1, 1)
+emission_enabled = true
+emission = Color(0.67, 0.13, 1, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_red"]
+shading_mode = 0
+albedo_color = Color(1, 0.06, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.06, 0.1, 1)
+emission_energy_multiplier = 3.7
+
+[sub_resource type="StandardMaterial3D" id="Mat_green"]
+shading_mode = 0
+albedo_color = Color(0.08, 1, 0.24, 1)
+emission_enabled = true
+emission = Color(0.08, 1, 0.24, 1)
+emission_energy_multiplier = 3.3
+
+[sub_resource type="StandardMaterial3D" id="Mat_white"]
+shading_mode = 0
+albedo_color = Color(0.82, 0.95, 1, 1)
+emission_enabled = true
+emission = Color(0.82, 0.95, 1, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_rainbow"]
+shading_mode = 0
+albedo_color = Color(1, 0.18, 0.68, 1)
+emission_enabled = true
+emission = Color(1, 0.18, 0.68, 1)
+emission_energy_multiplier = 3.8
+
+[resource]
+script = ExtResource("1_library")
+theme_materials = {
+"CyberBlue": SubResource("Mat_blue"),
+"EnergyRed": SubResource("Mat_red"),
+"FutureWhite": SubResource("Mat_white"),
+"RainbowDance": SubResource("Mat_rainbow"),
+"SynthPurple": SubResource("Mat_purple"),
+"ToxicGreen": SubResource("Mat_green")
+}

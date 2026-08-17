@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="2_theme_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/neon_highway.tres" id="3_world"]
+
+[sub_resource type="Resource" id="Theme_level"]
+script = ExtResource("2_theme_script")
+theme_name = "Pink"
+emission_color = Color(1, 0.02, 0.58, 1)
+accent_color = Color(0.65, 0.04, 1, 1)
+background_color = Color(0.045, 0.001, 0.035, 1)
+fog_color = Color(0.166, 0.0092, 0.0988, 1)
+fog_density = 0.0016
+glow_intensity = 0.96
+emission_energy = 6.334
+floor_color = Color(0.06, 0.0012, 0.0348, 1)
+floor_emission = 0.7624
+ambient_color = Color(0.12, 0.0024, 0.0696, 1)
+ambient_energy = 0.278
+ring_probability_scale = 0.96
+decoration_probability_scale = 0.84
+layout_weights = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 1.2,"NeonGrid": 1.4,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "ELECTRIC PINK"
+description = "Яркий клубный тоннель с розовыми панелями, фиолетовыми рамами и короткими вспышками."
+difficulty = "Medium"
+color_palette = PackedColorArray(1, 0.02, 0.58, 1, 0.65, 0.04, 1, 1, 0.045, 0.001, 0.035, 1)
+segment_types = PackedStringArray("Synthwave", "Ring", "EnergyGate", "Synthwave")
+asset_weights = {"Decoration": 0.78,"Panel": 1.55,"Pipe": 0.4,"Arch": 0.9}
+particle_settings = {"density": 0.82,"amount_scale": 0.78}
+lighting_settings = {"glow_intensity": 0.96,"glow_strength": 1.02,"bloom": 0.105,"ssr_enabled": false}
+fog_settings = {"density": 0.00165}
+camera_settings = {"step_impact": 0.7,"step_duration": 0.22,"fov_pulse": 1.1}
+music_reaction_settings = {"beat_strength": 1,"beat_decay": 0.19,"speed_boost": 0.03,"downbeat_multiplier": 1.45,"drop_strength": 2.8}
+preset_name = "ELECTRIC PINK"
+style_id = "Synthwave"
+world_style = ExtResource("3_world")
+theme = SubResource("Theme_level")
+seed_offset = 71271
+ring_density = 0.96
+decoration_density = 0.84
+panel_density = 1.35
+pipe_density = 0.28
+fog_amount = 0.9
+glow_strength = 1.18
+camera_motion = 0.38
+speed_multiplier = 1.06
+atmosphere_density = 0.82
+floor_pattern = "NeonGrid"
+layout_weight_scale = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 1.2,"NeonGrid": 1.4,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+level_id = "09_electric_pink"
+segment_sequence = PackedStringArray("Synthwave", "Ring", "EnergyGate", "Synthwave")

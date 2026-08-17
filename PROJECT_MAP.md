@@ -1,12 +1,12 @@
 ﻿# Project Map: Neon Footstep Renderer
 
-Last updated: 2026-08-09
+Last updated: 2026-08-17
 
 Этот файл - быстрая карта проекта для новых диалогов с Codex. Его можно давать как стартовый контекст: здесь описано, что это за проект, где лежат основные части, как идет поток данных, какие файлы трогать для типичных задач и какие команды считать опорными.
 
 ## Коротко
 
-`neon_music` - Godot 4.7 проект для рендера неонового rhythm/dance видео по аудиотреку. Python-пайплайн анализирует музыку, строит beat grid, назначает дорожки/движения/стены/hold-события и пишет единый `output/neon_track.json`. Дополнительно экспортируется `output/combo.srt` для CapCut. Godot читает `neon_track.json` и рендерит 3D-сцену: 4 lane-дорожки, foot/hand cues, hit VFX, walls, holds, background MP4 или procedural fallback.
+`neon_music` - Godot 4.7 проект для рендера неонового rhythm/dance видео по аудиотреку. Python-пайплайн анализирует музыку, строит beat grid, назначает дорожки/движения/стены/hold-события и пишет единый `output/neon_track.json`. Дополнительно экспортируется `output/combo.srt` для CapCut. Godot читает `neon_track.json` и рендерит 3D-сцену: 4 lane-дорожки, объёмные step-платформы, foot/hand cues, парные hand-hold призмы, hit VFX, walls, holds, background MP4 или procedural fallback.
 
 Текущий канонический трек: `assets/audio/audio.wav` (177.52 s). Пользовательские WAV из `Downloads` используются как read-only regression/calibration corpus и не заменяют канонический трек автоматически.
 
@@ -14,12 +14,12 @@ Last updated: 2026-08-09
 
 1. Audio is chosen in the GUI/CLI or imported from an AI/Gemini result.
 2. `scripts/python/audio_analyzer.py` separates bass/drums through Demucs, analyzes onset/tempo/music expression and directly emits Beat Grid V2 with raw detected-beat evidence. Temporary Demucs paths are normalized back to the source audio path before persistence.
-3. `scripts/python/lane_assignment.py`, `phrase_grid.py`, `music_expression.py` and `choreography_v4.py` add lanes, sections, movement calibration, movement events, walls and holds. Normal full-track generation uses profile `normal`; `warmup_first` is explicit teaching mode. The 96-beat vertical slice remains a regression wrapper.
+3. `scripts/python/lane_assignment.py`, `phrase_grid.py`, `music_expression.py` and `choreography_v4.py` add lanes, sections, movement calibration and semantic movement events. Simultaneous gameplay is homogeneous by contract: exactly a left/right hand pair (`DOUBLE_PUNCH` or sustained `DOUBLE_HAND_HOLD`) or a left/right foot pair (`DOUBLE_FOOT_PULSE`), never a hand and foot on the same hit. Normal full-track generation uses profile `normal`; its post-selection direction pass can place the music-spaced `jump, repeat jump, breath, duck, recovery` challenge in strong sections and a final rail/hand callback inside the last complete phrase. `warmup_first` is explicit teaching mode. The 96-beat vertical slice remains a regression wrapper.
 4. Outputs:
    - `output/neon_track.json` - the only working JSON track file; contains `beatmap`, `beat_grid`, `combo_srt`, source/validation metadata.
    - `output/combo.srt` - CapCut subtitle export, recoverable from `neon_track.json`.
 5. Godot main scene `scenes/main.tscn` runs `scripts/godot/main.gd`.
-6. `scripts/beatmap_parser.gd` normalizes the embedded `beatmap` from `neon_track.json` for rendering.
+6. `scripts/beatmap_parser.gd` normalizes the embedded `beatmap` from `neon_track.json` for rendering while preserving compound-note identity (`semantic_movement`, `movement_event_id`, and simultaneous groups).
 7. Renderer spawns notes, receptors, hit effects, wall/hold visuals, HUD/debug overlays, and writes movie/smoke artifacts.
 
 ## Дерево Проекта
@@ -32,7 +32,10 @@ Last updated: 2026-08-09
 ├─ PROJECT_MAP.md                 эта карта проекта
 ├─ requirements.txt               базовые Python зависимости analyzer
 ├─ requirements-advanced.txt      optional neural/music-expression backend
-├─ run_analyzer_gui.bat           запуск GUI анализатора
+├─ run_analyzer_gui.bat           единый запуск GUI + автоматическая CUDA-настройка
+├─ run_obs_overlay.bat            прозрачный игровой слой для единой OBS-сцены (без ffplay)
+├─ run_visual_tuning.bat          живой просмотр с MP4 и панелью настройки камеры/высоты дорожки
+├─ ANALYZER_QUICK_GUIDE.md        короткая памятка: что менять и не трогать
 ├─ render_video.ps1               PowerShell wrapper для Godot Movie Maker
 ├─ assets/                        аудио, изображения, модели, shaders, config
 ├─ data/                          static mapping/config JSON
@@ -52,13 +55,13 @@ Last updated: 2026-08-09
 Музыкальный анализ и генерация данных.
 
 - `audio_analyzer.py` - главный CLI pipeline. Делает Demucs separation, onset/tempo/expression analysis, формирует Beat Grid V2, подключает normal V4 projection и пишет единый `output/neon_track.json` плюс синхронный `output/combo.srt`.
-- `analyzer_gui.py` - Tkinter GUI. Главный класс `AnalyzerApp`; основные настройки разнесены по вкладкам, действия анализа/валидации находятся в фиксированной нижней панели.
-- `lane_assignment.py` - deterministic lane assignment, difficulty settings, anti-burst rules, wall constraints.
+- `analyzer_gui.py` - Tkinter GUI. Главный класс `AnalyzerApp`; основные настройки разнесены по вкладкам, действия анализа/валидации находятся в фиксированной нижней панели даже на 768p/DPI-scaled экране. Большая `START ANALYSIS` запускается также по `F5`; в шапке показан живой `GPU READY` или `CPU MODE`. При рабочей CUDA GUI передаёт Demucs строгий `device=cuda`; без доступной GPU автоматически выбирает `device=cpu` и не блокирует анализ. Во вкладке Obstacles отдельно показаны reference double-hand holds (включены, шаг 2-8 фраз) и отключённые по умолчанию legacy floor holds.
+- `lane_assignment.py` - deterministic lane assignment, difficulty settings, anti-burst rules, wall constraints and persisted reference-hand-hold settings.
 - `phrase_grid.py` - phrase grid V2 contract, movement metadata attachment, phrase/block/section annotation.
 - `music_expression.py` - music-aware features: optional neural meter, sections, accents, novelty, musical events and track-level `movement_calibration` (`phase_preference`, offbeat/contrast/density/impact/variation/recovery axes).
 - `choreography_v3.py` - deterministic semantic movement library and phrase movement plan.
-- `choreography_v4.py` - canonical Beat Grid V2/Beatmap V4 generation, candidates, micro-rises, motif memory, safe compound grammar, body counterpoint, pickup-to-drop, obstacle projection and V4 validation/audit.
-- `generate_choreography_v4.py` - deterministic V4 wrapper; reads/writes `output/neon_track.json`, regenerates embedded and standalone `combo.srt`, and supports `--vertical-slice` for the legacy 96-beat regression.
+- `choreography_v4.py` - canonical Beat Grid V2/Beatmap V4 generation, candidates, micro-rises, motif memory, safe compound grammar, body counterpoint, pickup-to-drop, rare `DOUBLE_HAND_HOLD` accent projection, reference-shaped hand call/response, music-gated long-step payoffs, jump-repeat/duck challenges and the final callback, obstacle projection and V4 validation/audit. Current rules contract: `choreography_rules.v4.4`.
+- `generate_choreography_v4.py` - deterministic V4 wrapper; reads/writes `output/neon_track.json`, synchronizes the regenerated movement projection into embedded `beat_grid`, regenerates embedded and standalone `combo.srt`, and supports `--vertical-slice` for the legacy 96-beat regression.
 - `reference_corpus.py` - read-only multi-WAV profiler. Compares tempo, onset density, pulse/offbeat phase, dynamics, section contrast and relative positions without copying source WAVs.
 - `validate_lanes.py` - broad acceptance gate. Resolves audio from the active track, routes V1/V3 through legacy replay and V2/V4 through `validate_v4`, checks deterministic full regeneration and Godot frame/movie smokes. Missing optional reference MP4 no longer blocks procedural smoke.
 - `timing_diagnostics.py` - aligns video recording/render with source audio and measures visual hit timing.
@@ -69,14 +72,43 @@ Last updated: 2026-08-09
 
 Runtime renderer scripts.
 
-- `main.gd` - heart of renderer. Loads inputs, manages clock/audio timing, spawns notes/walls/holds, background video, debug overlays, hit timing diagnostics, combo trails, execution deck. Double-note lane pairs are rendered as separate lane pads even when their semantic cue is jump/duck/overhead, so they do not collapse into one centered obstacle.
-- `note.gd` - `RhythmNote`; visual form for foot pads and hand targets, lane position, semantic cue shape, shatter.
+- `main.gd` - heart of renderer. Loads inputs, manages clock/audio timing, spawns notes/walls/holds, background video, debug overlays, hit timing diagnostics and execution deck. Decorative white stage-to-stage/combo connector ribbons are no longer built or updated. March/run/reset ground cues are normalized to ordinary left/right shoe-print steps. `SMALL_JUMP`/`JUMP` are also projected as two synchronized familiar step platforms on each landing, not as a separate beam symbol. Simultaneous two-foot hits add a small centered camera stomp and stay alive after judgment until their full rail tails pass the player; duck adds a camera dip plus a short impact shake. Movie Writer uses a deterministic StandardMaterial impact flash, expanding torus and 16 volumetric shards; the richer shader/particle family remains for interactive runs.
+- `note.gd` - `RhythmNote`; visual form for foot pads and hand targets, lane position, semantic cue shape and shatter. Ordinary step cues sit on lower-profile 3D neon mini-platforms and break into emissive volumetric fragments on hit. Long double-foot rails begin as readable paired pads and reveal their 14-unit tail only during the final approach; choreography keeps them only after a lower-body setup. `DOUBLE_HAND_HOLD` renders two solid cyan/magenta prisms while approaching, then shatters/retracts at the judgment plane instead of travelling into the camera. Duck keeps the ready-made elevated Kenney 3D beam.
 - `receptor.gd` - `NoteReceptor`; hit plane flash.
-- `hit_effect.gd` - `HalftoneDiamond`; hit VFX families for steps/jumps/directional/combo.
+- `hit_effect.gd` - `HalftoneDiamond`; hit VFX families for steps/jumps/directional/combo. Single punches animate six-frame ready-made Cethiel CC0 blue/purple arcs; finale callback hits add a track-wide ready-made Kenney CC0 light-mask ring without increasing gameplay difficulty.
 - `hit_particle.gd` - GPU particle burst for hits.
-- `background_mp4_backend.gd` - FFmpeg frame-decoding backend for MP4 background.
+- `_capture_gameplay_visual_review.gd` - deterministic three-frame visual acceptance (`before` / `impact` / `settled`) for ordinary low step platforms, staged double-foot rail reveal, safe hand-hold retraction and hit fragmentation.
+- `background_external_player.gd` - canonical graphical-preview MP4 path. It launches bundled `ffplay.exe` as a continuous borderless native player behind the transparent Godot game window. MP4 timing is independent of Godot `_process()`/render FPS; there is no raw-frame pipe, frame queue, texture upload or disk-frame cache. FFprobe records native codec/FPS/duration/color/VFR diagnostics. Windows uses D3D12 because a static reference proved Vulkan transparency washed out the native video; no creative video color filter is applied.
+- `run_obs_overlay.bat` starts the dedicated recording mode (`--obs-overlay`): Godot exposes only a transparent game layer and does not launch/decode the MP4. OBS owns `assets/images/background/background.mp4` as the lower Media Source and captures the Godot window with transparency as the upper Game Capture source, producing one recording canvas.
+- `run_visual_tuning.bat` starts a desktop-safe 1280x720 graphical preview with the background MP4 and the live `Track tuning` panel; the selected final export resolution remains independent. The native video and transparent Godot layer are aligned visually, but the Godot window is no longer forced above every Windows app. `Whole track height` moves the road, receptors, notes and lane lines together; the individual height sliders provide fine offsets. `Save default` writes the current camera/track/visual values to `assets/models/wall_visual_config.json` for future launches. The large fixed `● СНЯТЬ ВИДЕО — ВСЁ АВТОМАТИЧЕСКИ` button delegates to `scripts/obs_auto_record.ps1`: through an authenticated OBS WebSocket connection to `127.0.0.1` it builds a dedicated composition from a silent looping original MP4, the complete source WAV and transparent Godot Window Capture. Separating the WAV prevents a shorter background clip from cutting a longer song. Auto-recording deliberately keeps Godot windowed so Windows Graphics Capture survives Alt+Tab and occlusion; the renderer must not be manually minimized or closed. It never captures the desktop, temporarily mutes desktop/microphone sources and restores their prior states, records the WAV directly without local monitoring and mutes Godot locally. A monotonic watchdog stops OBS by the actual WAV duration even after AudioStreamPlayer resets at EOF; then the previous OBS scene is restored and the finished MP4 opens. The user can use other applications, play games and listen to unrelated audio during the recording. `Снять MP4` inside the scroll remains the slower offline option using `scripts/render_mp4_job.ps1` and NVIDIA H.264 with a CPU fallback.
+- `background_mp4_backend.gd` - internal deterministic MP4 sampler retained for Movie Writer/F10 only, because an external native window cannot be captured by Godot's offline writer. It samples by output timestamp and keeps the existing NV12 Y/UV shader path. `_test_external_background_realtime_speed.gd` covers native 25/30/60 duration, `_test_external_background_loop.gd` crosses the real 120-second loop boundary, `_capture_external_background_composite.gd` verifies the final layered screen, and `_test_background_offline_sampling.gd` covers offline timestamps.
 - `vfx_preview.gd` and `_capture_vfx_preview_frame.gd` - preview/smoke scene tooling.
 - `_accept_*_check.gd` - acceptance helper scripts.
+- `tunnel/neon_tunnel_generator.gd` - Forward+ infinite Neon Tunnel streamer.
+  It reuses 8 pooled `TunnelSegment` scenes, consumes the existing beat/phrase/
+  8-count/32-count adapter and changes only the decorative world root.
+  The optional wall spectrum remains available but is disabled in production.
+  Music beat/drop never moves the tunnel camera;
+  `tunnel_camera_motion_controller.gd` responds only to gameplay actions.
+  CYBER AWAKENING uses the minimal `RhythmFrames` world: two repeated authored
+  Quaternius frames per streamed cell, a dark Kenney road, rare side lights and
+  ring-only cyan/magenta pulses. No wall or ceiling can enter the dance corridor.
+- `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
+  data-driven library of 23 Dance Mode levels. The existing Track tuning GUI
+  selects/reseeds/previews these Resources at runtime; all of them share the
+  generator, segment scenes, resource cache and fixed eight-segment pool.
+- `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
+  `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
+  GLB sets. Runtime worlds include corridor, highway, city canyon, industrial
+  reactor and the reference-inspired minimal rhythm frames.
+- `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
+  GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and
+  lazy PackedScene cache. `tunnel/neon_material_library.gd` owns six shared neon
+  theme materials. `tunnel_asset_preview.gd` is the standalone library inspector.
+- `assets/tunnel/shaders/tunnel_architecture_theme.gdshader` - shared Forward+
+  material path for theme-aware GLTF architecture. It neutralizes baked source
+  hues while preserving texture/normal/ORM detail. Configured world pools and
+  their surface pipelines are warmed before audio starts to avoid streaming hitches.
 
 ### `scripts/`
 
@@ -87,14 +119,23 @@ Runtime renderer scripts.
 - `main.tscn` - production scene.
 - `note.tscn`, `receptor.tscn`, `hit_effect.tscn`, `hit_particle.tscn` - reusable runtime objects.
 - `vfx_preview.tscn` - preview scene.
+- `tunnel/neon_tunnel.tscn`, `tunnel/tunnel_segment.tscn` - production generator
+  and fallback-compatible base module. `tunnel/segments/` contains CyberRing,
+  EnergyGate, Synthwave, FutureClean and SpaceNeon real-asset variants.
+- `tunnel/tunnel_asset_preview.tscn` - category/size/material/Glow preview tool.
+- `tunnel/levels/cyber_awakening_preview.tscn` - music-free directed-level preview
+  with speed/theme/seed/density/phase overrides and optional viewport capture.
 - `debug/CueOrientationTest.tscn` - visual/orientation debug.
 
 ### `assets/`
 
 - `audio/` - active source audio and Godot imports; canonical source is currently `audio.wav`.
-- `images/` - footprints, floor grid, note textures, reference screenshots, hand targets, movement icons, VFX masks, track texture.
-- `models/` - shaders, wall visual config, imported GLB assets.
+- `images/` - footprints, floor grid, note textures, reference screenshots, hand targets, movement icons, VFX masks, track texture. `images/vfx/cethiel_weapon_slash/` contains the selected blue/purple six-frame directional arcs and its CC0 attribution; Kenney particle/light-mask selections keep separate attribution files beside their PNGs.
+- `models/` - shaders, wall visual config and imported GLB assets. Active duck/jump obstacles reuse the selected CC0 Kenney Platformer Kit `fence-low-straight.glb` as a low jump rail or elevated duck beam with neon runtime materials; the license and source link live beside the selected files.
 - `models/wall_visual_config.json` - renderer-only wall/camera/timing visual settings. Important for wall height/glow/safe lanes/audio offsets.
+- `tunnel/` - CC0 modular tunnel library: Quaternius Modular Sci-Fi MegaKit
+  (190 GLTF), Quaternius Sci-Fi Essentials (37 GLTF) and Kenney Modular Space
+  Kit (40 GLB), with licenses, textures, registry and metadata sidecars.
 - `CODEX_CHANGE_REQUEST_V2_CURRENT_PIPELINE.md`, `CODEX_FULL_VISUAL_MASTER_PROMPT_V6(1).md` - task/spec context from previous work.
 
 ### `docs/`
@@ -150,21 +191,27 @@ Embedded `beatmap` shape:
 - `events`: `wall_left`, `wall_right`, `hold`, and movement/obstacle-like events depending on generation path.
 - `movement_events`, `phrase_plan`, `candidate_debug`, `semantic_obstacle_events`, `micro_accents` and validation summary in direct V4 output.
 - `choreography_v4`: optional nested V4 bridge when the document comes directly from Audio Analyzer before canonical V4 normalization.
-- Notes include timing, lanes, movement, cue archetype, phrase/count metadata and optional beat-grid annotations.
+- Notes include timing, lanes, movement, cue archetype, phrase/count metadata and optional beat-grid annotations. Sustained hand targets carry `sustained: true` and their positive `duration`; ordinary taps carry duration `0`.
 - Wall events include start/time, duration, blocked lanes, mirrored `safe_lanes`, anticipation.
 - Hold events include lane, start/end/duration, side/foot and clearance constraints.
 
 Embedded `beat_grid` shape:
 
 - `raw_detected_beats`, `canonical_beats`, tempo/downbeat hypotheses, coverage/residual quality and controlled fallback regions.
-- selected difficulty and ramp/anti-burst settings.
+- selected difficulty, ramp/anti-burst settings and `generation_settings.reference_hand_holds` (`enabled`, `rate_phrases`).
 - SciPy peak diagnostics.
 - wall/hold generation diagnostics.
 - lane assignment diagnostics.
 - phrase grid, sections and movement summaries in newer phases.
 - `music_expression.movement_calibration` with phase, offbeat, dynamics and scaling targets.
 
-Current canonical evidence (2026-08-09): 403 detected beats, 425 canonical beats, 98.66% detected coverage, 111 movement events, 255 renderer notes, 31 compound movements, one selected pickup-to-drop phrase and zero V4 hard errors.
+Current V4.3 reference rule: a long `DOUBLE_FOOT_PULSE` is one simultaneous left/right landing with a positive visual duration. It is retained only as a musically supported `PAYOFF`, after a readable lower-body setup, and followed by a simple recovery; other rails become ordinary steps. Early `DOUBLE_PUNCH` blocks are rewritten as left/right call-response, while a simultaneous bilateral punch is reserved for `LIFT`/`PAYOFF`. A sustained hand hold also receives a recovery before any dense feet. Legacy ground labels (`ALTERNATING_FOOT_PULSES`, `HIGH_FOOT_PULSES`, `ROAD_PULSE`, `RESET_MARKER`) are exported as ordinary `FOOT_PAD_LEFT` / `FOOT_PAD_RIGHT` cues. Mixed hand/foot simultaneous groups remain prohibited.
+
+Reference visual evidence: the earlier comparison remains documented near `07:20` in [STAY ON BEAT #5](https://www.youtube.com/watch?v=Tcl6RXETEng). The 2026-08-10 recheck compares [STAY ON BEAT #8](https://www.youtube.com/watch?v=JEu84jbp2A0) and [DANCE MODE #11](https://www.youtube.com/watch?v=I5Jp1r2mlQQ); findings, implemented rules and the ten-item backlog are in `docs/COMPETITOR_REFERENCE_REVIEW_2026-08-10.md`.
+
+Latest visual/GUI QA artifacts: `output/reference_competitors/*contact_sheet.png`, `output/reference_competitors/*motion_sheet.png`, `output/previews/analyzer_gui_hand_holds.png`, and `output/visual_checks/gameplay_visual_review_{before,impact,settled}.png`.
+
+Latest acceptance (2026-08-11): `73 passed`; the active 201.56-second track regenerates to `205` renderer notes with zero V4 hard errors. V4.3 retains `3` music-supported long-step payoffs, replaces `4` unsupported rails, rewrites `4` early bilateral punches into left/right calls, and adds `2` hand-hold recoveries. A second canonical regeneration is byte-identical. Godot editor parsing, the deterministic three-frame GPU visual review, a headless 60 FPS rail hit-timing slice and NVIDIA RTX 5060 gameplay slices all pass. Background preview additionally passes native 1080p25/30/60 and 4K60 duration checks, a 126-second real-file loop test, D3D12 color-reference composition and Vulkan Movie Writer output. The earlier full `validate_lanes.py` run also passed its deterministic frame-clock and 353-frame wall-movie gates.
 
 Godot now looks for `res://output/neon_track.json` by default, extracts its embedded `beatmap`, and then normalizes notes/events.
 
@@ -191,10 +238,12 @@ Run analyzer GUI:
 .\run_analyzer_gui.bat
 ```
 
+This is the only user-facing launcher. It checks CUDA first. When NVIDIA hardware is present but GPU PyTorch is missing, the first launch automatically installs the official CUDA 13.0 wheel and verifies a real CUDA matrix operation. When no NVIDIA GPU is detected, or CUDA setup fails, it opens the GUI in `CPU MODE` instead of stopping. Later GPU launches skip installation. Choose audio and use the fixed bottom `START ANALYSIS` button or `F5`. A short list of mandatory/safe/unsafe settings is in `ANALYZER_QUICK_GUIDE.md`.
+
 Run analyzer CLI:
 
 ```powershell
-python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --demucs-device cpu
+python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --demucs-device cuda
 ```
 
 Generate V4 choreography data:
@@ -233,10 +282,10 @@ Import Godot assets once:
 godot --path . --editor --quit-after 2
 ```
 
-Render movie, or press F10 in a graphical Godot run to launch the same 2K frame-locked export into `output/renders/<track>_f10_<timestamp>.avi` with current live tuning GUI values:
+For the normal user workflow, press `Снять MP4` in the tuning panel (or F10) to launch the one-click final MP4 job with the current live values. The raw command below remains a developer-only Movie Writer AVI smoke:
 
 ```powershell
-godot --path . --resolution 2560x1440 --write-movie output/renders/output.avi --fixed-fps 60 -- "--audio=assets/audio/audio.wav" "--render-clock=frame" "--clock-fps=60"
+godot --rendering-driver vulkan --path . --resolution 2560x1440 --write-movie output/renders/output.avi --fixed-fps 60 -- "--audio=assets/audio/audio.wav" "--render-clock=frame" "--clock-fps=60"
 ```
 
 Render through wrapper:
@@ -273,17 +322,19 @@ python scripts/python/timing_diagnostics.py --video "path\to\recording.mp4" --be
 - Hit VFX: `scripts/godot/hit_effect.gd`, `scripts/godot/hit_particle.gd`, `assets/models/hit_vfx.gdshader`, `assets/images/vfx/`.
 - Main render timing/spawn/camera/walls/holds: `scripts/godot/main.gd`.
 - Wall visual tuning: `assets/models/wall_visual_config.json`.
-- MP4 background behavior: `scripts/godot/background_mp4_backend.gd`, `third_party/ffmpeg/README.md`.
+- MP4 background behavior: `scripts/godot/background_external_player.gd` for graphical preview; `scripts/godot/background_mp4_backend.gd` plus `assets/models/background_nv12.gdshader` for Movie Writer/F10; bundled tools are documented in `third_party/ffmpeg/README.md`.
+- MP4 timing audit and 25/30/60 evidence: `docs/BACKGROUND_VIDEO_TIMING_AUDIT_2026-08-11.md`.
 - Validation rules: `scripts/python/validate_lanes.py`, `tests/`.
 - Visual QA evidence: `output/previews/`, `docs/*AUDIT*`, `docs/*REPORT*`.
 
 ## Current State Notes
 
-- Branch at inspection: `codex/publish-current-version-github`.
+- Branch at inspection: `codex/publish-current-neon-music-2026-08-09`.
 - Worktree is dirty with many modified and untracked files. Do not revert unrelated changes.
 - Full Audio Analyzer now emits detected evidence into Beat Grid V2 and uses V4 profile `normal`; `warmup_first` is no longer accidentally forced by an `Active` difficulty name.
 - V4 dynamics include 32-beat `SETUP -> DEVELOP -> LIFT -> PAYOFF` micro-rises, motif recall with variation, phase-aware scoring, safe simultaneous compound movements, kick/feet vs snare/hands body counterpoint, and a context-selected `PICKUP_TO_DROP` transition mechanic.
-- Latest acceptance evidence: 56 pytest tests passed; two full Analyzer regenerations were byte-identical; two frame-clock smokes matched; wall movie smoke produced 353 frames/11.767 s with hit-trigger error no greater than 16.917 ms. The final wall-smoke component was rerun separately after correcting its obsolete `hold_start` expectation.
+- Reference recheck: `https://www.youtube.com/watch?v=Tcl6RXETEng` shows simultaneous foot pairs around 03:00/03:20 and a simultaneous left/right hand pair around 05:01; these are modeled as two homogeneous pair grammars rather than combined hand-and-foot hits.
+- Latest acceptance evidence: 73 pytest tests passed; canonical V4.3 regeneration reports zero hard errors, zero ambiguous legacy cue labels in renderer notes, and zero retired mixed-pair identifiers. The 201.56-second active track has 3 retained reference long-step payoffs, 4 rail fallbacks, 4 hand call/response rewrites and 2 post-hold recoveries. Godot editor parsing, headless hit timing, targeted NVIDIA gameplay slices, the three-frame gameplay/VFX review, native background playback through the 120-second loop and color-accurate D3D12 composition pass. Offline Movie Writer remains timestamp-driven and launches with Vulkan on Windows. Graphical pair reviews remain in `output/visual_checks/homogeneous_pairs_review.mp4` and `output/visual_checks/rail_and_jump_pair_review.mp4`.
 - Downbeat phase remains low-confidence/ambiguous and may benefit from the optional neural backend or manual phase selection; this is separate from detected-beat coverage.
 - Generated outputs and previews are important evidence, but many live under `output/` and may be regenerated.
 - There are duplicated root-level Godot files (`main.gd`, `note.gd`, `*.tscn`, shaders) plus canonical copies under `scripts/godot/`, `scenes/`, and `assets/models/`. Check actual scene references before editing root-level duplicates.

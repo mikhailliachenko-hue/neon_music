@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=33 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_config.gd" id="1_config"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/entrance_segment.tscn" id="2_entrance"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/ring_segment.tscn" id="3_ring"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/energy_gate_segment.tscn" id="4_gate"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/showcase_segment.tscn" id="5_showcase"]
+[ext_resource type="Resource" path="res://resources/tunnel/default_asset_library.tres" id="6_library"]
+[ext_resource type="Resource" path="res://assets/tunnel/asset_registry.tres" id="7_registry"]
+[ext_resource type="Resource" path="res://resources/tunnel/neon_material_library.tres" id="8_materials"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cyber_blue.tres" id="9_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/01_cyber_awakening.tres" id="10_level_01"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/02_synthwave_runner.tres" id="11_level_02"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/03_energy_core.tres" id="12_level_03"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/04_toxic_dimension.tres" id="13_level_04"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/05_ice_cyber.tres" id="14_level_05"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/06_golden_future.tres" id="15_level_06"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/07_deep_space.tres" id="16_level_07"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/08_rainbow_dance.tres" id="17_level_08"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/09_electric_pink.tres" id="18_level_09"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/10_matrix_flow.tres" id="19_level_10"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/11_lava_core.tres" id="20_level_11"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/12_white_future.tres" id="21_level_12"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/13_dark_void.tres" id="22_level_13"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/14_quantum_tunnel.tres" id="23_level_14"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/15_laser_highway.tres" id="24_level_15"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/16_cyber_city.tres" id="25_level_16"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/17_mirror_dimension.tres" id="26_level_17"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/18_beat_reactor.tres" id="27_level_18"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/19_neon_storm.tres" id="28_level_19"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/20_final_drop.tres" id="29_level_20"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/21_night_city_express.tres" id="30_level_21"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/22_machine_heart.tres" id="31_level_22"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/23_hyperlane_88.tres" id="32_level_23"]
+
+[resource]
+script = ExtResource("1_config")
+enabled = true
+replace_background_video = true
+debug_enabled = true
+diagnostics_enabled = false
+segment_count = 8
+segment_length = 18.0
+tunnel_speed = 14.0
+front_center_z = 16.0
+deterministic_seed = 4202026
+segment_scene = ExtResource("2_entrance")
+segment_scenes = Array[PackedScene]([ExtResource("2_entrance"), ExtResource("3_ring"), ExtResource("4_gate"), ExtResource("5_showcase")])
+tunnel_width = 13.0
+tunnel_height = 9.0
+ring_probability = 0.7
+decoration_probability = 0.5
+panel_density = 0.64
+pipe_density = 0.32
+phrase_change_probability = 0.84
+asset_library = ExtResource("6_library")
+asset_registry = ExtResource("7_registry")
+neon_material_library = ExtResource("8_materials")
+audio_reactive_visuals_enabled = false
+beat_reaction_strength = 0.72
+beat_decay_seconds = 0.26
+beat_speed_boost = 0.014
+downbeat_multiplier = 1.48
+theme_transition_seconds = 0.9
+fog_density = 0.0017
+glow_intensity = 0.58
+glow_bloom = 0.055
+glow_strength = 0.7
+atmosphere_density = 0.86
+spectrum_enabled = false
+camera_motion = 0.34
+step_camera_impact = 0.65
+step_camera_duration = 0.24
+initial_theme = "CyberBlue"
+themes = Array[TunnelTheme]([ExtResource("9_theme")])
+initial_preset = "CYBER AWAKENING"
+presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14"), ExtResource("24_level_15"), ExtResource("25_level_16"), ExtResource("26_level_17"), ExtResource("27_level_18"), ExtResource("28_level_19"), ExtResource("29_level_20"), ExtResource("30_level_21"), ExtResource("31_level_22"), ExtResource("32_level_23")])

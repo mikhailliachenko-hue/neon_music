@@ -1,0 +1,153 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_generator.gd" id="1_generator"]
+[ext_resource type="Resource" path="res://resources/tunnel/neon_tunnel_default.tres" id="2_config"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_material_controller.gd" id="3_neon"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_ring_manager.gd" id="4_rings"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_floor_controller.gd" id="5_floor"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_atmosphere_controller.gd" id="6_atmosphere"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_camera_motion_controller.gd" id="7_camera"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_navy_starfield.png" id="8_bg_navy"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="9_bg_graphite"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_violet_cosmic.png" id="10_bg_violet"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_spectrum_controller.gd" id="11_spectrum"]
+
+[sub_resource type="ParticleProcessMaterial" id="Particles_energy_dust"]
+emission_shape = 3
+emission_box_extents = Vector3(6.2, 4.2, 68)
+direction = Vector3(0, 0, 1)
+spread = 8.0
+gravity = Vector3(0, 0, 0)
+initial_velocity_min = 8.0
+initial_velocity_max = 14.0
+scale_min = 0.45
+scale_max = 1.35
+
+[sub_resource type="QuadMesh" id="Quad_energy_dust"]
+size = Vector2(0.065, 0.065)
+
+[sub_resource type="TorusMesh" id="Torus_distant_glow"]
+inner_radius = 5.2
+outer_radius = 5.42
+rings = 32
+ring_segments = 12
+
+[sub_resource type="QuadMesh" id="Quad_backdrop"]
+size = Vector2(260, 148)
+
+[sub_resource type="StandardMaterial3D" id="Material_bg_navy"]
+shading_mode = 0
+cull_mode = 2
+albedo_color = Color(0.82, 0.9, 1, 1)
+albedo_texture = ExtResource("8_bg_navy")
+emission_enabled = true
+emission = Color(0.34, 0.58, 1, 1)
+emission_energy_multiplier = 1.22
+emission_texture = ExtResource("8_bg_navy")
+
+[sub_resource type="StandardMaterial3D" id="Material_bg_graphite"]
+shading_mode = 0
+cull_mode = 2
+albedo_color = Color(0.9, 0.94, 1, 1)
+albedo_texture = ExtResource("9_bg_graphite")
+emission_enabled = true
+emission = Color(0.52, 0.62, 0.78, 1)
+emission_energy_multiplier = 1.08
+emission_texture = ExtResource("9_bg_graphite")
+
+[sub_resource type="StandardMaterial3D" id="Material_bg_violet"]
+shading_mode = 0
+cull_mode = 2
+albedo_color = Color(0.94, 0.86, 1, 1)
+albedo_texture = ExtResource("10_bg_violet")
+emission_enabled = true
+emission = Color(0.68, 0.38, 1, 1)
+emission_energy_multiplier = 1.16
+emission_texture = ExtResource("10_bg_violet")
+
+[node name="NeonTunnelGenerator" type="Node3D"]
+script = ExtResource("1_generator")
+config = ExtResource("2_config")
+
+[node name="SegmentPool" type="Node3D" parent="."]
+
+[node name="NeonMaterialController" type="Node" parent="."]
+script = ExtResource("3_neon")
+
+[node name="RingManager" type="Node" parent="."]
+script = ExtResource("4_rings")
+
+[node name="FloorController" type="Node" parent="."]
+script = ExtResource("5_floor")
+
+[node name="CameraMotionController" type="Node" parent="."]
+script = ExtResource("7_camera")
+
+[node name="SpectrumController" type="Node3D" parent="."]
+script = ExtResource("11_spectrum")
+
+[node name="Atmosphere" type="Node3D" parent="."]
+script = ExtResource("6_atmosphere")
+
+[node name="EnergyDust" type="GPUParticles3D" parent="Atmosphere"]
+position = Vector3(0, 1.6, -66)
+amount = 72
+lifetime = 10.0
+visibility_aabb = AABB(-8, -6, -75, 16, 14, 150)
+process_material = SubResource("Particles_energy_dust")
+draw_pass_1 = SubResource("Quad_energy_dust")
+
+[node name="DistantGlow" type="MeshInstance3D" parent="Atmosphere"]
+position = Vector3(0, 2.3, -136)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.5, 1.02, 1)
+mesh = SubResource("Torus_distant_glow")
+
+[node name="Backdrops" type="Node3D" parent="Atmosphere"]
+
+[node name="NavyStarfield" type="MeshInstance3D" parent="Atmosphere/Backdrops"]
+position = Vector3(0, 2.3, -142)
+material_override = SubResource("Material_bg_navy")
+mesh = SubResource("Quad_backdrop")
+cast_shadow = 0
+
+[node name="GraphiteFog" type="MeshInstance3D" parent="Atmosphere/Backdrops"]
+visible = false
+position = Vector3(0, 2.3, -142)
+material_override = SubResource("Material_bg_graphite")
+mesh = SubResource("Quad_backdrop")
+cast_shadow = 0
+
+[node name="VioletCosmic" type="MeshInstance3D" parent="Atmosphere/Backdrops"]
+visible = false
+position = Vector3(0, 2.3, -142)
+material_override = SubResource("Material_bg_violet")
+mesh = SubResource("Quad_backdrop")
+cast_shadow = 0
+
+[node name="DebugOverlay" type="CanvasLayer" parent="."]
+layer = 90
+
+[node name="DebugMargin" type="MarginContainer" parent="DebugOverlay"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -390.0
+offset_top = 22.0
+offset_right = -22.0
+offset_bottom = 430.0
+grow_horizontal = 0
+
+[node name="DebugPanel" type="PanelContainer" parent="DebugOverlay/DebugMargin"]
+layout_mode = 2
+
+[node name="DebugLabel" type="Label" parent="DebugOverlay/DebugMargin/DebugPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "NEON TUNNEL\nInitializing..."
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/neon_highway.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "neon_highway"
+display_name = "Neon Highway"
+spatial_profile = "OpenHighway"
+asset_set = ExtResource("2_assets")
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.58
+ring_probability = 0.72
+arch_probability = 0.78
+decoration_scale = 0.58
+layout_weight_scale = {"Straight": 1.5, "Ring": 0.8, "SidePanels": 0.9, "NeonGrid": 1.5, "EnergyGate": 0.62, "WideTunnel": 1.3, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.4}
+safe_lane_half_width = 4.9
+minimum_overhead_y = 4.55
+side_clearance_margin = 0.45
+camera_fov_offset = 2.0
+fog_scale = 0.66
+background_depth = 1.3

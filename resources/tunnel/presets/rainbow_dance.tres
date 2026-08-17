@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/rainbow_dance.tres" id="2_theme"]
+[resource]
+script = ExtResource("1_preset")
+preset_name = "Rainbow Dance"
+style_id = "RainbowDanceTunnel"
+theme = ExtResource("2_theme")
+seed_offset = 601
+ring_density = 1.35
+decoration_density = 1.25
+panel_density = 1.15
+pipe_density = 0.8
+fog_amount = 1.02
+glow_strength = 1.16
+camera_motion = 0.52
+speed_multiplier = 1.1
+atmosphere_density = 1.35
+floor_pattern = "NeonGrid"
+layout_weight_scale = {"DecoratedTunnel": 1.35, "DoubleRing": 1.5, "NeonGrid": 1.25, "Ring": 1.35}

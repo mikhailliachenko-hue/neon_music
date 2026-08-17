@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="BoxMesh" id="Box_support"]
+size = Vector3(11.2, 0.16, 0.32)
+
+[node name="PlaceholderCeilingSupport" type="Node3D"]
+
+[node name="SupportA" type="MeshInstance3D" parent="."]
+position = Vector3(0, 6.05, -4.5)
+mesh = SubResource("Box_support")
+
+[node name="SupportB" type="MeshInstance3D" parent="."]
+position = Vector3(0, 6.05, 4.5)
+mesh = SubResource("Box_support")

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/electric_pink.tres" id="2_theme"]
+[resource]
+script = ExtResource("1_preset")
+preset_name = "Electric Pink"
+style_id = "SynthwaveTunnel"
+theme = ExtResource("2_theme")
+seed_offset = 809
+ring_density = 1.15
+decoration_density = 1.05
+panel_density = 1.22
+pipe_density = 0.52
+fog_amount = 1.0
+glow_strength = 1.16
+camera_motion = 0.46
+speed_multiplier = 1.05
+atmosphere_density = 1.1
+floor_pattern = "NeonGrid"
+layout_weight_scale = {"NeonGrid": 1.65, "SidePanels": 1.4, "Ring": 1.15}

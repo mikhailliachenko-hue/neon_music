@@ -1,0 +1,69 @@
+extends SceneTree
+
+const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
+const WORLD_CASES := [
+	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
+	{"level": "LASER HIGHWAY", "world": "neon_highway", "asset_terms": ["Road", "Bridge", "Light", "Sign"]},
+	{"level": "NIGHT CITY EXPRESS", "world": "cyber_city_canyon", "asset_terms": ["Road", "Building", "Light", "Sign"]},
+	{"level": "MACHINE HEART", "world": "industrial_reactor", "asset_terms": ["Floor", "Structure", "Machine", "Pipe", "Hopper"]},
+]
+
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var failures := PackedStringArray()
+	var generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
+	if generator == null:
+		push_error("TUNNEL_WORLD_SMOKE: generator failed to instantiate")
+		quit(1)
+		return
+	root.add_child(generator)
+	await process_frame
+	var initial_pool_size := int(generator.get_runtime_stats().get("pool_size", 0))
+	var song_time := 0.0
+	generator.sync_to_song_time(song_time, {})
+	for world_case in WORLD_CASES:
+		var level_name := String(world_case.level)
+		var expected_world := String(world_case.world)
+		if not generator.select_level_by_name(level_name, 810000 + expected_world.hash()):
+			failures.append("could not select %s" % level_name)
+			continue
+		for frame in range(12):
+			await process_frame
+		var prepared_stats := generator.get_runtime_stats()
+		if int(prepared_stats.get("world_prepare_pending", -1)) != 0:
+			failures.append("%s did not finish staged preparation" % level_name)
+		song_time += 16.0
+		generator.sync_to_song_time(song_time, {})
+		var stats := generator.get_runtime_stats()
+		if int(stats.get("pool_size", 0)) != initial_pool_size or int(stats.get("active_segments", 0)) != initial_pool_size:
+			failures.append("%s changed the fixed segment pool" % level_name)
+		for segment_world in stats.get("segment_worlds", PackedStringArray()):
+			if String(segment_world) != expected_world:
+				failures.append("%s kept stale world %s" % [level_name, String(segment_world)])
+				break
+		var active_assets := stats.get("active_assets", PackedStringArray()) as PackedStringArray
+		var has_expected_asset := false
+		for asset_name in active_assets:
+			for term in world_case.asset_terms:
+				if String(term).to_lower() in String(asset_name).to_lower():
+					has_expected_asset = true
+					break
+			if has_expected_asset:
+				break
+		if not has_expected_asset:
+			failures.append("%s did not activate its authored GLB set: %s" % [level_name, str(active_assets)])
+		for segment in generator._segments:
+			for lane_error in segment.validate_active_safe_lane():
+				failures.append("%s: %s" % [level_name, lane_error])
+	print("TUNNEL_WORLD_SMOKE cases=%d pool=%d asset_pool=%d worlds=%s" % [
+		WORLD_CASES.size(), initial_pool_size, int(generator.get_runtime_stats().get("asset_pool", 0)),
+		str(generator.get_runtime_stats().get("segment_worlds", PackedStringArray())),
+	])
+	for failure in failures:
+		push_error("TUNNEL_WORLD_SMOKE: %s" % failure)
+	generator.queue_free()
+	quit(0 if failures.is_empty() else 1)

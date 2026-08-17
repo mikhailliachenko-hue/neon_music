@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "ElectricPink"
+emission_color = Color(1, 0.06, 0.62, 1)
+accent_color = Color(0.36, 0.08, 1, 1)
+background_color = Color(0.018, 0.001, 0.018, 1)
+fog_color = Color(0.18, 0.012, 0.12, 1)
+fog_density = 0.0046
+glow_intensity = 0.82
+emission_energy = 6.7
+floor_color = Color(0.045, 0.004, 0.035, 1)
+floor_emission = 0.9
+ambient_color = Color(0.15, 0.02, 0.1, 1)
+ambient_energy = 0.26
+ring_probability_scale = 1.2
+decoration_probability_scale = 1.05
+layout_weights = {"DecoratedTunnel": 0.9, "DoubleRing": 1.0, "EnergyGate": 0.55, "NarrowTunnel": 0.3, "NeonGrid": 1.35, "Ring": 1.2, "SidePanels": 1.15, "Straight": 0.55, "WideTunnel": 0.6}

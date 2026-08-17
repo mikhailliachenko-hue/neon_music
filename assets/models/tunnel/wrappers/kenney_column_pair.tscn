@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_prototype/column-rounded-low.glb" id="1_column"]
+
+[node name="KenneyColumnPair" type="Node3D"]
+
+[node name="LeftColumn" parent="." instance=ExtResource("1_column")]
+position = Vector3(-5.35, -1.62, 0)
+scale = Vector3(2.2, 4.8, 2.2)
+
+[node name="RightColumn" parent="." instance=ExtResource("1_column")]
+position = Vector3(5.35, -1.62, 0)
+scale = Vector3(2.2, 4.8, 2.2)

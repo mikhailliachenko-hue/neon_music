@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/tunnel/wrappers/kenney_safe_props.tscn" id="1_props"]
+
+[node name="KenneySafeProps" type="Node3D"]
+
+[node name="Props" parent="." instance=ExtResource("1_props")]

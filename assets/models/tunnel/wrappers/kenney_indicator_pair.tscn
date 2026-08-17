@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_prototype/indicator-square-f.glb" id="1_indicator"]
+
+[node name="KenneyIndicatorPair" type="Node3D"]
+
+[node name="LeftIndicator" parent="." instance=ExtResource("1_indicator")]
+position = Vector3(-6, 1.2, 0)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="RightIndicator" parent="." instance=ExtResource("1_indicator")]
+position = Vector3(6, 1.2, 0)
+rotation_degrees = Vector3(0, -90, 0)
+scale = Vector3(1.5, 1.5, 1.5)

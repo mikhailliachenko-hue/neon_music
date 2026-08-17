@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "sci_fi_corridor"
+display_name = "Sci-Fi Corridor"
+spatial_profile = "Corridor"
+floor_probability = 1.0
+ceiling_probability = 0.82
+wall_probability = 1.0
+ring_probability = 0.88
+arch_probability = 0.9
+decoration_scale = 0.86
+layout_weight_scale = {"Straight": 1.2, "Ring": 1.0, "EnergyGate": 0.9, "WideTunnel": 0.75}
+safe_lane_half_width = 4.75
+minimum_overhead_y = 4.35
+side_clearance_margin = 0.35
+fog_scale = 1.0

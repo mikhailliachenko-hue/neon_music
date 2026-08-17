@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="2_theme_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_frames.tres" id="3_world"]
+
+[sub_resource type="Resource" id="Theme_level"]
+script = ExtResource("2_theme_script")
+theme_name = "CyberBlue"
+emission_color = Color(0.02, 0.78, 1, 1)
+accent_color = Color(1, 0.06, 0.68, 1)
+background_color = Color(0.002, 0.008, 0.025, 1)
+fog_color = Color(0.0092, 0.1308, 0.166, 1)
+fog_density = 0.0017
+glow_intensity = 0.6
+emission_energy = 5.944
+floor_color = Color(0.0012, 0.0468, 0.06, 1)
+floor_emission = 0.7084
+ambient_color = Color(0.0024, 0.0936, 0.12, 1)
+ambient_energy = 0.248
+ring_probability_scale = 1.08
+decoration_probability_scale = 0.68
+layout_weights = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 0.75,"NeonGrid": 0.72,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "CYBER AWAKENING"
+description = "Первое чистое погружение: крупные арки, ясная дорожка и умеренный glow."
+difficulty = "Easy"
+color_palette = PackedColorArray(0.02, 0.78, 1, 1, 1, 0.06, 0.68, 1, 0.002, 0.008, 0.025, 1)
+segment_types = PackedStringArray("Entrance", "PortalRhythm", "LaserGrid", "Showcase")
+asset_weights = {"Decoration": 0.65,"Panel": 0.8,"Pipe": 0.55,"Arch": 1.15}
+particle_settings = {"density": 0.82,"amount_scale": 0.8}
+lighting_settings = {"glow_intensity": 0.6,"glow_strength": 0.72,"bloom": 0.055,"ssr_enabled": false}
+fog_settings = {"density": 0.0017}
+camera_settings = {"step_impact": 0.58,"step_duration": 0.24,"fov_pulse": 0.9,"section_transition_duration": 0.58}
+music_reaction_settings = {"beat_strength": 0.72,"beat_decay": 0.26,"speed_boost": 0.014,"downbeat_multiplier": 1.42,"drop_strength": 2.5}
+preset_name = "CYBER AWAKENING"
+style_id = "CyberRing"
+world_style = ExtResource("3_world")
+theme = SubResource("Theme_level")
+seed_offset = 7919
+ring_density = 1.08
+decoration_density = 0.68
+panel_density = 0.78
+pipe_density = 0.32
+fog_amount = 1
+glow_strength = 0.88
+camera_motion = 0.25
+speed_multiplier = 1
+atmosphere_density = 0.82
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Straight": 1,"Ring": 0.75,"DoubleRing": 0.48,"SidePanels": 0.75,"NeonGrid": 0.72,"EnergyGate": 0.55,"WideTunnel": 0.5,"NarrowTunnel": 0.25,"DecoratedTunnel": 0.65}
+level_id = "01_cyber_awakening"
+segment_sequence = PackedStringArray("Entrance", "PortalRhythm", "LaserGrid", "Showcase")

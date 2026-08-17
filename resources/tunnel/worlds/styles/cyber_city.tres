@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/cyber_city.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "cyber_city_canyon"
+display_name = "Cyber City Canyon"
+spatial_profile = "CityCanyon"
+asset_set = ExtResource("2_assets")
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 1.0
+ring_probability = 0.36
+arch_probability = 0.48
+decoration_scale = 0.72
+layout_weight_scale = {"Straight": 1.45, "Ring": 0.35, "SidePanels": 1.15, "NeonGrid": 0.72, "EnergyGate": 0.46, "WideTunnel": 1.55, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.55}
+safe_lane_half_width = 5.0
+minimum_overhead_y = 4.7
+side_clearance_margin = 0.55
+camera_fov_offset = 3.0
+fog_scale = 1.12
+background_depth = 1.7
