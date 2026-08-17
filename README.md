@@ -52,7 +52,7 @@ high-impact payoff remains on the following drop.
    .\run_analyzer_gui.bat
    ```
 
-3. Choose an audio file and output path on **Track & Dance**, select the dance difficulty/layout, then click **Generate choreography** in the fixed action bar. Obstacles and renderer-only visual tuning live on separate tabs. The GUI writes the canonical `output/neon_track.json` plus `output/combo.srt`; **Validate current track** validates the path currently selected in the GUI.
+3. Choose an audio file and output path on **Track & Dance**, select the dance difficulty/layout, then click **Generate choreography** in the fixed action bar. Obstacles and renderer-only visual tuning live on separate tabs. The GUI writes the canonical `output/neon_track.json`, held numeric `output/combo.srt`, and sparse status `output/feedback.srt`; **Validate current track** validates the path currently selected in the GUI.
 
 The CLI uses the same pipeline and still defaults to `Active` so the existing workflow keeps working:
 
@@ -68,7 +68,15 @@ Optional warm-up and difficulty controls:
 python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --difficulty Calm --ramp-duration 32 --ramp-strength 0.7 --max-same-lane-run 2 --max-same-side-run 4
 ```
 
-The analyzer creates one canonical `output/neon_track.json` and the companion `output/combo.srt`. The track embeds the `beatmap` and `beat_grid` payloads used by Godot and diagnostics. The embedded beatmap keeps separate `notes` and `events` arrays; the loader still accepts older standalone files only for explicit compatibility workflows. Notes include `lanes`, `energy_class`, `lane_mode`, and per-stem `stem_energy`; events can contain walls and holds. The embedded beat grid carries BPM/grid diagnostics, difficulty, musical sections, movement targets, ramp/anti-burst settings, and wall/hold/lane diagnostics.
+The analyzer creates one canonical `output/neon_track.json` and two CapCut tracks. `combo.srt` contains only the cumulative number; every entry lasts until the next distinct hit, and simultaneous targets are collapsed into one score update. `feedback.srt` contains long-lived reference-shaped tiers such as `GREAT`, `PERFECT`, and `UNSTOPPABLE`. The track embeds the `beatmap` and `beat_grid` payloads used by Godot and diagnostics. The embedded beatmap keeps separate `notes` and `events` arrays; the loader still accepts older standalone files only for explicit compatibility workflows.
+
+### CapCut combo overlay
+
+1. Import the rendered video, then use **Captions → Add captions → Import file** and select `output/combo.srt`.
+2. Select one numeric caption, place it in the upper-right safe area, choose a wide techno font, white fill, a soft dark shadow, and enable **Apply to all captions**.
+3. Add one ordinary Text layer reading `COMBO` directly below the number and stretch it across the complete video. Keeping this static label outside SRT allows a much smaller font and wider tracking.
+4. Import `output/feedback.srt` as the second caption layer. Place it below and slightly left of the score, use the level accent color, dark semi-transparent plate, thin outline, and a short entrance animation. Apply the style to all feedback captions.
+5. Do not add an exit animation to every numeric caption: the adjacent SRT intervals already create a clean score replacement without a blank frame or flashing.
 
 Wall events are generated automatically for any audio input from deterministic phrase/downbeat candidates that stay low in onset density and RMS energy across preparation, wall, and recovery rest windows. They alternate `wall_left` and `wall_right`, include `start`, `duration`, blocked `lanes`, mirrored `safe_lanes`, and `anticipation`, and ordinary notes are strongly filtered or redirected through the wall break window. CLI controls:
 

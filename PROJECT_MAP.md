@@ -1,12 +1,12 @@
 ﻿# Project Map: Neon Footstep Renderer
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 Этот файл - быстрая карта проекта для новых диалогов с Codex. Его можно давать как стартовый контекст: здесь описано, что это за проект, где лежат основные части, как идет поток данных, какие файлы трогать для типичных задач и какие команды считать опорными.
 
 ## Коротко
 
-`neon_music` - Godot 4.7 проект для рендера неонового rhythm/dance видео по аудиотреку. Python-пайплайн анализирует музыку, строит beat grid, назначает дорожки/движения/стены/hold-события и пишет единый `output/neon_track.json`. Дополнительно экспортируется `output/combo.srt` для CapCut. Godot читает `neon_track.json` и рендерит 3D-сцену: 4 lane-дорожки, объёмные step-платформы, foot/hand cues, парные hand-hold призмы, hit VFX, walls, holds, background MP4 или procedural fallback.
+`neon_music` - Godot 4.7 проект для рендера неонового rhythm/dance видео по аудиотреку. Python-пайплайн анализирует музыку, строит beat grid, назначает дорожки/движения/стены/hold-события и пишет единый `output/neon_track.json`. Для CapCut экспортируются отдельные `output/combo.srt` и `output/feedback.srt`. Godot читает `neon_track.json` и рендерит 3D-сцену: 4 lane-дорожки, объёмные step-платформы, foot/hand cues, парные hand-hold призмы, hit VFX, walls, holds, background MP4 или procedural fallback.
 
 Текущий канонический трек: `assets/audio/audio.wav` (177.52 s). Пользовательские WAV из `Downloads` используются как read-only regression/calibration corpus и не заменяют канонический трек автоматически.
 
@@ -17,7 +17,8 @@ Last updated: 2026-08-17
 3. `scripts/python/lane_assignment.py`, `phrase_grid.py`, `music_expression.py` and `choreography_v4.py` add lanes, sections, movement calibration and semantic movement events. Simultaneous gameplay is homogeneous by contract: exactly a left/right hand pair (`DOUBLE_PUNCH` or sustained `DOUBLE_HAND_HOLD`) or a left/right foot pair (`DOUBLE_FOOT_PULSE`), never a hand and foot on the same hit. Normal full-track generation uses profile `normal`; its post-selection direction pass can place the music-spaced `jump, repeat jump, breath, duck, recovery` challenge in strong sections and a final rail/hand callback inside the last complete phrase. `warmup_first` is explicit teaching mode. The 96-beat vertical slice remains a regression wrapper.
 4. Outputs:
    - `output/neon_track.json` - the only working JSON track file; contains `beatmap`, `beat_grid`, `combo_srt`, source/validation metadata.
-   - `output/combo.srt` - CapCut subtitle export, recoverable from `neon_track.json`.
+   - `output/combo.srt` - held numeric score for CapCut; each value ends at the next distinct hit.
+   - `output/feedback.srt` - sparse long-lived combo tier (`GREAT`, `PERFECT`, `UNSTOPPABLE`, etc.).
 5. Godot main scene `scenes/main.tscn` runs `scripts/godot/main.gd`.
 6. `scripts/beatmap_parser.gd` normalizes the embedded `beatmap` from `neon_track.json` for rendering while preserving compound-note identity (`semantic_movement`, `movement_event_id`, and simultaneous groups).
 7. Renderer spawns notes, receptors, hit effects, wall/hold visuals, HUD/debug overlays, and writes movie/smoke artifacts.
@@ -155,7 +156,8 @@ Useful for understanding current intent:
 Generated artifacts. Usually do not treat as source unless user explicitly asks.
 
 - `neon_track.json` - current production analyzer output and only JSON track contract.
-- `combo.srt` - CapCut subtitle export generated from/alongside `neon_track.json`.
+- `combo.srt` - held numeric CapCut score generated from `neon_track.json` gameplay notes.
+- `feedback.srt` - separate sparse CapCut performance-status track.
 - `reports/` - validation/audit JSON.
 - `reports/reference_corpus.json` - latest six-track calibration/regression summary; source WAV paths are not persisted.
 - `diagnostics/` - timing, determinism and smoke diagnostics.
@@ -182,10 +184,10 @@ Primary track contract is `neon_music.track.v1` in `output/neon_track.json`. The
 - `schema`, `status`, `source`, `audio`, `bpm`, `beat_interval`.
 - `beatmap`: runtime note/event payload Godot reads.
 - `beat_grid`: BPM/grid diagnostics, sections, phrase/movement metadata.
-- `combo_srt`: SRT text used to generate `output/combo.srt`.
+- `combo_srt`: backward-compatible embedded numeric score SRT; standalone exports are regenerated from gameplay notes.
 - `validation_report`: AI/local validation summary when available.
 - `lane_layout`: `4_lanes` or `2_cells`; `2_cells` uses only lanes 0 and 3 for the large left/right pads, with strong accents/drop/downbeats emitted as simultaneous `[0, 3]` jump notes.
-- `combo_srt` praise tiers step up on exact 10-combo boundaries: 1-9 NICE, 10-19 WELL DONE, 20-29 GREAT, etc.
+- Simultaneous targets at the same millisecond increase the combo together and produce one visible number, avoiding overlapping CapCut captions.
 
 Embedded `beatmap` shape:
 
@@ -223,7 +225,7 @@ AI/Gemini workflow files:
 - `ai_exchange/OUTPUT/neon_track.json` - AI result before import.
 - `scripts/python/import_ai_neon_track.py` - imports AI result into `output/neon_track.json` and exports `output/combo.srt`.
 - `scripts/python/validate_ai_track.py` - checks AI output for full-track coverage, density, duration mismatch and SRT completeness.
-- `scripts/python/export_combo_srt.py` - regenerates `output/combo.srt` from `output/neon_track.json`.
+- `scripts/python/export_combo_srt.py` - regenerates both `output/combo.srt` and `output/feedback.srt` from `output/neon_track.json`.
 
 ## Commands
 

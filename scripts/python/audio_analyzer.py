@@ -57,6 +57,7 @@ from music_expression import (
     apply_neural_meter,
 )
 from choreography_v4 import WARMUP_PROFILE, build_full_track, migrate_beat_grid_v1, validate_v4
+from subtitle_tracks import build_feedback_srt, build_score_srt
 
 # NOTE DENSITY:
 # Decrease to generate more notes (faster), Increase to generate fewer notes (slower).
@@ -68,18 +69,6 @@ LOW_BAND_MELS = 16
 TEMPO_MIN_BPM = 60.0
 TEMPO_MAX_BPM = 200.0
 TEMPO_CANDIDATE_COUNT = 6
-COMBO_PRAISE_TIERS = [
-    "NICE!",
-    "WELL DONE!",
-    "GREAT!",
-    "AWESOME!",
-    "PERFECT!",
-    "FLAWLESS!",
-    "EPIC!",
-    "VICTORY!",
-    "LEGENDARY!",
-    "THAT'S INCREDIBLE!",
-]
 BEATMAP_SCHEMA = "neon_music.beatmap.v3"
 WALL_GENERATION_SCHEMA = "neon_music.wall_generation.v1"
 HOLD_GENERATION_SCHEMA = "neon_music.hold_generation.v1"
@@ -970,14 +959,6 @@ def _low_band_onset_analysis(
     return onset_frames, backtracked_frames, np.asarray(onset_times, dtype=float), onset_envelope, peak_features, diagnostics
 
 
-def srt_timestamp(seconds: float) -> str:
-    milliseconds = max(0, round(seconds * 1000.0))
-    hours, milliseconds = divmod(milliseconds, 3_600_000)
-    minutes, milliseconds = divmod(milliseconds, 60_000)
-    secs, milliseconds = divmod(milliseconds, 1000)
-    return f"{hours:02}:{minutes:02}:{secs:02},{milliseconds:03}"
-
-
 def _frame_strengths(onset_envelope: np.ndarray, frames: np.ndarray) -> list[float]:
     if onset_envelope.size == 0 or frames.size == 0:
         return []
@@ -1558,24 +1539,24 @@ def analyze(
     return beatmap
 
 
-def _combo_praise(combo_counter: int) -> str:
-    tier_index = min(max(0, int(combo_counter) // 10), len(COMBO_PRAISE_TIERS) - 1)
-    return COMBO_PRAISE_TIERS[tier_index]
+def write_srt(
+    beatmap: object,
+    path: Path | None = None,
+    track_end: float | None = None,
+) -> str:
+    """Write the held numeric combo track kept in the legacy combo_srt field."""
+    text = build_score_srt(_beatmap_notes(beatmap), track_end=track_end)
+    if path is not None:
+        path.write_text(text, encoding="utf-8")
+    return text
 
 
-def write_srt(beatmap: object, path: Path | None = None) -> str:
-    blocks: list[str] = []
-    for combo_counter, beat in enumerate(_beatmap_notes(beatmap), start=1):
-        start = float(beat["time"])
-        end = start + 0.5
-        word = _combo_praise(combo_counter)
-        blocks.append(
-            f"{combo_counter}\n"
-            f"{srt_timestamp(start)} --> {srt_timestamp(end)}\n"
-            f"{combo_counter}\n"
-            f"{word}\n"
-        )
-    text = "\n".join(blocks)
+def write_feedback_srt(
+    beatmap: object,
+    path: Path | None = None,
+    track_end: float | None = None,
+) -> str:
+    text = build_feedback_srt(_beatmap_notes(beatmap), track_end=track_end)
     if path is not None:
         path.write_text(text, encoding="utf-8")
     return text
@@ -1612,6 +1593,7 @@ def main() -> int:
     parser.add_argument("--beatmap", type=Path, default=output_dir / "beatmap.json")
     parser.add_argument("--metadata", type=Path, default=output_dir / "beat_grid.json")
     parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt", help=argparse.SUPPRESS)
+    parser.add_argument("--feedback-subtitles", type=Path, default=output_dir / "feedback.srt", help=argparse.SUPPRESS)
     parser.add_argument("--track", type=Path, default=output_dir / "neon_track.json")
     parser.add_argument("--lane-layout", choices=list(LANE_LAYOUTS), default=DEFAULT_LANE_LAYOUT, help="Gameplay layout: 4_lanes or 2_cells.")
     parser.add_argument("--demucs-device", default="auto", help="Demucs device for PyTorch separation: auto tries cuda then cpu.")
@@ -1681,7 +1663,10 @@ def main() -> int:
             timing["analysis"]["separation_device"] = str(stems.get("device", args.demucs_device))
             timing["analysis"]["analyzed_stems"] = ["bass.wav", "drums.wav"]
             timing["analysis"]["analyzed_mix"] = RHYTHM_MIX_FILENAME
-        combo_srt = write_srt(beatmap, args.subtitles)
+        track_end = float(timing.get("duration", 0.0)) or None
+        combo_srt = write_srt(beatmap, args.subtitles, track_end=track_end)
+        args.feedback_subtitles.parent.mkdir(parents=True, exist_ok=True)
+        write_feedback_srt(beatmap, args.feedback_subtitles, track_end=track_end)
         write_neon_track(
             args.track,
             build_neon_track(

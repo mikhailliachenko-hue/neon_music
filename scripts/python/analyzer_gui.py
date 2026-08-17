@@ -491,6 +491,7 @@ class AnalyzerApp(tk.Tk):
                 )
                 track_path = Path(str(options["track_path"]))
                 srt_path = track_path.parent / "combo.srt"
+                feedback_srt_path = track_path.parent / "feedback.srt"
                 track_path.parent.mkdir(parents=True, exist_ok=True)
                 timing["audio"] = str(audio.resolve())
                 beatmap["audio"] = timing["audio"]
@@ -505,16 +506,25 @@ class AnalyzerApp(tk.Tk):
                     build_neon_track(
                         beatmap=beatmap,
                         beat_grid=timing,
-                        combo_srt=audio_analyzer.write_srt(beatmap, srt_path),
+                        combo_srt=audio_analyzer.write_srt(
+                            beatmap,
+                            srt_path,
+                            track_end=float(timing.get("duration", 0.0)) or None,
+                        ),
                         source="analyzer_gui",
                     ),
+                )
+                audio_analyzer.write_feedback_srt(
+                    beatmap,
+                    feedback_srt_path,
+                    track_end=float(timing.get("duration", 0.0)) or None,
                 )
             diagnostics = timing.get("lane_assignment", {}).get("diagnostics", {})
             wall_summary = timing.get("wall_generation", {})
             hold_summary = timing.get("hold_generation", {})
             hold_count = int(timing.get("hold_count", 0))
             hand_hold_count = sum(str(event.get("movement", "")) == "DOUBLE_HAND_HOLD" for event in beatmap.get("movement_events", []))
-            self._queue.put(("ok", "Detected {notes} gameplay notes, {walls} wall events, {hand_holds} double-hand holds, and {holds} legacy floor holds. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n".format(
+            self._queue.put(("ok", "Detected {notes} gameplay notes, {walls} wall events, {hand_holds} double-hand holds, and {holds} legacy floor holds. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
                 notes=len(audio_analyzer._beatmap_notes(beatmap)),
                 walls=len([event for event in audio_analyzer._beatmap_events(beatmap) if str(event.get("type", "")) in audio_analyzer.WALL_EVENT_TYPES]),
                 holds=hold_count,
@@ -529,6 +539,7 @@ class AnalyzerApp(tk.Tk):
                 recovery=diagnostics.get("wall_recovery_accepted_notes", 0),
                 track=track_path,
                 srt=srt_path,
+                feedback_srt=feedback_srt_path,
             )))
         except Exception as exc:
             self._queue.put(("error", f"{type(exc).__name__}: {exc}\n"))

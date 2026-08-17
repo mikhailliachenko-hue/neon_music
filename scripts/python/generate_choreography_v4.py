@@ -5,7 +5,7 @@ import argparse
 import copy
 import json
 from pathlib import Path
-from audio_analyzer import write_srt
+from audio_analyzer import write_feedback_srt, write_srt
 from choreography_v4 import WARMUP_PROFILE, audit_legacy, build_full_track, build_vertical_slice, dump_json, migrate_beat_grid_v1, validate_v4
 from neon_track_io import build_neon_track, extract_beat_grid, extract_beatmap, load_neon_track
 
@@ -54,6 +54,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=3407)
     parser.add_argument("--profile", choices=[WARMUP_PROFILE, "normal"], default="normal")
     parser.add_argument("--subtitles", type=Path, default=ROOT / "output" / "combo.srt")
+    parser.add_argument("--feedback-subtitles", type=Path, default=ROOT / "output" / "feedback.srt")
     parser.add_argument("--vertical-slice", action="store_true", help="Generate the legacy 96-beat acceptance slice instead of the full track.")
     args = parser.parse_args()
     if args.grid is None and args.beatmap is None:
@@ -69,7 +70,9 @@ def main() -> int:
     report = validate_v4(grid, beatmap)
     beatmap["validation_summary"] = report["summary"]
     grid = synchronize_grid_projection(grid, beatmap, report, args.profile)
-    combo_srt = write_srt(beatmap, args.subtitles)
+    track_end = float(grid.get("duration", 0.0)) or None
+    combo_srt = write_srt(beatmap, args.subtitles, track_end=track_end)
+    write_feedback_srt(beatmap, args.feedback_subtitles, track_end=track_end)
     dump_json(args.track, build_neon_track(
         beatmap=beatmap,
         beat_grid=grid,
