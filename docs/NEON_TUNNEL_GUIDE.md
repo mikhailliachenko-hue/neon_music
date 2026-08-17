@@ -56,8 +56,9 @@ The default level follows the Liam Fitness tunnel references with a deliberately
 minimal composition. `RhythmFrames` repeats the imported Quaternius
 `Door_Frame_A`, keeps a dark Kenney road, and adds only sparse particles. Walls,
 ceilings and side decoration are disabled. Successful step, hand, jump and duck
-actions launch a cyan/magenta gradient wave through the frames; a preview beat
-is used only when no gameplay action is available. Geometry does not scale and
+actions launch a cyan/magenta gradient wave through the frames. Beats never
+launch that wave in production; the standalone no-music preview invokes a
+separate explicit preview pulse. Geometry does not scale and
 WorldEnvironment/camera do not flash or shake with the beat.
 
 Music-free preview with reproducible controls:

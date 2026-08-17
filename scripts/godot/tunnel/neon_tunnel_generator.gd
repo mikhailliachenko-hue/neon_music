@@ -24,7 +24,6 @@ var _travel_distance := 0.0
 var _last_song_time := -1.0
 var _beat_pulse := 0.0
 var _frame_pulse := 0.0
-var _frame_beat_index := 0
 var _frame_wave_controller := TunnelFrameWaveController.new()
 var _generation_phrase := 0
 var _variation_epoch := 0
@@ -124,6 +123,13 @@ func trigger_action_camera_impact(action: String, strength: float, lane_bias: fl
 		camera_motion_controller.trigger_action_impact(action, strength, lane_bias)
 		if _diagnostics:
 			print("TUNNEL_ACTION_CAMERA action=%s strength=%.3f lane_bias=%.3f" % [action, strength, lane_bias])
+
+
+func trigger_preview_frame_wave(downbeat: bool) -> void:
+	# Only the standalone no-music preview calls this method. Production playback
+	# must receive frame waves exclusively through gameplay action callbacks.
+	if _enabled and _is_rhythm_frames_active():
+		_frame_wave_controller.trigger_preview_pulse(downbeat)
 
 
 func is_enabled() -> bool:
@@ -241,8 +247,7 @@ func sync_to_song_time(song_time: float, music_state: Dictionary) -> void:
 			_frame_wave_controller.wave_speed,
 			_frame_wave_controller.wave_width,
 			_frame_wave_controller.wave_lifetime,
-			wave_origin_z,
-			_frame_beat_index
+			wave_origin_z
 		)
 	ring_manager.apply_music(_segments, _beat_pulse, float(visual_state.get("drop_pulse", 0.0)), song_time)
 	floor_controller.apply_music(_segments, _beat_pulse, float(visual_state.get("drop_pulse", 0.0)), song_time)
@@ -482,15 +487,12 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 		print("TUNNEL_DROP section=%s energy=%s beat=%d" % [section_role, energy_role, int(state.get("beat_index", -1))])
 
 
-func _update_frame_reaction(delta: float, state: Dictionary) -> void:
+func _update_frame_reaction(delta: float, _state: Dictionary) -> void:
 	if not _is_rhythm_frames_active():
 		_frame_pulse = 0.0
 		_frame_wave_controller.clear()
 		return
 	_frame_wave_controller.advance(delta)
-	if int(state.get("beat_index", -1)) >= 0 and bool(state.get("beat_changed", false)):
-		_frame_beat_index = int(state.get("beat_index", 0))
-		_frame_wave_controller.trigger_preview_beat(bool(state.get("downbeat_changed", false)))
 	_frame_pulse = _frame_wave_controller.peak_strength()
 
 

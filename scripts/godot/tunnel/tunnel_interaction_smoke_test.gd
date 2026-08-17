@@ -35,6 +35,13 @@ func _run() -> void:
 			immediate_profile_changes += 1
 	if immediate_profile_changes != 0:
 		failures.append("level phase mutated visible pooled segments")
+	generator.sync_to_song_time(0.5, {
+		"beat_index": 1,
+		"beat_changed": true,
+		"downbeat_changed": false,
+	})
+	if int(generator.get_runtime_stats().get("frame_waves", 0)) != 0:
+		failures.append("production beat triggered a frame wave without gameplay action")
 	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
 	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:
 		failures.append("step action did not trigger a travelling frame wave")

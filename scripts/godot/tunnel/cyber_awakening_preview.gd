@@ -94,6 +94,8 @@ func _process(delta: float) -> void:
 		"energy_role": "drop_peak" if phase == 3 else "stable_groove",
 		"section_changed": count32_changed,
 	}
+	if beat_changed:
+		generator.trigger_preview_frame_wave(bool(state["downbeat_changed"]))
 	generator.sync_to_song_time(_preview_time, state)
 	_last_beat = beat
 	_last_count8 = count8

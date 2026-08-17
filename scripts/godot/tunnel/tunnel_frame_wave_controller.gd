@@ -63,10 +63,9 @@ func trigger_action(action: String, requested_strength: float) -> void:
 	_seconds_since_action = 0.0
 
 
-func trigger_preview_beat(downbeat: bool) -> void:
-	# Standalone preview scenes have no gameplay hit callbacks. A restrained beat
-	# fallback keeps the travelling wave visible there without double-triggering
-	# during the real choreography.
+func trigger_preview_pulse(downbeat: bool) -> void:
+	# This is an explicit standalone-preview hook, never a production fallback.
+	# If an interactive preview later supplies an action, the action keeps priority.
 	if _seconds_since_action < 0.34:
 		return
 	_trigger(0.92 if downbeat else 0.62)

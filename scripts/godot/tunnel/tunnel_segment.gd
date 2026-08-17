@@ -345,8 +345,7 @@ func apply_frame_reaction(
 	wave_speed: float,
 	wave_width: float,
 	wave_lifetime: float,
-	wave_origin_z: float,
-	beat_index: int
+	wave_origin_z: float
 ) -> void:
 	if _active_world_style == null or _active_world_style.spatial_profile != "RhythmFrames":
 		return
@@ -367,7 +366,9 @@ func apply_frame_reaction(
 				if module.has_meta("rhythm_frame_base_scale"):
 					module.scale = module.get_meta("rhythm_frame_base_scale") as Vector3
 				var depth := maxf(0.0, wave_origin_z - module.global_position.z)
-				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105 + float(beat_index) * 0.16)
+				# Resting color is spatially stable. Musical beats must not shift every
+				# frame at once; only an action wave changes this gradient over time.
+				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105)
 				var base_color := _frame_primary.lerp(_frame_accent, smoothstep(0.08, 0.92, gradient_phase))
 				var wave_amount := 0.0
 				var wave_color := base_color
