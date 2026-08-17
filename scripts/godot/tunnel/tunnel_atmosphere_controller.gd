@@ -6,9 +6,11 @@ class_name TunnelAtmosphereController
 @onready var backdrop_navy: MeshInstance3D = $Backdrops/NavyStarfield
 @onready var backdrop_graphite: MeshInstance3D = $Backdrops/GraphiteFog
 @onready var backdrop_violet: MeshInstance3D = $Backdrops/VioletCosmic
+@onready var level_backdrop: MeshInstance3D = $Backdrops/LevelBackdrop
 
 var _particle_material: StandardMaterial3D
 var _glow_material: StandardMaterial3D
+var _level_backdrop_material: StandardMaterial3D
 var _base_amount := 72
 var _preset_density := 1.0
 
@@ -32,14 +34,29 @@ func _ready() -> void:
 	distant_glow.material_override = _glow_material
 	distant_glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
+	_level_backdrop_material = StandardMaterial3D.new()
+	_level_backdrop_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_level_backdrop_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_level_backdrop_material.albedo_color = Color(0.68, 0.68, 0.68, 1.0)
+	_level_backdrop_material.emission_enabled = true
+	_level_backdrop_material.emission = Color(0.24, 0.24, 0.24, 1.0)
+	_level_backdrop_material.emission_energy_multiplier = 0.35
+	level_backdrop.material_override = _level_backdrop_material
+	level_backdrop.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
 
 func set_preset(preset: TunnelLevelPreset) -> void:
 	_preset_density = preset.atmosphere_density if preset != null else 1.0
 	particles.amount = clampi(roundi(float(_base_amount) * _preset_density), 24, 128)
+	var has_level_background := preset != null and preset.background_texture != null
+	level_backdrop.visible = has_level_background
+	if has_level_background and _level_backdrop_material != null:
+		_level_backdrop_material.albedo_texture = preset.background_texture
+		_level_backdrop_material.emission_texture = preset.background_texture
 	var theme_name := preset.theme.theme_name if preset != null and preset.theme != null else "CyberBlue"
-	backdrop_navy.visible = theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
-	backdrop_graphite.visible = theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
-	backdrop_violet.visible = not backdrop_navy.visible and not backdrop_graphite.visible
+	backdrop_navy.visible = not has_level_background and theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
+	backdrop_graphite.visible = not has_level_background and theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
+	backdrop_violet.visible = not has_level_background and not backdrop_navy.visible and not backdrop_graphite.visible
 
 
 func trigger_drop() -> void:

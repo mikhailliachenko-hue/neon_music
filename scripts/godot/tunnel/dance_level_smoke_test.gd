@@ -28,6 +28,7 @@ func _run() -> void:
 	var ids := {}
 	var themes := {}
 	var world_styles := {}
+	var backgrounds := {}
 	var warm_cache := -1
 	for index in range(presets.size()):
 		var preset := presets[index]
@@ -55,6 +56,13 @@ func _run() -> void:
 				failures.append("%s: %s" % [preset.display_name(), world_error])
 		if preset.color_palette.size() < 3 or preset.effective_segment_sequence().is_empty():
 			failures.append("missing preview/spatial data: %s" % preset.display_name())
+		if preset.background_texture == null or preset.preview_texture == null:
+			failures.append("missing level background: %s" % preset.display_name())
+		else:
+			var background_path := preset.background_texture.resource_path
+			backgrounds[background_path] = true
+			if preset.preview_texture.resource_path != background_path:
+				failures.append("preview/background mismatch: %s" % preset.display_name())
 		for settings in [preset.asset_weights, preset.particle_settings, preset.lighting_settings, preset.fog_settings, preset.camera_settings, preset.music_reaction_settings]:
 			if settings.is_empty():
 				failures.append("missing runtime settings: %s" % preset.display_name())
@@ -69,10 +77,16 @@ func _run() -> void:
 			failures.append("runtime level mismatch: %s" % preset.display_name())
 		if int(stats.get("pool_size", 0)) != 8 or int(stats.get("active_segments", 0)) != 8:
 			failures.append("pool changed while selecting: %s" % preset.display_name())
+		var backdrop := generator.get_node_or_null("Atmosphere/Backdrops/LevelBackdrop") as MeshInstance3D
+		var backdrop_material := backdrop.material_override as StandardMaterial3D if backdrop != null else null
+		if backdrop == null or not backdrop.visible or backdrop_material == null or backdrop_material.albedo_texture != preset.background_texture:
+			failures.append("runtime background did not switch: %s" % preset.display_name())
 	if themes.size() != EXPECTED_NAMES.size():
 		failures.append("themes are not visually diverse: %d unique" % themes.size())
 	if world_styles.size() < 6:
 		failures.append("world architecture is not diverse: %d unique styles" % world_styles.size())
+	if backgrounds.size() != EXPECTED_NAMES.size():
+		failures.append("expected %d unique backgrounds, got %d" % [EXPECTED_NAMES.size(), backgrounds.size()])
 	var final_cache := generator.config.asset_registry.cached_scene_count()
 	if final_cache != warm_cache:
 		failures.append("asset cache changed after warm-up: %d -> %d" % [warm_cache, final_cache])
@@ -84,8 +98,8 @@ func _run() -> void:
 		failures.append("random mode is not deterministic for a saved seed")
 	if int(generator.get_runtime_stats().get("seed", 0)) != 24681357:
 		failures.append("random mode did not preserve its seed")
-	print("DANCE_LEVEL_SMOKE presets=%d themes=%d worlds=%d pool=%d cache=%d names=%s" % [
-		presets.size(), themes.size(), world_styles.size(), int(generator.get_runtime_stats().get("pool_size", 0)),
+	print("DANCE_LEVEL_SMOKE presets=%d themes=%d worlds=%d backgrounds=%d pool=%d cache=%d names=%s" % [
+		presets.size(), themes.size(), world_styles.size(), backgrounds.size(), int(generator.get_runtime_stats().get("pool_size", 0)),
 		final_cache, str(EXPECTED_NAMES),
 	])
 	for failure in failures:

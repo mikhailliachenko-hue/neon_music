@@ -7,6 +7,7 @@ class_name TunnelLevelPreset
 @export_enum("Easy", "Medium", "Hard", "Expert") var difficulty := "Medium"
 @export var color_palette: PackedColorArray = []
 @export var preview_texture: Texture2D
+@export var background_texture: Texture2D
 
 @export_group("Spatial Grammar")
 @export var segment_types: PackedStringArray = []

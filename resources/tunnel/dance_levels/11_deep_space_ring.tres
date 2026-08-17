@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
 [ext_resource type="Resource" path="res://resources/tunnel/themes/deep_space.tres" id="2_theme"]
 [ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_circle_frames.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/11_deep_space_ring.png" id="4_background"]
 
 [resource]
 script = ExtResource("1_preset")
@@ -10,6 +11,8 @@ level_name = "DEEP SPACE RING"
 description = "Редкие частицы, глубокий фон и сине-фиолетовые круги."
 difficulty = "Medium"
 color_palette = PackedColorArray(0.08, 0.32, 1, 1, 0.38, 0.08, 0.95, 1, 0.001, 0.002, 0.018, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
 segment_types = PackedStringArray("Ring")
 asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
 particle_settings = {"density": 0.16,"amount_scale": 0.16}

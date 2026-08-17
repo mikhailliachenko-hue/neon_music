@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
 [ext_resource type="Resource" path="res://resources/tunnel/themes/toxic_green.tres" id="2_theme"]
 [ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_tall_frames.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/07_toxic_portal.png" id="4_background"]
 
 [resource]
 script = ExtResource("1_preset")
@@ -10,6 +11,8 @@ level_name = "TOXIC PORTAL"
 description = "Высокие зелёно-lime рамы с длинным текучим хвостом волны."
 difficulty = "Medium"
 color_palette = PackedColorArray(0.14, 1, 0.12, 1, 0.7, 1, 0.02, 1, 0.001, 0.018, 0.003, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
 segment_types = PackedStringArray("Ring")
 asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
 particle_settings = {"density": 0.12,"amount_scale": 0.12}

@@ -125,6 +125,13 @@ material_override = SubResource("Material_bg_violet")
 mesh = SubResource("Quad_backdrop")
 cast_shadow = 0
 
+[node name="LevelBackdrop" type="MeshInstance3D" parent="Atmosphere/Backdrops"]
+visible = false
+position = Vector3(0, 2.3, -142.1)
+scale = Vector3(1.92, 1.9, 1)
+mesh = SubResource("Quad_backdrop")
+cast_shadow = 0
+
 [node name="DebugOverlay" type="CanvasLayer" parent="."]
 layer = 90
 
