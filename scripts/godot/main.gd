@@ -1505,7 +1505,9 @@ func _camera_duck_y_offset(song_time: float) -> float:
 			strength = _camera_dodge_ease((song_time - dip_in_start) / maxf(0.001, dip_full_start - dip_in_start))
 		elif song_time > dip_full_end:
 			strength = 1.0 - _camera_dodge_ease((song_time - dip_full_end) / maxf(0.001, return_end - dip_full_end))
-		var offset := -0.72 * clampf(strength, 0.0, 1.0)
+		# The imported overhead barrier now sits above the standing eye line. A
+		# deeper authored dip makes the camera visibly pass underneath it.
+		var offset := -0.92 * clampf(strength, 0.0, 1.0)
 		if absf(offset) > absf(best_offset):
 			best_offset = offset
 	return best_offset

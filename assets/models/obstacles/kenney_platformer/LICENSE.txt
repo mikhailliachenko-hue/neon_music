@@ -1,0 +1,18 @@
+Platformer Kit 4.1
+
+Created and distributed by Kenney (https://kenney.nl/).
+Original package creation date: 2026-04-02.
+
+License: Creative Commons Zero (CC0 1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The original package states that the content may be used for personal,
+educational, and commercial purposes. Crediting Kenney is appreciated but
+not required.
+
+Selected files used by Neon Music:
+- fence-low-straight.glb
+- Textures/colormap.png
+
+Source:
+https://kenney.nl/assets/platformer-kit

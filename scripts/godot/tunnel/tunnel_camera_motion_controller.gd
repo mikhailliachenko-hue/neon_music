@@ -100,9 +100,11 @@ func apply(song_time: float, _pulse: float, _drop_pulse: float) -> void:
 				step_rotation = Vector3(wave * 0.24, 0.0, _step_lane_bias * absf(wave) * 0.06)
 				action_fov = absf(wave) * 0.16
 			"HAND", "PUNCH":
-				step_position = Vector3(-_step_lane_bias * absf(wave) * 0.010, wave * 0.008, 0.0)
-				step_rotation = Vector3(-wave * 0.10, 0.0, _step_lane_bias * absf(wave) * 0.12)
-				action_fov = absf(wave) * 0.10
+				# A punch gets a short directional camera impulse: noticeable enough to
+				# sell contact, but far below the step/jump motion and never sustained.
+				step_position = Vector3(-_step_lane_bias * absf(wave) * 0.020, wave * 0.014, -absf(wave) * 0.012)
+				step_rotation = Vector3(-wave * 0.35, 0.0, _step_lane_bias * absf(wave) * 0.65)
+				action_fov = absf(wave) * 0.16
 			_:
 				step_position = Vector3(_step_lane_bias * absf(wave) * 0.010, wave * 0.050, -absf(wave) * 0.016)
 				step_rotation = Vector3(-wave * 0.40, 0.0, _step_lane_bias * absf(wave) * 0.14)
