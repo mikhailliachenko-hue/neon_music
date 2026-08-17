@@ -100,7 +100,10 @@ Runtime renderer scripts.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
   data-driven library of 13 reference-focused Dance Mode levels. The existing Track tuning GUI
   selects/reseeds/previews these Resources at runtime; all of them share the
-  generator, segment scenes, resource cache and fixed eight-segment pool.
+  generator, segment scenes, resource cache and fixed eight-segment pool. Each
+  preset also calibrates steady GLB-frame readability independently from bloom
+  and action-wave strength, so thin dark silhouettes and broad gates share a
+  consistent exposure without one global brightness multiplier.
 - `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
   `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
   GLB sets. The user-facing library now uses six minimal rhythm-frame silhouettes:

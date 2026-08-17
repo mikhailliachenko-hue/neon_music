@@ -48,6 +48,8 @@ var _spectrum_pulse := 0.0
 var _frame_primary := Color.WHITE
 var _frame_accent := Color.WHITE
 var _frame_emission := 1.0
+var _frame_rest_glow := 0.22
+var _frame_rest_emission_scale := 1.0
 
 
 func _ready() -> void:
@@ -85,6 +87,19 @@ func configure_layout(
 ) -> void:
 	_active_world_style = preset.world_style if preset != null else null
 	_active_world_key = _world_cache_key(_active_world_style)
+	# A stable low light keeps the authored silhouette readable between actions.
+	# It is preset-controlled because a thin blue ring needs more support than a
+	# broad white or red gate. Action waves are still the only dynamic response.
+	_frame_rest_glow = clampf(
+		float(preset.lighting_settings.get("frame_rest_glow", 0.22)) if preset != null else 0.22,
+		0.10,
+		0.36
+	)
+	_frame_rest_emission_scale = clampf(
+		float(preset.lighting_settings.get("frame_rest_emission_scale", 1.0)) if preset != null else 1.0,
+		0.70,
+		1.25
+	)
 	layout_name = _profile_layout(layout_name, new_logical_index)
 	logical_index = new_logical_index
 	current_layout = layout_name
@@ -400,7 +415,9 @@ func apply_frame_reaction(
 						wave_color = phase_color.lerp(companion_color, signed_gradient * 0.34)
 				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.58
 				var final_color := base_color.lerp(wave_color, visual_amount)
-				var emission := (0.44 + _frame_emission * 0.105) * (1.0 + wave_amount * wave_emission_strength)
+				var emission := (0.50 + _frame_emission * 0.12) * _frame_rest_emission_scale \
+					* (1.0 + wave_amount * wave_emission_strength)
+				var body_glow := _frame_rest_glow + visual_amount * 0.24
 				for stored_material in module.get_meta("rhythm_frame_materials") as Array:
 					var material := stored_material as Material
 					if material is ShaderMaterial:
@@ -408,7 +425,7 @@ func apply_frame_reaction(
 						themed.set_shader_parameter("theme_primary", final_color)
 						themed.set_shader_parameter("theme_accent", final_color.lerp(Color.WHITE, 0.14))
 						themed.set_shader_parameter("theme_emission", emission)
-						themed.set_shader_parameter("theme_body_glow", 0.12 + visual_amount * 0.34)
+						themed.set_shader_parameter("theme_body_glow", body_glow)
 					elif material is StandardMaterial3D:
 						var standard := material as StandardMaterial3D
 						standard.emission = final_color

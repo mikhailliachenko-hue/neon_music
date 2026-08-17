@@ -53,7 +53,11 @@ void fragment() {
 	float glow_mask = authored_accent * 0.72 + authored_highlight * 0.075;
 	vec3 glow_color = mix(theme_primary.rgb, theme_accent.rgb, authored_accent);
 	EMISSION = glow_color * glow_mask * theme_emission;
-	EMISSION += theme_primary.rgb * detail * theme_body_glow;
+	// Very dark authored GLB materials still need a faint silhouette between
+	// action waves. A small floor keeps the frame readable without flattening
+	// its texture/detail or increasing the scene-wide bloom.
+	float silhouette_detail = mix(0.18, 1.0, detail);
+	EMISSION += theme_primary.rgb * silhouette_detail * theme_body_glow;
 
 	if (has_normal_texture) {
 		NORMAL_MAP = texture(source_normal, themed_uv).rgb;

@@ -67,6 +67,12 @@ func _run() -> void:
 			if settings.is_empty():
 				failures.append("missing runtime settings: %s" % preset.display_name())
 				break
+		var frame_rest_glow := float(preset.lighting_settings.get("frame_rest_glow", -1.0))
+		var frame_rest_emission_scale := float(preset.lighting_settings.get("frame_rest_emission_scale", -1.0))
+		if frame_rest_glow < 0.10 or frame_rest_glow > 0.36:
+			failures.append("invalid frame rest glow: %s" % preset.display_name())
+		if frame_rest_emission_scale < 0.70 or frame_rest_emission_scale > 1.25:
+			failures.append("invalid frame rest emission scale: %s" % preset.display_name())
 		if not generator.select_level_by_index(index, 900000 + index):
 			failures.append("runtime selection failed: %s" % preset.display_name())
 			continue

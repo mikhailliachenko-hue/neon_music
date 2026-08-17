@@ -45,6 +45,12 @@ frame silhouette, densities and particle/light/fog/camera/music reaction
 settings; selecting one reapplies those settings to the existing pool without
 restarting gameplay.
 
+`lighting_settings.frame_rest_glow` and
+`lighting_settings.frame_rest_emission_scale` calibrate the steady readability
+of each imported frame separately from bloom and from the action wave. Thin
+blue/circle/star silhouettes can therefore remain visible without overexposing
+the broad REDLINE gate.
+
 The user-facing configuration is
 `resources/tunnel/levels/cyber_awakening.tres`. The older
 `resources/tunnel/neon_tunnel_default.tres` remains only for legacy preview and
@@ -78,7 +84,7 @@ godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --phas
 The level catalog is `resources/tunnel/levels/cyber_awakening.tres`; its initial
 preset is `resources/tunnel/dance_levels/01_cyber_awakening.tres`.
 
-The production camera is positioned at `y=0.0` above a track near `y=-1.82`, so
+The production camera is positioned at `y=-0.12` above a track near `y=-1.82`, so
 the view reads as a dancer standing on the road rather than a ceiling camera.
 Ordinary music beats never shake or pulse the camera. Foot/step, jump, duck,
 hand/punch and hold actions receive separate short damped profiles; jump/duck
