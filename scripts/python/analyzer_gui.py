@@ -56,8 +56,8 @@ VISUAL_DEFAULTS = {
     "wall_segment_spacing": 1.25,
     "wall_strip_emission": 4.8,
     "wall_edge_emission": 12.0,
-    "safe_lane_emission": 3.8,
-    "safe_lane_opacity": 0.18,
+    "safe_lane_emission": 2.1,
+    "safe_lane_opacity": 0.12,
     "safe_lane_pulse": 0.35,
     "next_cell_ring_lead_time": 1.25,
     "next_cell_ring_brightness": 0.9,
@@ -71,7 +71,7 @@ VISUAL_DEFAULTS = {
     "visual_hit_offset_ms": 0.0,
     "wall_left_color": [0.196, 1.0, 1.0],
     "wall_right_color": [0.49, 0.0, 0.90],
-    "safe_lane_color": [1.0, 0.78, 0.12],
+    "safe_lane_color": [0.36, 0.86, 1.0],
     "next_cell_ring_color": [0.72, 1.0, 1.0],
 }
 
@@ -333,7 +333,7 @@ class AnalyzerApp(tk.Tk):
         fields = [
             ("Safe lane glow", "safe_lane_emission"),
             ("Safe lane opacity", "safe_lane_opacity"),
-            ("Safe lane pulse", "safe_lane_pulse"),
+            ("Safe lane flow", "safe_lane_pulse"),
             ("Ring lead", "next_cell_ring_lead_time"),
             ("Ring brightness", "next_cell_ring_brightness"),
             ("Ring fade", "next_cell_ring_fade_duration"),

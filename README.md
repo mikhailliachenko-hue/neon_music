@@ -73,7 +73,7 @@ The analyzer creates one canonical `output/neon_track.json` and the companion `o
 Wall events are generated automatically for any audio input from deterministic phrase/downbeat candidates that stay low in onset density and RMS energy across preparation, wall, and recovery rest windows. They alternate `wall_left` and `wall_right`, include `start`, `duration`, blocked `lanes`, mirrored `safe_lanes`, and `anticipation`, and ordinary notes are strongly filtered or redirected through the wall break window. CLI controls:
 
 ```powershell
-python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --walls --wall-duration-beats 8 --wall-min-gap-bars 8 --wall-rate-bars 12 --wall-anticipation 1.2 --wall-density-multiplier 2.6 --wall-preparation-window 0.9 --wall-recovery-window 0.85 --wall-rest-window 1.0
+python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --walls --wall-duration-beats 8 --wall-min-gap-bars 8 --wall-rate-bars 12 --wall-anticipation 1.85 --wall-density-multiplier 2.6 --wall-preparation-window 0.9 --wall-recovery-window 0.85 --wall-rest-window 1.0
 python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --no-walls
 python scripts/python/audio_analyzer.py --audio "assets/audio/audio.wav" --wall-override wall_events_override.json
 ```
@@ -98,17 +98,17 @@ Renderer visuals are configured separately in `assets/models/wall_visual_config.
 - `86.000s`: left-side wall / magenta-blue glow reference.
 - `96.000s`: right-side wall / blue-violet glow reference.
 
-Measured masks from those frames gave cyan around RGB `(50,255,255)` and magenta/violet around RGB `(115-128,0,226-231)`. The renderer now treats each wall as a long Z-axis neon gallery: a translucent volumetric two-lane parallelepiped, repeated LED/halftone gate segments, side LED dots, and bright longitudinal edge beams. `wall_length_z` defaults to `24.0` with a safe range of `8.0..36.0`; advanced visual controls include `wall_segment_count`, `wall_segment_spacing`, `wall_strip_emission`, and `wall_edge_emission`.
+Measured masks from those frames gave cyan around RGB `(50,255,255)` and magenta/violet around RGB `(115-128,0,226-231)`. Each wall is now a cached modular scene assembled from the existing sci-fi GLB-derived panel asset, with a restrained dotted neon face instead of runtime-built complex geometry. A six-instance `DodgeObstaclePool` is prewarmed with shared per-instance materials; no model load, instantiate, material duplication or destroy happens while a wall is travelling. `wall_length_z` defaults to `24.0` with a safe range of `8.0..36.0`.
 
-During anticipation and until a wall passes, the two free lanes are highlighted with renderer-only `safe_lane_color`, `safe_lane_emission`, `safe_lane_opacity`, and `safe_lane_pulse`. For `wall_left`, safe lanes are `2-3`; for `wall_right`, safe lanes are `0-1`. Camera dodge is also renderer-only and frame-locked: `wall_right` shifts the camera left, `wall_left` shifts it right, then returns to the configured base `camera_x` with no accumulated drift. Defaults are `camera_dodge_distance=1.05`, `camera_dodge_in_duration=0.55`, `camera_dodge_hold=0.25`, `camera_dodge_return_duration=0.70`, and `camera_dodge_easing=sine`, with safe ranges stored in `assets/models/wall_visual_config.json`. The next ordinary note target is cued by a neutral cyan-white receptor ring (`next_cell_ring_*`), replacing the old lane-line predictor.
+During the default `1.85s` anticipation and until a wall passes, the two free lanes are highlighted with a soft, non-pulsing cyan flow guide. The legacy config key `safe_lane_pulse` controls only its flow speed; brightness stays stable. For `wall_left`, safe lanes are `2-3`; for `wall_right`, safe lanes are `0-1`. Camera dodge is renderer-only and frame-locked: `wall_right` shifts the camera left, `wall_left` shifts it right, then returns to the configured base `camera_x` with no accumulated drift. The obstacle itself never fades at its choreography end time: it remains readable and is recycled only when the entire trailing edge is behind the camera. Defaults are `camera_dodge_distance=1.05`, `camera_dodge_in_duration=0.55`, `camera_dodge_hold=0.25`, `camera_dodge_return_duration=0.70`, and `camera_dodge_easing=sine`, with safe ranges stored in `assets/models/wall_visual_config.json`.
 
 Preview smoke:
 
 ```powershell
-godot --rendering-driver opengl3 --path . --write-movie output/renders/wall_preview_smoke.avi --fixed-fps 30 -- --wall-preview --wall-preview-heights=3.2,4.8,5.8 --no-background-video --render-clock=frame --clock-fps=30 --clock-stop-after=10.5
+godot --rendering-driver opengl3 --path . --fixed-fps 10 -- --wall-preview --wall-preview-heights=3.2,4.8,5.8 --no-background-video --render-clock=frame --clock-fps=10 --clock-stop-after=10.5 --frame-sequence-dir=output/diagnostics/wall_preview_frames
 ```
 
-The preview shows alternating `wall_left` and `wall_right` gallery-style volumetric blocks with safe-lane highlights, camera dodge in both directions, long Z-axis passage framing, LED segments, edge beams, next-cell receptor rings, plus left- and right-side hold strips with front footprint caps. Current extracted preview frames are written to `output/previews/v4_preview_hold_right_safe_wall_left_002100.png`, `output/previews/v4_preview_hold_left_safe_wall_right_005300.png`, `output/previews/v4_preview_wall_right_dodge_005200.png`, and `output/previews/v4_preview_wall_left_dodge_008300.png`.
+The preview shows alternating pooled `wall_left` and `wall_right` modular volumes, soft safe-lane flow, camera dodge in both directions, complete pass-by/recycle behaviour, next-cell receptor rings, plus left- and right-side hold strips with front footprint caps. Pool integrity is checked independently with `godot --headless --path . --script res://scripts/godot/obstacles/dodge_obstacle_pool_smoke_test.gd`.
 
 ## Hit Timing
 

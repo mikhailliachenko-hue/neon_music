@@ -1,5 +1,5 @@
 {
-  "anticipation_duration": 1.15,
+  "anticipation_duration": 1.85,
   "calibration_frames": [
     {
       "role": "right wall / cyan-magenta full-height reference",
@@ -43,12 +43,12 @@
   "rail_y": -1.60000004768372,
   "receptor_y": -1.72000009536744,
   "safe_lane_color": [
-    1.0,
-    0.78,
-    0.12
+    0.36,
+    0.86,
+    1.0
   ],
-  "safe_lane_emission": 3.6,
-  "safe_lane_opacity": 0.18,
+  "safe_lane_emission": 2.1,
+  "safe_lane_opacity": 0.12,
   "safe_lane_pulse": 0.35,
   "safe_ranges": {
     "camera_dodge_distance": [

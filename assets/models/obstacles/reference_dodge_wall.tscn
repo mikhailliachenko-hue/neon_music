@@ -1,0 +1,68 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/obstacles/dodge_obstacle_visual.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/models/wall_obstacle/template-wall-detail-a-imported.tscn" id="2_panel"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_front"]
+size = Vector2(3.84, 4.42)
+
+[sub_resource type="QuadMesh" id="QuadMesh_inner"]
+size = Vector2(23.5, 4.42)
+
+[sub_resource type="StandardMaterial3D" id="Material_placeholder"]
+shading_mode = 0
+albedo_color = Color(0.03, 0.08, 0.12, 1)
+
+[node name="ReferenceDodgeWall" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="ModelModules" type="Node3D" parent="VisualRoot"]
+
+[node name="Panel00" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, -10.8)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel01" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, -7.2)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel02" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, -3.6)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel03" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel04" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, 3.6)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel05" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, 7.2)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="Panel06" parent="VisualRoot/ModelModules" instance=ExtResource("2_panel")]
+position = Vector3(0, 0, 11.5)
+scale = Vector3(0.96, 1.04, 0.72)
+
+[node name="FrontFace" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 2.21, 11.52)
+mesh = SubResource("QuadMesh_front")
+material_override = SubResource("Material_placeholder")
+cast_shadow = 0
+
+[node name="BackFace" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(0, 2.21, -11.82)
+rotation_degrees = Vector3(0, 180, 0)
+mesh = SubResource("QuadMesh_front")
+material_override = SubResource("Material_placeholder")
+cast_shadow = 0
+
+[node name="InnerLaneFace" type="MeshInstance3D" parent="VisualRoot"]
+position = Vector3(1.96, 2.21, -0.15)
+rotation_degrees = Vector3(0, 90, 0)
+mesh = SubResource("QuadMesh_inner")
+material_override = SubResource("Material_placeholder")
+cast_shadow = 0

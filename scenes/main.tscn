@@ -4,6 +4,7 @@
 [ext_resource type="Shader" path="res://assets/models/track.gdshader" id="2_track"]
 [ext_resource type="PackedScene" path="res://scenes/receptor.tscn" id="3_receptor"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening.tscn" id="4_tunnel"]
+[ext_resource type="Script" path="res://scripts/godot/obstacles/dodge_obstacle_pool.gd" id="5_dodge_pool"]
 
 [sub_resource type="Environment" id="Environment_neon"]
 background_mode = 1
@@ -95,6 +96,10 @@ position = Vector3(3, -1.7, 0)
 lane = 3
 
 [node name="TunnelFrames" type="Node3D" parent="."]
+
+[node name="DodgeObstaclePool" type="Node3D" parent="TunnelFrames"]
+script = ExtResource("5_dodge_pool")
+pool_size = 6
 
 [node name="NeonTunnelGenerator" parent="TunnelFrames" instance=ExtResource("4_tunnel")]
 

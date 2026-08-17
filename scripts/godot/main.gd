@@ -24,26 +24,22 @@ const HUD_BAR_SIDE_MARGIN := 178.0
 const HUD_BAR_INNER_MARGIN := 192.0
 const BACKGROUND_VIDEO_DISTANCE := 220.0
 const ENABLE_BACKGROUND_VIDEO := true
-const DODGE_OBSTACLE_PATH := "res://assets/models/obstacles/kenney/fence-straight.glb"
 const BACKGROUND_VIDEO_BASE_SIZE := Vector2(16.0, 9.0)
 const BACKGROUND_MP4_BACKEND_SCRIPT := preload("res://scripts/godot/background_mp4_backend.gd")
 const BACKGROUND_EXTERNAL_PLAYER_SCRIPT := preload("res://scripts/godot/background_external_player.gd")
 const BACKGROUND_NV12_SHADER := preload("res://assets/models/background_nv12.gdshader")
+const DODGE_LANE_TELEGRAPH_SHADER := preload("res://assets/models/obstacles/dodge_lane_telegraph.gdshader")
 const GHOST_CUE_CENTER_Z := -8.75
 const GHOST_CUE_LENGTH := 17.5
 const GHOST_CUE_WIDTH := 1.55
 const GHOST_CUE_BASE_ALPHA := 0.16
 const WALL_EVENT_TYPES := ["wall_left", "wall_right"]
-const WALL_PANEL_SCENE := preload("res://assets/models/wall_obstacle/template-wall-detail-a-imported.tscn")
-const WALL_LED_SHADER := preload("res://assets/models/wall_led_wave.gdshader")
 const HOLD_EVENT_TYPE := "hold"
 const WALL_VISUAL_CONFIG_PATH := "res://assets/models/wall_visual_config.json"
 const DANCE_LEVEL_SELECTION_PATH := "user://dance_mode_selection.json"
 const DEFAULT_WALL_WIDTH_X := 3.9
 const DEFAULT_WALL_HEIGHT := 4.8
 const DEFAULT_WALL_LENGTH_Z := 24.0
-const WALL_CENTER_Y := 0.45
-const WALL_EDGE_THICKNESS := 0.08
 const WALL_FRONT_OVERHANG_Z := 1.15
 const DEFAULT_WALL_OPACITY := 0.18
 const DEFAULT_WALL_EMISSION_STRENGTH := 2.1
@@ -52,10 +48,10 @@ const DEFAULT_WALL_SEGMENT_COUNT := 18
 const DEFAULT_WALL_SEGMENT_SPACING := 1.25
 const DEFAULT_WALL_STRIP_EMISSION := 4.8
 const DEFAULT_WALL_EDGE_EMISSION := 12.0
-const DEFAULT_WALL_ANTICIPATION_DURATION := 1.2
-const DEFAULT_SAFE_LANE_COLOR := Color(1.0, 0.78, 0.12)
-const DEFAULT_SAFE_LANE_EMISSION := 3.8
-const DEFAULT_SAFE_LANE_OPACITY := 0.18
+const DEFAULT_WALL_ANTICIPATION_DURATION := 1.85
+const DEFAULT_SAFE_LANE_COLOR := Color(0.36, 0.86, 1.0)
+const DEFAULT_SAFE_LANE_EMISSION := 2.1
+const DEFAULT_SAFE_LANE_OPACITY := 0.12
 const DEFAULT_SAFE_LANE_PULSE := 0.35
 const WALL_CUE_BASE_ALPHA := 0.13
 const NEXT_CELL_RING_SEGMENTS := 96
@@ -94,6 +90,7 @@ const TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC := 25000
 @onready var notes_root: Node3D = $Notes
 @onready var receptors: Array[Node] = $Receptors.get_children()
 @onready var frames_root: Node3D = $TunnelFrames
+@onready var dodge_obstacle_pool: Node3D = $TunnelFrames/DodgeObstaclePool
 @onready var tunnel_generator: NeonTunnelGenerator = $TunnelFrames/NeonTunnelGenerator
 @onready var effects_root: Node3D = $HitEffects
 
@@ -163,7 +160,7 @@ var ghost_cue_root: Node3D
 var ghost_cue_materials: Array[StandardMaterial3D] = []
 var ghost_cue_index := 0
 var wall_cue_root: Node3D
-var wall_cue_materials: Array[StandardMaterial3D] = []
+var wall_cue_materials: Array[ShaderMaterial] = []
 var wall_cue_index := 0
 var wall_left_color := DEFAULT_WALL_LEFT_COLOR
 var wall_right_color := DEFAULT_WALL_RIGHT_COLOR
@@ -355,9 +352,8 @@ func _soft_restart() -> void:
 		if is_instance_valid(trail):
 			trail.queue_free()
 	active_combo_trails.clear()
-	for wall in active_walls:
-		if is_instance_valid(wall):
-			wall.queue_free()
+	if dodge_obstacle_pool != null:
+		dodge_obstacle_pool.call("release_all")
 	active_walls.clear()
 	for hold in active_holds:
 		if is_instance_valid(hold):
@@ -1403,7 +1399,7 @@ func _build_tuning_gui() -> void:
 	_add_tuning_slider(guidance_section, "wall_anticipation_duration", "Wall anticipation", 0.25, 2.5, 0.05)
 	_add_tuning_slider(guidance_section, "safe_lane_emission", "Safe lane glow", 0.8, 8.0, 0.1)
 	_add_tuning_slider(guidance_section, "safe_lane_opacity", "Safe lane opacity", 0.04, 0.42, 0.01)
-	_add_tuning_slider(guidance_section, "safe_lane_pulse", "Safe lane pulse", 0.0, 1.0, 0.05)
+	_add_tuning_slider(guidance_section, "safe_lane_pulse", "Safe lane flow", 0.0, 1.0, 0.05)
 	_add_tuning_slider(guidance_section, "camera_dodge_distance", "Camera dodge", 0.0, 1.8, 0.05)
 	_add_tuning_slider(guidance_section, "camera_dodge_in_duration", "Dodge in", 0.05, 2.5, 0.05)
 	_add_tuning_slider(guidance_section, "camera_dodge_hold", "Dodge hold", 0.0, 2.0, 0.05)
@@ -2549,7 +2545,10 @@ func _camera_dodge_offset(song_time: float) -> float:
 			continue
 		var start := _wall_start(event)
 		var duration := _wall_duration(event)
-		var anticipation := maxf(0.0, float(event.get("anticipation", _wall_anticipation_duration())))
+		var anticipation := maxf(
+			_wall_anticipation_duration(),
+			maxf(0.0, float(event.get("anticipation", 0.0)))
+		)
 		var in_duration := minf(_camera_dodge_in_duration(), maxf(0.001, anticipation))
 		var in_start := start - anticipation
 		var full_time := in_start + in_duration
@@ -3368,167 +3367,38 @@ func _wall_center_z_for_time(start: float, song_time: float) -> float:
 
 
 func _spawn_wall(event: Dictionary, event_index: int, song_time: float) -> void:
-	var wall := Node3D.new()
-	wall.name = "PhysicalDodgeObstacle%03d" % event_index
-	wall.set_meta("start", _wall_start(event))
-	wall.set_meta("duration", _wall_duration(event))
-	wall.set_meta("event_index", event_index)
+	if dodge_obstacle_pool == null:
+		push_error("Dodge obstacle pool is unavailable.")
+		return
 	var color := _wall_color(event)
-	var wall_length := 4.0
-	wall.position = Vector3(_wall_center_x(event), -1.05, -((_wall_start(event) - song_time) * scroll_speed) - wall_length * 0.5)
-	var obstacle_scene := load(DODGE_OBSTACLE_PATH) as PackedScene
-	if obstacle_scene == null:
-		push_warning("Dodge obstacle model unavailable: %s" % DODGE_OBSTACLE_PATH)
+	var start := _wall_start(event)
+	var wall_position := Vector3(
+		_wall_center_x(event),
+		float(tuning_values.get("track_y", track.position.y)),
+		_wall_center_z_for_time(start, song_time)
+	)
+	var dimensions := Vector3(
+		_wall_width_x(),
+		clampf(float(event.get("height", _wall_height())), 2.4, 6.2),
+		_wall_length_z()
+	)
+	var face_brightness := _wall_emission_strength() + _wall_edge_emission() * 0.035
+	var wall = dodge_obstacle_pool.call(
+		"acquire",
+		String(event.get("type", "")),
+		event_index,
+		start,
+		_wall_duration(event),
+		color,
+		wall_position,
+		dimensions,
+		_wall_emission_strength(),
+		face_brightness
+	)
+	if wall == null:
 		return
-	var model := obstacle_scene.instantiate() as Node3D
-	if model == null:
-		return
-	model.name = "KenneyFenceObstacle"
-	model.scale = Vector3(1.45, 1.45, 1.45)
-	model.rotation_degrees.y = 90.0 if String(event.get("type", "")) == "wall_left" else -90.0
-	wall.add_child(model)
-	var model_materials: Array[StandardMaterial3D] = []
-	for child in model.find_children("*", "MeshInstance3D", true, false):
-		var mesh_instance := child as MeshInstance3D
-		if mesh_instance == null:
-			continue
-		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		for surface in range(mesh_instance.mesh.get_surface_count()):
-			var source := mesh_instance.get_active_material(surface) as StandardMaterial3D
-			var material := source.duplicate() as StandardMaterial3D if source != null else StandardMaterial3D.new()
-			material.albedo_color = Color(color.r, color.g, color.b, 0.96)
-			material.emission_enabled = true
-			material.emission = color
-			material.emission_energy_multiplier = 2.6
-			mesh_instance.set_surface_override_material(surface, material)
-			model_materials.append(material)
-	wall.set_meta("model_materials", model_materials)
-	frames_root.add_child(wall)
 	active_walls.append(wall)
 	_print_wall_diagnostic("spawn_wall", song_time, event_index, event)
-
-
-func _add_wall_led_face(wall: Node3D, face_name: String, size: Vector2, position: Vector3, rotation: Vector3, material: ShaderMaterial) -> void:
-	var face := MeshInstance3D.new()
-	face.name = face_name
-	var mesh := QuadMesh.new()
-	mesh.size = size
-	face.mesh = mesh
-	face.position = position
-	face.rotation_degrees = rotation
-	face.material_override = material
-	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	wall.add_child(face)
-
-
-func _build_wall_gallery_segments(wall: Node3D, wall_width: float, wall_height: float, wall_length: float, strip_material: StandardMaterial3D, edge_material: StandardMaterial3D) -> void:
-	var edge_thickness := WALL_EDGE_THICKNESS * 1.45
-	var beam_length := wall_length + WALL_EDGE_THICKNESS * 4.0
-	for edge_x in [-wall_width * 0.5, wall_width * 0.5]:
-		for edge_y in [-wall_height * 0.5, wall_height * 0.5]:
-			var beam := MeshInstance3D.new()
-			beam.name = "LongEdgeBeam"
-			var beam_box := BoxMesh.new()
-			beam_box.size = Vector3(edge_thickness, edge_thickness, beam_length)
-			beam.mesh = beam_box
-			beam.material_override = edge_material
-			beam.position = Vector3(edge_x, edge_y, 0.0)
-			beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			wall.add_child(beam)
-
-	# Bright end frames make the obstacle volume obvious from the approach angle.
-	_create_wall_gate_segment(wall, wall_width, wall_height, -wall_length * 0.5, strip_material, 1.0)
-	_create_wall_gate_segment(wall, wall_width, wall_height, wall_length * 0.5, strip_material, 0.72)
-
-	var module_spacing := 3.1
-	var module_count := maxi(1, int(ceil(wall_length / module_spacing)))
-	var module_step := wall_length / float(module_count)
-	var model_materials: Array[StandardMaterial3D] = []
-	var wall_color := edge_material.emission
-	var inner_face_x := wall_width * 0.5 if wall.position.x < 0.0 else -wall_width * 0.5
-	for index in range(module_count):
-		var module := WALL_PANEL_SCENE.instantiate() as Node3D
-		if module == null:
-			continue
-		module.name = "SciFiWallModule%02d" % index
-		module.position = Vector3(
-			inner_face_x,
-			-wall_height * 0.5,
-			-wall_length * 0.5 + module_step * (float(index) + 0.5)
-		)
-		module.scale = Vector3(module_step / 4.0, wall_height / 4.25, 0.16)
-		module.rotation_degrees.y = 90.0 if wall.position.x < 0.0 else -90.0
-		for child in module.find_children("*", "MeshInstance3D", true, false):
-			var mesh_instance := child as MeshInstance3D
-			mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			for surface in range(mesh_instance.mesh.get_surface_count()):
-				var source := mesh_instance.get_active_material(surface) as StandardMaterial3D
-				var material := source.duplicate() as StandardMaterial3D if source != null else StandardMaterial3D.new()
-				material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-				material.albedo_color = Color(
-					0.055 + wall_color.r * 0.18,
-					0.065 + wall_color.g * 0.18,
-					0.10 + wall_color.b * 0.18,
-					0.16
-				)
-				material.metallic = 0.68
-				material.roughness = 0.36
-				material.emission_enabled = true
-				material.emission = wall_color
-				material.emission_energy_multiplier = 0.62
-				mesh_instance.set_surface_override_material(surface, material)
-				model_materials.append(material)
-		wall.add_child(module)
-	wall.set_meta("model_materials", model_materials)
-
-
-func _create_wall_gate_segment(wall: Node3D, wall_width: float, wall_height: float, z: float, material: StandardMaterial3D, strength: float) -> void:
-	var gate_thickness := WALL_EDGE_THICKNESS * (0.65 + 0.25 * strength)
-	var gate_width := wall_width + WALL_EDGE_THICKNESS * 2.5
-	var gate_height := wall_height + WALL_EDGE_THICKNESS * 1.8
-	var parts := [
-		[Vector3(0.0, gate_height * 0.5, z), Vector3(gate_width, gate_thickness, gate_thickness)],
-		[Vector3(0.0, -gate_height * 0.5, z), Vector3(gate_width, gate_thickness, gate_thickness)],
-		[Vector3(-gate_width * 0.5, 0.0, z), Vector3(gate_thickness, gate_height, gate_thickness)],
-		[Vector3(gate_width * 0.5, 0.0, z), Vector3(gate_thickness, gate_height, gate_thickness)],
-	]
-	for part in parts:
-		var strip := MeshInstance3D.new()
-		strip.name = "GalleryLedStrip"
-		var box := BoxMesh.new()
-		box.size = part[1]
-		strip.mesh = box
-		strip.material_override = material
-		strip.position = part[0]
-		strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		wall.add_child(strip)
-
-
-func _create_wall_panel_material(color: Color) -> ShaderMaterial:
-	var material := ShaderMaterial.new()
-	material.shader = WALL_LED_SHADER
-	material.set_shader_parameter("side_color", color)
-	material.set_shader_parameter("wave_color", Color(1.0, 0.72, 0.18, 1.0))
-	material.set_shader_parameter("opacity", 0.76)
-	material.set_shader_parameter("brightness", 3.6)
-	material.set_shader_parameter("flow_speed", 1.35)
-	return material
-
-
-func _create_wall_strip_material(color: Color) -> StandardMaterial3D:
-	var material := _emissive_material(color, _wall_strip_emission())
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	material.albedo_color = Color(color.r, color.g, color.b, 0.82)
-	return material
-
-
-func _create_wall_edge_material(color: Color) -> StandardMaterial3D:
-	var material := _emissive_material(color, _wall_edge_emission())
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	material.albedo_color = Color(color.r, color.g, color.b, 1.0)
-	return material
 
 
 func _update_active_walls(song_time: float) -> void:
@@ -3538,35 +3408,21 @@ func _update_active_walls(song_time: float) -> void:
 			active_walls.remove_at(index)
 			continue
 		var start := float(wall.get_meta("start", 0.0))
-		var duration := float(wall.get_meta("duration", 0.0))
 		wall.position.z = _wall_center_z_for_time(start, song_time)
-		var fade := clampf((song_time - start + 0.65) / 0.65, 0.32, 1.0)
-		if song_time > start + duration - 0.65:
-			fade = clampf((start + duration - song_time) / 0.65, 0.0, 1.0)
-		var panel_material = wall.get_meta("panel_material") as ShaderMaterial if wall.has_meta("panel_material") else null
-		if panel_material != null:
-			panel_material.set_shader_parameter("opacity", 0.76 * fade)
-			panel_material.set_shader_parameter("brightness", 3.6 * (0.45 + fade * 0.55))
-		var strip_material = wall.get_meta("strip_material") as StandardMaterial3D if wall.has_meta("strip_material") else null
-		if strip_material != null:
-			strip_material.albedo_color.a = 0.82 * fade
-			strip_material.emission_energy_multiplier = _wall_strip_emission() * (0.35 + fade)
-		var edge_material = wall.get_meta("edge_material") as StandardMaterial3D if wall.has_meta("edge_material") else null
-		if edge_material != null:
-			edge_material.albedo_color.a = fade
-			edge_material.emission_energy_multiplier = _wall_edge_emission() * (0.42 + fade)
-		var model_materials := wall.get_meta("model_materials", []) as Array
-		for model_material in model_materials:
-			if model_material is StandardMaterial3D:
-				(model_material as StandardMaterial3D).albedo_color.a = 0.16 * fade
-				(model_material as StandardMaterial3D).emission_energy_multiplier = 0.62 * (0.45 + fade)
-		var pass_plane := _wall_length_z() * 0.5 + WALL_FRONT_OVERHANG_Z + 1.5
-		var fully_past_camera := wall.position.z - pass_plane > camera.global_position.z
+		# The obstacle stays fully readable while it crosses the player. It is only
+		# recycled after its trailing edge is behind the camera, never faded by the
+		# choreography event duration.
+		var approach_start := start - time_to_hit
+		var fade := clampf((song_time - approach_start) / 1.15, 0.32, 1.0)
+		wall.call("set_fade", fade)
+		var pass_plane: float = float(wall.call("half_length")) + WALL_FRONT_OVERHANG_Z + 1.5
+		var fully_past_camera: bool = wall.position.z - pass_plane > camera.global_position.z
 		wall.set_meta("passed_camera", fully_past_camera)
 		if fully_past_camera:
 			_print_wall_diagnostic("clear_wall", song_time, int(wall.get_meta("event_index", -1)), {})
 			active_walls.remove_at(index)
-			wall.queue_free()
+			if dodge_obstacle_pool != null:
+				dodge_obstacle_pool.call("release", wall)
 
 
 func _build_wall_anticipation_layer() -> void:
@@ -3583,7 +3439,14 @@ func _build_wall_anticipation_layer() -> void:
 		cue.rotation_degrees.x = -90.0
 		cue.position = Vector3(-2.0 if side == 0 else 2.0, 0.0, GHOST_CUE_CENTER_Z)
 		cue.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		var material := _create_ghost_cue_material(safe_lane_color)
+		var material := ShaderMaterial.new()
+		material.shader = DODGE_LANE_TELEGRAPH_SHADER
+		material.set_shader_parameter("lane_color", safe_lane_color)
+		material.set_shader_parameter("strength", 0.0)
+		material.set_shader_parameter("emission_energy", _safe_lane_emission())
+		# Legacy JSON key kept so saved wall_visual.v1 configs remain valid.
+		# Удалить когда станет неактуально: rename safe_lane_pulse to safe_lane_flow in the next schema.
+		material.set_shader_parameter("flow_speed", 0.24 + _safe_lane_pulse() * 0.34)
 		cue.material_override = material
 		wall_cue_materials.append(material)
 		wall_cue_root.add_child(cue)
@@ -3611,8 +3474,8 @@ func _update_wall_anticipation_cue(song_time: float) -> void:
 	var strength := 1.0
 	if song_time < start:
 		strength = clampf((song_time - (start - anticipation)) / anticipation, 0.0, 1.0)
-	var pulse := 1.0 + _safe_lane_pulse() * 0.5 * (1.0 + sin(song_time * TAU * 2.0))
-	_set_wall_anticipation_cue(String(event.get("type", "")), strength * pulse)
+	strength = strength * strength * (3.0 - 2.0 * strength)
+	_set_wall_anticipation_cue(String(event.get("type", "")), strength)
 
 
 func _set_wall_anticipation_cue(event_type: String, strength: float) -> void:
@@ -3624,9 +3487,10 @@ func _set_wall_anticipation_cue(event_type: String, strength: float) -> void:
 		elif event_type == "wall_right":
 			safe_side = 0
 		var side_strength := clampf(strength, 0.0, 1.0) if side == safe_side else 0.0
-		material.albedo_color = Color(safe_lane_color.r, safe_lane_color.g, safe_lane_color.b, _safe_lane_opacity() * side_strength)
-		material.emission = safe_lane_color
-		material.emission_energy_multiplier = _safe_lane_emission() * side_strength
+		material.set_shader_parameter("lane_color", Color(safe_lane_color.r, safe_lane_color.g, safe_lane_color.b, _safe_lane_opacity()))
+		material.set_shader_parameter("strength", side_strength)
+		material.set_shader_parameter("emission_energy", _safe_lane_emission())
+		material.set_shader_parameter("flow_speed", 0.24 + _safe_lane_pulse() * 0.34)
 
 
 func _clear_wall_anticipation_cue() -> void:
