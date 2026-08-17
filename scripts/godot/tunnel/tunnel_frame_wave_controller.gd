@@ -6,6 +6,8 @@ const SLOT_COUNT := 4
 var wave_speed := 64.0
 var wave_width := 11.5
 var wave_lifetime := 2.2
+var wave_near_fade_distance := 24.0
+var wave_emission_strength := 0.46
 
 var _ages := PackedFloat32Array()
 var _strengths := PackedFloat32Array()
@@ -27,9 +29,13 @@ func configure(preset: TunnelLevelPreset) -> void:
 		wave_speed = preset.setting(preset.music_reaction_settings, "wave_speed", 64.0)
 		wave_width = preset.setting(preset.music_reaction_settings, "wave_width", 11.5)
 		wave_lifetime = preset.setting(preset.music_reaction_settings, "wave_lifetime", 2.2)
+		wave_near_fade_distance = preset.setting(preset.music_reaction_settings, "wave_near_fade_distance", 24.0)
+		wave_emission_strength = preset.setting(preset.music_reaction_settings, "wave_emission_strength", 0.46)
 	wave_speed = clampf(wave_speed, 24.0, 110.0)
 	wave_width = clampf(wave_width, 5.0, 24.0)
 	wave_lifetime = clampf(wave_lifetime, 0.8, 3.5)
+	wave_near_fade_distance = clampf(wave_near_fade_distance, 8.0, 48.0)
+	wave_emission_strength = clampf(wave_emission_strength, 0.1, 1.0)
 	clear()
 
 
@@ -104,3 +110,12 @@ func peak_strength() -> float:
 	for strength in _strengths:
 		peak = maxf(peak, strength)
 	return peak
+
+
+static func spatial_visibility(depth: float, front_depth: float, width: float, near_fade_distance: float) -> float:
+	var safe_width := maxf(0.001, width)
+	var safe_fade_distance := maxf(0.001, near_fade_distance)
+	var distance_to_front := absf(depth - front_depth)
+	var spatial_mask := 1.0 - smoothstep(safe_width * 0.15, safe_width * 0.5, distance_to_front)
+	var near_fade := smoothstep(safe_fade_distance * 0.52, safe_fade_distance, maxf(0.0, depth))
+	return spatial_mask * near_fade

@@ -10,6 +10,12 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var failures := PackedStringArray()
+	var near_wave_visibility := TunnelFrameWaveController.spatial_visibility(0.0, 0.0, 11.5, 24.0)
+	var far_wave_visibility := TunnelFrameWaveController.spatial_visibility(24.0, 24.0, 11.5, 24.0)
+	if near_wave_visibility > 0.001:
+		failures.append("action wave remains visible inside the near-camera exclusion zone")
+	if far_wave_visibility < 0.95:
+		failures.append("action wave never reaches full visibility in the mid-distance")
 	var generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
 	root.add_child(generator)
 	await process_frame
@@ -120,7 +126,11 @@ func _run() -> void:
 		failures.append("section transition did not return to the camera baseline")
 
 	var stats := generator.get_runtime_stats()
-	print("TUNNEL_INTERACTION_SMOKE spectrum=%s/%d mode=%s pool=%d deferred_recycles=%d beat_camera_static=%s hand_rotation_deg=%.3f duck_barrier_bottom=%.3f" % [
+	if float(stats.get("frame_wave_near_fade_distance", 0.0)) < 20.0:
+		failures.append("frame wave near fade is too close to gameplay")
+	if float(stats.get("frame_wave_emission_strength", 99.0)) > 0.6:
+		failures.append("frame wave emission strength is too distracting")
+	print("TUNNEL_INTERACTION_SMOKE spectrum=%s/%d mode=%s pool=%d deferred_recycles=%d beat_camera_static=%s hand_rotation_deg=%.3f duck_barrier_bottom=%.3f wave_near=%.3f wave_far=%.3f" % [
 		String(stats.get("spectrum_source", "off")),
 		int(stats.get("spectrum_bands", 0)),
 		spectrum.anchor_mode() if spectrum != null else "missing",
@@ -129,6 +139,8 @@ func _run() -> void:
 		str(failures.find("beat/drop still changes the camera") < 0),
 		hand_rotation_delta,
 		barrier_bottom,
+		near_wave_visibility,
+		far_wave_visibility,
 	])
 	for failure in failures:
 		push_error("TUNNEL_INTERACTION_SMOKE: %s" % failure)

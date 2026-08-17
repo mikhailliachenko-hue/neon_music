@@ -345,6 +345,8 @@ func apply_frame_reaction(
 	wave_speed: float,
 	wave_width: float,
 	wave_lifetime: float,
+	wave_near_fade_distance: float,
+	wave_emission_strength: float,
 	wave_origin_z: float
 ) -> void:
 	if _active_world_style == null or _active_world_style.spatial_profile != "RhythmFrames":
@@ -379,25 +381,34 @@ func apply_frame_reaction(
 					if strength <= 0.0 or age < 0.0 or age > wave_lifetime:
 						continue
 					var front_depth := age * wave_speed
-					var distance_to_front := absf(depth - front_depth)
-					var spatial_mask := 1.0 - smoothstep(wave_width * 0.28, wave_width, distance_to_front)
+					# `wave_width` is the full visible band. Keeping the half-width here
+					# limits the response to a few frames instead of lighting half the tunnel.
+					# The action still launches at the camera, but it only becomes readable
+					# in the mid-distance where it cannot compete with gameplay cues.
+					var spatial_visibility := TunnelFrameWaveController.spatial_visibility(
+						depth, front_depth, wave_width, wave_near_fade_distance
+					)
 					var life_mask := 1.0 - smoothstep(wave_lifetime * 0.72, wave_lifetime, age)
-					var candidate := spatial_mask * life_mask * strength
+					var candidate := spatial_visibility * life_mask * strength
 					if candidate > wave_amount:
 						wave_amount = candidate
 						var phase_color := _frame_accent if posmod(wave_color_phases[wave_index], 2) == 1 else _frame_primary
+						var companion_color := _frame_primary if posmod(wave_color_phases[wave_index], 2) == 1 else _frame_accent
 						var signed_gradient := clampf(0.5 + (front_depth - depth) / maxf(1.0, wave_width) * 0.45, 0.0, 1.0)
-						wave_color = phase_color.lerp(Color(1.0, 0.97, 0.90, 1.0), signed_gradient * 0.78)
-				var final_color := base_color.lerp(wave_color, clampf(wave_amount, 0.0, 1.0))
-				var emission := (0.44 + _frame_emission * 0.105) * (1.0 + wave_amount * 1.85)
+						# No white-hot head: the wave stays inside the authored two-color
+						# palette and uses only a restrained amount of color travel.
+						wave_color = phase_color.lerp(companion_color, signed_gradient * 0.34)
+				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.58
+				var final_color := base_color.lerp(wave_color, visual_amount)
+				var emission := (0.44 + _frame_emission * 0.105) * (1.0 + wave_amount * wave_emission_strength)
 				for stored_material in module.get_meta("rhythm_frame_materials") as Array:
 					var material := stored_material as Material
 					if material is ShaderMaterial:
 						var themed := material as ShaderMaterial
 						themed.set_shader_parameter("theme_primary", final_color)
-						themed.set_shader_parameter("theme_accent", final_color.lerp(Color.WHITE, 0.24 + wave_amount * 0.32))
+						themed.set_shader_parameter("theme_accent", final_color.lerp(Color.WHITE, 0.14))
 						themed.set_shader_parameter("theme_emission", emission)
-						themed.set_shader_parameter("theme_body_glow", 0.12 + wave_amount * 0.88)
+						themed.set_shader_parameter("theme_body_glow", 0.12 + visual_amount * 0.34)
 					elif material is StandardMaterial3D:
 						var standard := material as StandardMaterial3D
 						standard.emission = final_color

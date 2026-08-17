@@ -247,6 +247,8 @@ func sync_to_song_time(song_time: float, music_state: Dictionary) -> void:
 			_frame_wave_controller.wave_speed,
 			_frame_wave_controller.wave_width,
 			_frame_wave_controller.wave_lifetime,
+			_frame_wave_controller.wave_near_fade_distance,
+			_frame_wave_controller.wave_emission_strength,
 			wave_origin_z
 		)
 	ring_manager.apply_music(_segments, _beat_pulse, float(visual_state.get("drop_pulse", 0.0)), song_time)
@@ -298,6 +300,8 @@ func get_runtime_stats() -> Dictionary:
 		"spectrum_bands": spectrum_controller.band_count() if spectrum_controller != null else 0,
 		"spectrum_source": spectrum_controller.source_mode() if spectrum_controller != null else "off",
 		"frame_waves": _frame_wave_controller.active_count(),
+		"frame_wave_near_fade_distance": _frame_wave_controller.wave_near_fade_distance,
+		"frame_wave_emission_strength": _frame_wave_controller.wave_emission_strength,
 	}
 
 
