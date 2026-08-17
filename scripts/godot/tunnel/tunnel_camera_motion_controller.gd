@@ -105,6 +105,12 @@ func apply(song_time: float, _pulse: float, _drop_pulse: float) -> void:
 				step_position = Vector3(-_step_lane_bias * absf(wave) * 0.020, wave * 0.014, -absf(wave) * 0.012)
 				step_rotation = Vector3(-wave * 0.35, 0.0, _step_lane_bias * absf(wave) * 0.65)
 				action_fov = absf(wave) * 0.16
+			"HOLD":
+				# A long hit gets one soft confirmation push; the camera never
+				# follows the full ribbon or drifts while the hold is active.
+				step_position = Vector3(-_step_lane_bias * absf(wave) * 0.010, wave * 0.006, -absf(wave) * 0.009)
+				step_rotation = Vector3(-wave * 0.16, 0.0, _step_lane_bias * absf(wave) * 0.22)
+				action_fov = absf(wave) * 0.10
 			_:
 				step_position = Vector3(_step_lane_bias * absf(wave) * 0.010, wave * 0.050, -absf(wave) * 0.016)
 				step_rotation = Vector3(-wave * 0.40, 0.0, _step_lane_bias * absf(wave) * 0.14)

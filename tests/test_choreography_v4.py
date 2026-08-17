@@ -125,7 +125,7 @@ def test_body_counterpoint_maps_kick_to_feet_and_snare_to_hands():
     assert _body_counterpoint_fit(sequence, context) == 1.0
 
 
-def test_tail_drop_candidates_include_safe_pickup_mechanic():
+def test_tail_drop_candidates_keep_the_last_8_count_focused():
     context = {
         "section_role": "verse",
         "tail_events": [{"type": "drop", "beat_index": 32}],
@@ -135,11 +135,9 @@ def test_tail_drop_candidates_include_safe_pickup_mechanic():
         "MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "PUNCH_LEFT",
         "PUNCH_RIGHT", "DOUBLE_FOOT_PULSE",
     }, music_context=context)
-    pickup = [candidate for candidate in candidates if any(
-        item.get("cell_function") == "PICKUP_TO_DROP" for item in candidate["sequence"]
-    )]
-    assert pickup
-    assert all(candidate["metrics"]["pickup_payoff_fit"] == 1.0 for candidate in pickup)
+    assert candidates
+    assert all(candidate["metrics"]["pickup_payoff_fit"] == 1.0 for candidate in candidates)
+    assert all(candidate["metrics"]["block_family_focus"] == 1.0 for candidate in candidates)
 
 def test_selected_candidate_sequence_is_rendered():
     _, beatmap = products()
@@ -160,10 +158,10 @@ def test_full_track_generation_expands_beyond_slice():
     assert full_map["generation_mode"] == "full_track"
     assert len(full_map["movement_events"]) >= len(slice_map["movement_events"])
 
-def test_teach_practice_mirror_combine():
+def test_teach_repeat_mirror_payoff():
     _, beatmap = products()
     roles = {event["cell_function"] for event in beatmap["movement_events"]}
-    assert {"TEACH", "PRACTICE", "MIRROR", "COMBINE"} <= roles
+    assert {"TEACH", "REPEAT", "MIRROR", "PAYOFF"} <= roles
 
 def test_max_new_movements_per_phrase():
     _, beatmap = products()
@@ -383,7 +381,11 @@ def test_long_double_foot_rails_require_readable_lower_body_setup():
     assert double_foot_indices
     recovery = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER"}
     assert all(index > 0 and events[index - 1]["movement"] in allowed_setup for index in double_foot_indices)
-    assert all(events[index]["dynamic_role"] == "PAYOFF" for index in double_foot_indices)
+    assert all(
+        events[index]["dynamic_role"] == "PAYOFF"
+        or events[index]["cell_function"] == "FINALE_CALLBACK_LONG_STEP"
+        for index in double_foot_indices
+    )
     assert all(index + 1 < len(events) and events[index + 1]["movement"] in recovery for index in double_foot_indices)
     for index in double_foot_indices:
         event = events[index]
@@ -394,7 +396,7 @@ def test_long_double_foot_rails_require_readable_lower_body_setup():
         assert all(not note["sustained"] and note["duration"] == event["duration"] for note in notes)
 
 
-def test_reference_hands_teach_call_response_before_bilateral_payoff():
+def test_hand_phrases_teach_call_response_before_bilateral_payoff():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
     events = beatmap["movement_events"]
@@ -402,18 +404,17 @@ def test_reference_hands_teach_call_response_before_bilateral_payoff():
         event["movement"] == "DOUBLE_PUNCH" and event["dynamic_role"] in {"SETUP", "DEVELOP"}
         for event in events
     )
-    calls = [event for event in events if event["cell_function"] == "REFERENCE_HAND_CALL"]
-    responses = [event for event in events if event["cell_function"] == "REFERENCE_HAND_RESPONSE"]
-    assert calls and len(calls) == len(responses)
-    assert all(event["movement"] in {"PUNCH_LEFT", "PUNCH_RIGHT"} for event in [*calls, *responses])
+    calls = [event for event in events if event["movement"] == "PUNCH_LEFT"]
+    responses = [event for event in events if event["movement"] == "PUNCH_RIGHT"]
+    assert calls and responses
+    assert abs(len(calls) - len(responses)) <= 1
     paired = [event for event in events if event["movement"] == "DOUBLE_PUNCH"]
     assert paired
     assert all(event["dynamic_role"] in {"LIFT", "PAYOFF"} for event in paired)
     assert all(len(event["internal_hits"]) == 2 and {hit["beat_offset"] for hit in event["internal_hits"]} == {0} for event in paired)
-    recovery = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER"}
     hold_indices = [index for index, event in enumerate(events) if event["movement"] == "DOUBLE_HAND_HOLD"]
     assert hold_indices
-    assert all(index + 1 < len(events) and events[index + 1]["movement"] in recovery for index in hold_indices)
+    assert all(events[index]["duration_beats"] == 8 for index in hold_indices)
 
 
 def test_reference_jump_repeat_uses_two_landings_then_breath_duck_and_recovery():
@@ -431,7 +432,7 @@ def test_reference_jump_repeat_uses_two_landings_then_breath_duck_and_recovery()
             }
         ]
         assert [event["movement"] for event in challenge] == [
-            "SMALL_JUMP", "WEIGHT_SHIFT", "DUCK", "STEP_TOUCH_RIGHT",
+            "SMALL_JUMP", "SMALL_JUMP", "DUCK", "DUCK", "WEIGHT_SHIFT",
         ]
         jump = challenge[0]
         assert [hit["beat_offset"] for hit in jump["internal_hits"]] == [0, 2]
@@ -453,8 +454,8 @@ def test_finale_callback_is_inside_track_and_recalls_rail_then_hand_call():
         if event["cell_function"].startswith("FINALE_CALLBACK_")
     ]
     assert [event["movement"] for event in events] == [
-        "STEP_TOUCH_LEFT", "DOUBLE_FOOT_PULSE", "WEIGHT_SHIFT",
-        "PUNCH_LEFT", "PUNCH_RIGHT", "DOUBLE_PUNCH", "STEP_TOUCH_RIGHT",
+        "WEIGHT_SHIFT", "DOUBLE_FOOT_PULSE", "WEIGHT_SHIFT",
+        "PUNCH_LEFT", "PUNCH_RIGHT", "STEP_TOUCH_RIGHT",
     ]
     assert events[-1]["canonical_beat_index"] < len(grid["canonical_beats"])
     finale_notes = [note for note in beatmap["notes"] if note.get("finale_callback")]

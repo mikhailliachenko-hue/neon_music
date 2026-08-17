@@ -20,28 +20,25 @@ per-phrase movement targets. The full design and research sources are in
 with `python -m pip install -r requirements-advanced.txt`; the default signal
 path remains available with `--no-neural-meter`.
 
-V4 also shapes every complete 32-beat phrase as four readable 8-count blocks:
-`SETUP -> DEVELOP -> LIFT -> PAYOFF`. The generator develops one primary
-movement axis at a time (intensity, density, level, travel, or upper body),
-uses impact-rebuild curves for drops, and release curves for recovery/outro.
+V4.5 shapes every complete 32-beat phrase as four readable 8-count blocks:
+`TEACH -> REPEAT -> MIRROR -> PAYOFF`. Each 8-count owns one action family,
+each phrase uses no more than five movements and two broad families, and a
+64-beat chapter keeps the same mechanic for an establish/variation pair.
+Music energy still controls density, impact and payoff strength, while sparse
+jump/duck chapters provide deliberate contrast instead of random mixing.
 Run `generate_choreography_v4.py` without `--profile` for the normal dynamic
 profile; `--profile warmup_first` is the explicit teaching-mode alternative.
 
 Compound choreography is projected as synchronized component cues rather than
-one ambiguous icon. `SYNC_STEP_PUNCH_*` pairs a same-side step and punch on the
-same beat; the harder `CROSS_STEP_PUNCH_*` is allowed only after a simple sync
-pattern has appeared earlier in the phrase. `DOUBLE_FOOT_PULSE` emits two
-grounded foot-pad cues and is not treated as a jump. Repeated verse/chorus/drop
-sections use motif memory to recall a recognizable hook while penalizing exact
-phrase copies, and transition scoring accounts for stance, level, weight,
-impact, and compound-pattern changes.
+one ambiguous icon. `DOUBLE_FOOT_PULSE` emits two grounded foot-pad cues and is
+not treated as a jump; paired hands follow the same explicit left/right
+contract. Repeated sections use motif memory to recall a recognizable hook,
+and transition scoring accounts for stance, level, weight and impact.
 
-Two music-reactive dynamics are layered on top of that grammar. Body
-counterpoint maps kick/low accents toward grounded footwork and snare/high
-accents toward hand or upper-body cues, rewarding readable alternation rather
-than extra notes. `PICKUP_TO_DROP` may replace the final 8-count before a
-detected drop with two hand calls and a grounded double-foot response; the
-high-impact payoff remains on the following drop.
+Body counterpoint maps kick/low accents toward grounded footwork and
+snare/high accents toward hand or upper-body cues. A detected drop now raises
+the payoff inside the currently taught mechanic instead of injecting a mixed
+hand/foot pickup into its final 8-count.
 
 ## Analyzer Workflow
 

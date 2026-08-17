@@ -63,10 +63,10 @@ script = ExtResource("1_main")
 environment = SubResource("Environment_neon")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(0, 0, 6.35)
-rotation_degrees = Vector3(-4, 0, 0)
+position = Vector3(0, -0.12, 6.5)
+rotation_degrees = Vector3(-3.5, 0, 0)
 current = true
-fov = 72.0
+fov = 70.0
 
 [node name="Track" type="MeshInstance3D" parent="."]
 position = Vector3(0, -1.8, -55)

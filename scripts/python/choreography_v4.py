@@ -16,6 +16,14 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from phrase_readability import (
+    action_family,
+    build_phrase_candidate,
+    phrase_action_signature,
+    phrase_readability_metrics,
+    phrase_readability_violations,
+)
+
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
 BEATMAP_SCHEMA = "neon_music.beatmap.v4"
 MOVEMENT_SCHEMA = "neon_music.movement_events.v2"
@@ -451,78 +459,8 @@ def _candidate_sequence(
     if not role and phrase_index == 0:
         role = "intro"
     if role in {"peak", "finale"}:
-        role = "drop"
-    cells = ROLE_PHRASE_CELLS.get(role)
-    if cells is None:
-        if SLICE_CELLS:
-            start_cell = (phrase_index * 4) % len(SLICE_CELLS)
-            cells = [SLICE_CELLS[(start_cell + offset) % len(SLICE_CELLS)] for offset in range(4)]
-        else:
-            cells = []
-    # Some energetic roles expose multiple payoff choices. A phrase always
-    # remains four 8-count blocks; the extra cells are a deterministic pool,
-    # not a fifth block that would violate the 32-beat contract.
-    if len(cells) > 4:
-        payoff_pool = cells[3:]
-        cells = [*cells[:3], payoff_pool[variant % len(payoff_pool)]]
-    sequence, cursor = [], phrase_index * 32
-    tail_types = {
-        str(event.get("type", ""))
-        for event in context.get("tail_events", [])
-        if isinstance(event, dict)
-    }
-    for cell_index, (function, originals) in enumerate(cells):
-        items = list(originals)
-        cell_function = function
-        mode = variant % 6
-        if mode == 1 and cell_index == 2:
-            items = [(MOVEMENTS.get(move, {}).get("mirror_id", move), duration) for move, duration in items]
-        elif mode == 2 and cell_index == 1:
-            items = list(reversed(items))
-        elif mode == 3 and cell_index == 3 and function not in {"CALLBACK_FINAL_STEP"}:
-            items = [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]
-        elif mode == 4 and cell_index == 0 and function not in {"ORIENT"}:
-            items = [("MARCH_IN_PLACE", 4), *items]
-            items[-1] = (items[-1][0], max(2, items[-1][1] - 4))
-        elif mode == 5 and cell_index == 2 and function not in {"RECOVERY"}:
-            items = [("SIDE_REACH_LEFT", 2), ("SIDE_REACH_RIGHT", 2), ("WEIGHT_SHIFT", 4)]
-        # A safe musical pickup: hands accelerate first, grounded feet confirm
-        # the final pulse, and the actual high-impact response remains on the
-        # following drop phrase. Only a subset of candidates receives it so
-        # scoring can decide whether it really fits the local context.
-        if (
-            cell_index == 3
-            and "drop" in tail_types
-            and role not in {"drop", "chorus", "breakdown", "outro"}
-            and variant % 3 == 0
-        ):
-            items = [("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("DOUBLE_FOOT_PULSE", 4)]
-            cell_function = "PICKUP_TO_DROP"
-        # Variant transforms must never change the 8-count cell contract.
-        total = sum(duration for _, duration in items)
-        while total > 8 and items:
-            movement_id, duration = items[-1]
-            excess = total - 8
-            if duration > excess:
-                items[-1] = (movement_id, duration - excess)
-                total = 8
-            else:
-                total -= duration
-                items.pop()
-        if items and total < 8:
-            movement_id, duration = items[-1]
-            items[-1] = (movement_id, duration + 8 - total)
-        for movement_id, duration in items:
-            meta = MOVEMENTS[movement_id]
-            sequence.append({"movement": movement_id, "start_beat": cursor, "duration_beats": duration, "body_side": meta["side"], "mirror_mode": meta["side"] == "right", "internal_hit_offsets": [value for value in meta["internal_hit_offsets"] if value < duration], "cell_function": cell_function, "dynamic_role": ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[cell_index]})
-            cursor += duration
-    # Deterministic identity variation without fake scores.
-    if variant >= 6 and len(sequence) > 2:
-        index = 1 + (variant % (len(sequence) - 1))
-        old = sequence[index]["movement"]
-        replacement = MOVEMENTS[old]["mirror_id"]
-        sequence[index] = {**sequence[index], "movement": replacement, "body_side": MOVEMENTS[replacement]["side"], "mirror_mode": MOVEMENTS[replacement]["side"] == "right"}
-    return sequence
+        role = "finale"
+    return build_phrase_candidate(phrase_index, variant, role, MOVEMENTS)
 
 
 def _warmup_sequence(phrase_index: int, variant: int) -> list[dict[str, Any]]:
@@ -590,6 +528,7 @@ def _apply_reference_hand_hold_accents(
     enabled: bool,
     rate_phrases: int,
     profile: str,
+    excluded_phrase_indices: set[int] | None = None,
 ) -> list[int]:
     """Replace rare four-beat accents with the reference's paired hand hold.
 
@@ -604,39 +543,17 @@ def _apply_reference_hand_hold_accents(
     applied: list[int] = []
     last_phrase = -spacing
     strong_roles = {"build", "chorus", "drop", "peak", "finale"}
-    unsafe_replacements = {"DUCK", "SHALLOW_SQUAT", "SMALL_JUMP", "JUMP", "DOUBLE_FOOT_PULSE"}
-    upper_body_choices = {"DOUBLE_PUNCH", "PUNCH_LEFT", "PUNCH_RIGHT", "SIDE_REACH_LEFT", "SIDE_REACH_RIGHT", "SIDE_STEP_CLAP"}
+    excluded = excluded_phrase_indices or set()
     for phrase_index, phrase in enumerate(selected_sequences):
         role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
-        if phrase_index == 0 or role not in strong_roles or phrase_index - last_phrase < spacing:
+        if phrase_index == 0 or phrase_index in excluded or role not in strong_roles or phrase_index - last_phrase < spacing:
             continue
-        candidates = [
-            (index, item)
-            for index, item in enumerate(phrase)
-            if int(item.get("duration_beats", 0)) == 4
-            and str(item.get("movement", "")) not in unsafe_replacements
-        ]
-        if not candidates:
-            continue
-        replace_index, original = max(
-            candidates,
-            key=lambda pair: (
-                {"PAYOFF": 3, "LIFT": 2, "DEVELOP": 1, "SETUP": 0}.get(str(pair[1].get("dynamic_role", "")), 0),
-                str(pair[1].get("movement", "")) in upper_body_choices,
-                int(pair[1].get("start_beat", 0)),
-            ),
-        )
-        hold_meta = MOVEMENTS["DOUBLE_HAND_HOLD"]
-        phrase[replace_index] = {
-            **original,
-            "movement": "DOUBLE_HAND_HOLD",
-            "body_side": hold_meta["side"],
-            "mirror_mode": False,
-            "internal_hit_offsets": [0],
-            "cell_function": "REFERENCE_HAND_HOLD",
-        }
-        applied.append(phrase_index)
-        last_phrase = phrase_index
+        phrase_start = phrase_index * 32
+        if _replace_reference_window(phrase, phrase_start + 24, phrase_start + 32, [
+            ("DOUBLE_HAND_HOLD", 8, "REFERENCE_HAND_HOLD", "PAYOFF"),
+        ]):
+            applied.append(phrase_index)
+            last_phrase = phrase_index
     return applied
 
 
@@ -743,16 +660,18 @@ def _apply_reference_jump_repeat_challenges(
     strong_roles = {"build", "chorus", "drop", "peak", "finale"}
     for phrase_index, phrase in enumerate(selected_sequences):
         role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
-        if phrase_index == 0 or phrase_index >= len(selected_sequences) - 2:
+        if phrase_index == 0 or phrase_index % 2 != 0 or phrase_index >= len(selected_sequences) - 2:
             continue
         if role not in strong_roles or phrase_index - last_phrase < 6:
             continue
         phrase_start = phrase_index * 32
-        if _replace_reference_window(phrase, phrase_start + 8, phrase_start + 24, [
+        if _replace_reference_window(phrase, phrase_start, phrase_start + 32, [
+            ("MARCH_IN_PLACE", 8, "REFERENCE_JUMP_SETUP", "SETUP"),
             ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
-            ("WEIGHT_SHIFT", 4, "REFERENCE_JUMP_BREATH", "DEVELOP"),
+            ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
             ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
-            ("STEP_TOUCH_RIGHT", 4, "REFERENCE_JUMP_RECOVERY", "LIFT"),
+            ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
+            ("WEIGHT_SHIFT", 8, "REFERENCE_JUMP_RECOVERY", "PAYOFF"),
         ]):
             applied.append(phrase_index)
             last_phrase = phrase_index
@@ -778,14 +697,13 @@ def _apply_reference_finale_callback(
         )
         if phrase_end - phrase_start < 32:
             continue
-        if _replace_reference_window(phrase, phrase_start + 8, phrase_start + 32, [
-            ("STEP_TOUCH_LEFT", 4, "FINALE_CALLBACK_SETUP", "DEVELOP"),
-            ("DOUBLE_FOOT_PULSE", 4, "FINALE_CALLBACK_LONG_STEP", "PAYOFF"),
-            ("WEIGHT_SHIFT", 4, "FINALE_CALLBACK_BREATH", "LIFT"),
-            ("PUNCH_LEFT", 2, "FINALE_CALLBACK_HAND_CALL", "LIFT"),
-            ("PUNCH_RIGHT", 2, "FINALE_CALLBACK_HAND_RESPONSE", "LIFT"),
-            ("DOUBLE_PUNCH", 4, "FINALE_CALLBACK_HAND_PAYOFF", "PAYOFF"),
-            ("STEP_TOUCH_RIGHT", 4, "FINALE_CALLBACK_RESOLVE", "PAYOFF"),
+        if _replace_reference_window(phrase, phrase_start, phrase_start + 32, [
+            ("WEIGHT_SHIFT", 8, "FINALE_CALLBACK_SETUP", "SETUP"),
+            ("DOUBLE_FOOT_PULSE", 4, "FINALE_CALLBACK_LONG_STEP", "DEVELOP"),
+            ("WEIGHT_SHIFT", 4, "FINALE_CALLBACK_BREATH", "DEVELOP"),
+            ("PUNCH_LEFT", 4, "FINALE_CALLBACK_HAND_CALL", "LIFT"),
+            ("PUNCH_RIGHT", 4, "FINALE_CALLBACK_HAND_RESPONSE", "LIFT"),
+            ("STEP_TOUCH_RIGHT", 8, "FINALE_CALLBACK_RESOLVE", "PAYOFF"),
         ]):
             return phrase_index
     return -1
@@ -1048,10 +966,16 @@ def _metrics(
     rhythmic_phase_fit = max(0.0, min(1.0, 0.38 + 0.56 * phase_family_fit + compound_bonus))
     transition_costs = [_movement_transition_cost(previous, current) for previous, current in zip(sequence, sequence[1:])]
     transition_quality = max(0.0, 1.0 - statistics.fmean(transition_costs)) if transition_costs else 1.0
+    readability = phrase_readability_metrics(sequence, MOVEMENTS)
     return {
         "music_alignment": round(alignment, 6),
         "event_fit": round(event_fit, 6),
-        "phrase_coherence": round(min(0.98, .66 + .035 * len(set(item["cell_function"] for item in sequence)) + .025 * len(set(families)) + .01 * changes), 6),
+        "phrase_coherence": readability["phrase_coherence"],
+        "unique_movement_count": readability["unique_movement_count"],
+        "primary_family_count": readability["primary_family_count"],
+        "family_switch_count": readability["family_switch_count"],
+        "block_family_focus": readability["block_family_focus"],
+        "motif_repetition": readability["motif_repetition"],
         "transition_quality": round(transition_quality, 6),
         "transition_cost_p95": round(float(_percentile(transition_costs, .95) or 0.0), 6),
         "energy_fit": round(energy_fit, 6),
@@ -1275,12 +1199,17 @@ def _pickup_payoff_fit(sequence: list[dict[str, Any]], context: dict[str, Any]) 
         if isinstance(event, dict)
     }
     if "drop" in tail_types:
-        pickup = [item for item in sequence if item.get("cell_function") == "PICKUP_TO_DROP"]
-        if not pickup:
-            return .2
+        phrase_end = max(
+            int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0))
+            for item in sequence
+        )
+        pickup = [
+            item for item in sequence
+            if int(item.get("start_beat", 0)) >= phrase_end - 8
+        ]
         safe = all(MOVEMENTS[item["movement"]]["impact_level"] != "high" for item in pickup)
-        channels = {_movement_body_channel(str(item["movement"])) for item in pickup}
-        return 1.0 if safe and {"upper", "lower"} <= channels else .72
+        focused = len({action_family(str(item["movement"]), MOVEMENTS) for item in pickup}) == 1
+        return 1.0 if safe and focused else .55
     if "drop" in primary_types or str(context.get("section_role", "")).lower() == "drop":
         start = int(context.get("start_beat", 0))
         early = [item for item in sequence if int(item["start_beat"]) < start + 8]
@@ -1322,6 +1251,8 @@ def _hard_violations(
         violations.append("warmup_obstacle_too_early")
     if profile == WARMUP_PROFILE and any(item["movement"] not in WARMUP_MOVEMENTS for item in sequence):
         violations.append("warmup_movement_not_allowed")
+    if profile != WARMUP_PROFILE:
+        violations.extend(phrase_readability_violations(sequence, MOVEMENTS))
     for previous, current in zip(sequence, sequence[1:]):
         previous_meta = MOVEMENTS[previous["movement"]]
         current_meta = MOVEMENTS[current["movement"]]
@@ -1369,8 +1300,9 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
     else:
         weights = {
             "music_alignment": .16, "event_fit": .14, "energy_fit": .12,
-            "section_fit": .14, "teachability": .12, "visual_readability": .12,
-            "fatigue_safety": .10, "difficulty_fit": .06, "body_balance": .04,
+            "section_fit": .12, "teachability": .10, "visual_readability": .10,
+            "phrase_coherence": .10, "motif_repetition": .06,
+            "fatigue_safety": .08, "difficulty_fit": .04, "body_balance": .04,
         }
     total = sum(weights.values())
     base = sum(float(metrics.get(key, 0.0)) * weight for key, weight in weights.items()) / max(total, 1e-9)
@@ -1381,11 +1313,12 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
     )
     compound = .72 * float(metrics.get("compound_flow", .55)) + .28 * float(metrics.get("compound_variety", 0.0))
     return (
-        .66 * base + .14 * micro + .04 * compound
+        .63 * base + .14 * micro + .04 * compound
         + .05 * float(metrics.get("transition_quality", .7))
         + .04 * float(metrics.get("rhythmic_phase_fit", .5))
         + .04 * float(metrics.get("body_counterpoint_fit", .55))
         + .03 * float(metrics.get("pickup_payoff_fit", .55))
+        + .03 * float(metrics.get("phrase_coherence", .5))
     )
 
 
@@ -1669,10 +1602,16 @@ def build_choreography(
             beats.append({"index": index, "time": round(start + (index - len(beats)) * interval, 6), "source": "controlled_extrapolation", "extrapolated": True, "confidence": .35, "downbeat": index % 4 == 0})
     familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
     candidate_debug, selected_sequences, phrase_contexts, selected_candidate_ids = [], [], [], []
+    phrase_chapter_signatures: list[tuple[str, ...]] = []
+    phrase_chapter_indices: list[int] = []
+    phrase_chapter_phases: list[str] = []
     recent_patterns: list[tuple[tuple[str, int, str], ...]] = []
     previous_sequence: list[dict[str, Any]] = []
     previous_role = ""
     motif_memory: dict[str, list[dict[str, Any]]] = {}
+    chapter_signature: tuple[str, ...] = ()
+    chapter_phrase_count = 0
+    chapter_index = -1
     phrase_count = max(1, math.ceil(len(beats) / 32))
     for phrase_index in range(phrase_count):
         music_context = _phrase_music_context(grid, phrase_index)
@@ -1718,13 +1657,46 @@ def build_choreography(
                 selection["selected"] = max(valid, key=lambda candidate: (candidate["score"], candidate["candidate_id"]))
                 selection["selected"]["selected"] = True
                 selection["selected_candidate_id"] = selection["selected"]["candidate_id"]
+        # The reference holds one mechanic for roughly 64 beats even when the
+        # local audio classifier flips role inside that window. Section energy
+        # still changes scoring and visuals; it no longer changes the required
+        # movement family every 15 seconds.
+        new_chapter = (
+            not chapter_signature
+            or chapter_phrase_count >= 2
+            or (current_role == "outro" and previous_role != "outro")
+        )
+        if not new_chapter and chapter_signature:
+            chapter_candidates = [
+                candidate for candidate in candidates
+                if not candidate["hard_violations"]
+                and phrase_action_signature(candidate["sequence"], MOVEMENTS) == chapter_signature
+            ]
+            if chapter_candidates:
+                for candidate in candidates:
+                    candidate["selected"] = False
+                selection["selected"] = max(
+                    chapter_candidates,
+                    key=lambda candidate: (
+                        float(candidate["score"])
+                        + .06 * float(candidate["metrics"].get("motif_repetition", .5)),
+                        candidate["candidate_id"],
+                    ),
+                )
+                selection["selected"]["selected"] = True
+                selection["selected_candidate_id"] = selection["selected"]["candidate_id"]
         selected_candidate = selection["selected"]
         selected_pattern = tuple((item["movement"], int(item["duration_beats"]), item.get("cell_function", "")) for item in selected_candidate["sequence"])
         if selected_pattern in recent_patterns[-2:]:
             alternatives = []
             for candidate in candidates:
                 pattern = tuple((item["movement"], int(item["duration_beats"]), item.get("cell_function", "")) for item in candidate["sequence"])
-                if not candidate["hard_violations"] and pattern not in recent_patterns[-2:]:
+                same_chapter = (
+                    new_chapter
+                    or not chapter_signature
+                    or phrase_action_signature(candidate["sequence"], MOVEMENTS) == chapter_signature
+                )
+                if not candidate["hard_violations"] and same_chapter and pattern not in recent_patterns[-2:]:
                     alternatives.append((candidate, pattern))
             if alternatives:
                 replacement, replacement_pattern = max(alternatives, key=lambda pair: (pair[0]["score"], pair[0]["candidate_id"]))
@@ -1739,6 +1711,15 @@ def build_choreography(
         phrase_contexts.append(music_context)
         selected_candidate_ids.append(selection["selected_candidate_id"])
         selected_sequences.append(selected_candidate["sequence"])
+        selected_signature = phrase_action_signature(selected_candidate["sequence"], MOVEMENTS)
+        if new_chapter or not chapter_signature:
+            chapter_signature = selected_signature
+            chapter_index += 1
+            chapter_phrase_count = 0
+        phrase_chapter_signatures.append(chapter_signature)
+        phrase_chapter_indices.append(chapter_index)
+        phrase_chapter_phases.append("establish" if chapter_phrase_count == 0 else "variation")
+        chapter_phrase_count += 1
         recent_patterns.append(selected_pattern)
         previous_sequence = selected_candidate["sequence"]
         previous_role = current_role
@@ -1758,13 +1739,45 @@ def build_choreography(
         enabled=bool(hand_hold_config.get("enabled", True)),
         rate_phrases=max(2, int(hand_hold_config.get("rate_phrases", 4))),
         profile=profile,
+        excluded_phrase_indices=set(reference_jump_repeat_phrase_indices),
     )
     reference_hand_call_rewrites = _apply_reference_hand_call_response(selected_sequences, profile)
-    reference_hand_recovery_rewrites = _apply_reference_recovery_after_hand_holds(selected_sequences)
+    # Holds now live only inside hand-only 8-counts. Injecting a foot recovery
+    # after them was the source of an unreadable mid-block family switch.
+    reference_hand_recovery_rewrites = 0
     reference_long_steps = _shape_reference_long_step_accents(selected_sequences, phrase_contexts, profile)
     reference_finale_callback_phrase_index = _apply_reference_finale_callback(selected_sequences, profile, len(beats))
+    post_process_familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
+    for phrase_index, phrase in enumerate(selected_sequences):
+        selected_id = selected_candidate_ids[phrase_index]
+        selected_debug = next(
+            candidate for candidate in candidate_debug
+            if candidate.get("candidate_id") == selected_id
+        )
+        selected_debug["sequence"] = copy.deepcopy(phrase)
+        selected_debug["sequence_hash"] = sequence_hash(phrase)
+        previous_diagnostics = dict(selected_debug.get("metrics", {}))
+        selected_debug["metrics"] = _metrics(
+            phrase, phrase_index, post_process_familiarity, phrase_contexts[phrase_index],
+        )
+        for key in (
+            "dynamic_contrast", "dynamic_contrast_fit", "motif_overlap",
+            "motif_variation_fit", "cross_phrase_transition", "recovery_relief",
+            "motif_recall", "motif_exact_repeat",
+        ):
+            if key in previous_diagnostics:
+                selected_debug["metrics"][key] = previous_diagnostics[key]
+        selected_debug["score_breakdown"] = dict(selected_debug["metrics"])
+        selected_debug["hard_violations"] = phrase_readability_violations(phrase, MOVEMENTS)
+        phrase_chapter_signatures[phrase_index] = phrase_action_signature(phrase, MOVEMENTS)
+        post_process_familiarity.update(item["movement"] for item in phrase)
+
     sequence = [item for phrase in selected_sequences for item in phrase if item["start_beat"] < len(beats)]
-    if sequence and profile != WARMUP_PROFILE and sequence[-1]["movement"] != "STEP_TOUCH_RIGHT":
+    if (
+        sequence
+        and profile != WARMUP_PROFILE
+        and sequence[-1]["movement"] != "STEP_TOUCH_RIGHT"
+    ):
         final_step_meta = MOVEMENTS["STEP_TOUCH_RIGHT"]
         sequence[-1] = {**sequence[-1], "movement": "STEP_TOUCH_RIGHT", "body_side": final_step_meta["side"], "mirror_mode": False, "internal_hit_offsets": [0, 2], "cell_function": "CALLBACK_FINAL_STEP"}
     movement_events, base_events, obstacles = [], [], []
@@ -1824,12 +1837,15 @@ def build_choreography(
         if micro_rise.get("blocks") and phrase_beats < 32:
             micro_rise["blocks"] = micro_rise["blocks"][:math.ceil(phrase_beats / 8)]
             micro_rise["partial"] = True
-        grammar = "TEACH_PRACTICE_MIRROR_COMBINE" if phrase_index == 0 else f"MUSIC_ROLE_{role.upper()}"
+        grammar = "TEACH_REPEAT_MIRROR_PAYOFF" if phrase_index == 0 else f"MUSIC_ROLE_{role.upper()}"
         phrase_plan.append({
             "id": f"phrase_{phrase_index:03d}", "start_beat": phrase_index * 32,
             "duration_beats": phrase_beats, "actual_duration_beats": phrase_beats,
             "partial": phrase_beats < 32, "grammar": grammar, "starts_on_downbeat": True,
             "section_role": role, "section_id": context.get("section_id", ""),
+            "chapter_index": phrase_chapter_indices[phrase_index] if phrase_index < len(phrase_chapter_indices) else phrase_index,
+            "chapter_phase": phrase_chapter_phases[phrase_index] if phrase_index < len(phrase_chapter_phases) else "establish",
+            "action_signature": list(phrase_chapter_signatures[phrase_index]) if phrase_index < len(phrase_chapter_signatures) else [],
             "selected_candidate_id": selected_candidate_ids[phrase_index] if phrase_index < len(selected_candidate_ids) else "",
             "target_intensity": targets.get("intensity"),
             "target_complexity": targets.get("complexity"),
@@ -1899,7 +1915,7 @@ def build_choreography(
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
-        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.4",
+        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.5",
         "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
@@ -2042,6 +2058,10 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         "micro_rise_fit", "payoff_strength", "micro_transition_flow",
         "compound_flow", "compound_variety", "body_counterpoint_fit", "pickup_payoff_fit",
         "transition_cost_p95", "motif_recall", "motif_variation_fit", "motif_exact_repeat",
+        # These are structural acceptance diagnostics. A constant value can be
+        # the desired result (for example every block has exactly one family).
+        "unique_movement_count", "primary_family_count", "family_switch_count",
+        "block_family_focus", "motif_repetition", "side_balance",
     }
     constant_metrics = sorted(
         key for key, values in metric_values.items()
@@ -2078,6 +2098,8 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
             "music_alignment", "event_fit", "energy_fit", "section_fit",
             "difficulty_fit", "body_balance", "visual_readability", "fatigue_safety",
             "rhythmic_phase_fit", "body_counterpoint_fit", "pickup_payoff_fit",
+            "phrase_coherence", "unique_movement_count", "primary_family_count",
+            "family_switch_count", "block_family_focus", "motif_repetition",
         )
         if any(key in row for row in selected_metric_rows)
     }

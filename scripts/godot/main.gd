@@ -2958,6 +2958,8 @@ func _camera_action_for_cue(kind: String, cue_archetype: String, movement: Strin
 		return "DUCK"
 	if "JUMP" in cue or "JUMP" in action:
 		return "JUMP"
+	if "HOLD" in cue or "HOLD" in action or kind == "hold_start":
+		return "HOLD"
 	if "PUNCH" in cue or "PUNCH" in action:
 		return "PUNCH"
 	if "HAND" in cue or "HAND" in action or cue == "DOUBLE_TARGET":
@@ -2966,7 +2968,7 @@ func _camera_action_for_cue(kind: String, cue_archetype: String, movement: Strin
 		return "STEP"
 	if "STEP" in action or "LUNGE" in action or "FOOT" in action:
 		return "STEP"
-	return "HOLD" if kind == "hold_start" else ""
+	return ""
 
 
 func _show_hit_feedback(hit_time: float, combo_index: int) -> void:

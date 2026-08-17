@@ -16,18 +16,18 @@ const HAND_CONTAINER_DEPTH := 0.62
 const HAND_FAR_SCALE_BOOST := 0.72
 const HAND_VISUAL_CENTER_Y := 2.65
 const HAND_MAX_SCALE := 1.24
-const HAND_HOLD_MIN_LENGTH := 10.0
-const HAND_HOLD_MAX_LENGTH := 28.0
-const HAND_HOLD_LENGTH_PER_SECOND := 20.0
+const HAND_HOLD_MIN_LENGTH := 5.5
+const HAND_HOLD_MAX_LENGTH := 12.0
+const HAND_HOLD_LENGTH_PER_SECOND := 6.0
 const MATERIAL_PUNCH_ICON := "res://assets/images/movement_icons/material/punch.svg"
 const MOVEMENT_ICON_SHADER := preload("res://assets/models/movement_icon.gdshader")
 const JUMP_OBSTACLE_PATH := "res://assets/models/obstacles/jump_obstacle.tscn"
 const DUCK_GATE_PATH := "res://assets/models/obstacles/duck_gate.tscn"
-const DOUBLE_FOOT_RAIL_BASE_LENGTH := 14.0
-const DOUBLE_FOOT_RAIL_MAX_LENGTH := 24.0
-const DOUBLE_FOOT_RAIL_LENGTH_PER_SECOND := 13.5
-const DOUBLE_FOOT_RAIL_MIN_LENGTH := 3.1
-const DOUBLE_FOOT_RAIL_FRONT_Z := 3.0
+const DOUBLE_FOOT_RAIL_BASE_LENGTH := 10.0
+const DOUBLE_FOOT_RAIL_MAX_LENGTH := 18.0
+const DOUBLE_FOOT_RAIL_LENGTH_PER_SECOND := 9.0
+const DOUBLE_FOOT_RAIL_MIN_LENGTH := 10.0
+const DOUBLE_FOOT_RAIL_TARGET_Z := 0.30
 
 var hit_time := 0.0
 var lane := 0
@@ -159,7 +159,7 @@ func _configure_visuals() -> void:
 	var glass_material := StandardMaterial3D.new()
 	glass_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glass_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var glass_alpha := 0.38 if _is_double_foot_cue() else 0.12
+	var glass_alpha := 0.24 if _is_double_foot_cue() else 0.12
 	glass_material.albedo_color = Color(
 		emission_color.r,
 		emission_color.g,
@@ -168,7 +168,7 @@ func _configure_visuals() -> void:
 	)
 	glass_material.emission_enabled = true
 	glass_material.emission = emission_color
-	glass_material.emission_energy_multiplier = 1.75 if _is_double_foot_cue() else 0.45
+	glass_material.emission_energy_multiplier = 1.10 if _is_double_foot_cue() else 0.45
 	$GlassPanel.material_override = glass_material
 
 	var border_material := StandardMaterial3D.new()
@@ -176,7 +176,7 @@ func _configure_visuals() -> void:
 	border_material.albedo_color = emission_color
 	border_material.emission_enabled = true
 	border_material.emission = emission_color
-	border_material.emission_energy_multiplier = 11.5 if _is_double_foot_cue() else 8.5
+	border_material.emission_energy_multiplier = 7.0 if _is_double_foot_cue() else 8.5
 	for border in $Border.get_children():
 		border.material_override = border_material
 
@@ -235,14 +235,18 @@ func _configure_double_foot_rail(panel: MeshInstance3D, footprint: MeshInstance3
 	for side_name in ["Left", "Right"]:
 		var side := border.get_node(side_name) as MeshInstance3D
 		side.mesh = side.mesh.duplicate()
-	footprint.position.z = 2.28
-	_set_double_foot_reveal(0.0)
+	footprint.position.z = DOUBLE_FOOT_RAIL_TARGET_Z
+	# Keep the authored rail visible at its full length from spawn. Growing it
+	# only near the player looked like geometry popping into existence.
+	_set_double_foot_reveal(1.0)
 
 
 func _set_double_foot_reveal(amount: float) -> void:
 	var reveal := smoothstep(0.0, 1.0, clampf(amount, 0.0, 1.0))
 	var rail_length := lerpf(DOUBLE_FOOT_RAIL_MIN_LENGTH, _double_foot_rail_length, reveal)
-	var rail_center_z := DOUBLE_FOOT_RAIL_FRONT_Z - rail_length * 0.5
+	# The target is the far end; its luminous guide tail points toward +Z where
+	# the player/camera is. This makes the action readable several seconds early.
+	var rail_center_z := DOUBLE_FOOT_RAIL_TARGET_Z + rail_length * 0.5
 	var panel := $GlassPanel as MeshInstance3D
 	var panel_mesh := panel.mesh as QuadMesh
 	if panel_mesh != null:
@@ -251,8 +255,8 @@ func _set_double_foot_reveal(amount: float) -> void:
 	var border := $Border as Node3D
 	var front := border.get_node("Bottom") as MeshInstance3D
 	var back := border.get_node("Top") as MeshInstance3D
-	front.position.z = DOUBLE_FOOT_RAIL_FRONT_Z
-	back.position.z = DOUBLE_FOOT_RAIL_FRONT_Z - rail_length
+	front.position.z = DOUBLE_FOOT_RAIL_TARGET_Z + rail_length
+	back.position.z = DOUBLE_FOOT_RAIL_TARGET_Z
 	for side_name in ["Left", "Right"]:
 		var side := border.get_node(side_name) as MeshInstance3D
 		var side_mesh := side.mesh as BoxMesh
@@ -263,7 +267,7 @@ func _set_double_foot_reveal(amount: float) -> void:
 
 func _animate_architectural_cue(anticipation: float, heartbeat: float) -> void:
 	if _is_double_foot_cue():
-		_set_double_foot_reveal(anticipation * 1.18)
+		_set_double_foot_reveal(1.0)
 	elif cue_archetype.begins_with("FLOOR_PULSE"):
 		var rail := get_node_or_null("KenneyJumpObstacle/ReadyMadeJumpRail") as Node3D
 		if rail != null:
@@ -372,30 +376,30 @@ func _build_hand_container_model() -> void:
 func _build_hand_hold_prism() -> void:
 	var hold := Node3D.new()
 	hold.name = "HandHoldPrism"
-	hold.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, -HAND_CONTAINER_DEPTH * 0.5)
+	hold.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, HAND_CONTAINER_DEPTH * 0.5)
 	var length := maxf(HAND_HOLD_MIN_LENGTH, _hand_hold_length)
 	var body := MeshInstance3D.new()
 	body.name = "HoldBody"
-	body.position.z = -length * 0.5
+	body.position.z = length * 0.5
 	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(HAND_TARGET_SIZE * 0.78, HAND_TARGET_SIZE * 0.78, length)
+	body_mesh.size = Vector3(HAND_TARGET_SIZE * 0.30, HAND_TARGET_SIZE * 0.30, length)
 	body.mesh = body_mesh
 	var body_material := StandardMaterial3D.new()
 	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	# The reference hold is a solid colored volume, not four guide rails around
-	# an almost-black center. Keep the entire prism in the hand's cyan/magenta.
-	body_material.albedo_color = emission_color
+	# The long hit is a translucent guide ribbon with a bright target cap. A
+	# fully emissive solid prism dominated the frame and read as an obstacle.
+	body_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	body_material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.10)
 	body_material.emission_enabled = true
 	body_material.emission = emission_color
-	body_material.emission_energy_multiplier = 1.35
-	body_material.no_depth_test = true
-	body_material.render_priority = 9
+	body_material.emission_energy_multiplier = 0.20
+	body_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	body.material_override = body_material
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(body)
-	var rail_material := _emissive_material(emission_color, 5.8)
-	var half := HAND_TARGET_SIZE * 0.39
-	var rail_z := -length * 0.5
+	var rail_material := _emissive_material(emission_color, 2.4)
+	var half := HAND_TARGET_SIZE * 0.15
+	var rail_z := length * 0.5
 	for rail_data in [
 		["TopLeftRail", Vector3(-half, half, rail_z)],
 		["TopRightRail", Vector3(half, half, rail_z)],
@@ -409,35 +413,37 @@ func _build_hand_hold_prism() -> void:
 func _build_step_platform() -> void:
 	# Lift the authored top decal as well as adding side walls; otherwise a Box
 	# hidden entirely below the road still reads like the old flat quad.
-	$GlassPanel.position.y = 0.17
-	$Border.position.y = 0.17
-	$Footprint.position.y = 0.235
+	$GlassPanel.position.y = 0.09
+	$Border.position.y = 0.09
+	$Footprint.position.y = 0.145
+	var footprint_mesh := $Footprint.mesh as QuadMesh
+	if footprint_mesh != null:
+		footprint_mesh = footprint_mesh.duplicate() as QuadMesh
+		footprint_mesh.size = Vector2(1.28, 1.86)
+		$Footprint.mesh = footprint_mesh
 	var platform := Node3D.new()
 	platform.name = "StepPlatform3D"
 	platform.position.y = 0.025
 	var body := MeshInstance3D.new()
 	body.name = "PlatformBody"
 	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(1.82, 0.22, 2.98)
+	body_mesh.size = Vector3(1.76, 0.10, 2.18)
 	body.mesh = body_mesh
 	var body_material := StandardMaterial3D.new()
 	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	body_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	body_material.albedo_color = Color(0.015 + emission_color.r * 0.22, 0.02 + emission_color.g * 0.22, 0.055 + emission_color.b * 0.22, 0.82)
+	body_material.albedo_color = Color(0.012 + emission_color.r * 0.10, 0.016 + emission_color.g * 0.10, 0.040 + emission_color.b * 0.10, 0.72)
 	body_material.emission_enabled = true
 	body_material.emission = emission_color
-	body_material.emission_energy_multiplier = 0.72
+	body_material.emission_energy_multiplier = 0.42
 	body.material_override = body_material
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	platform.add_child(body)
 	var rim := _emissive_material(emission_color, 7.0)
-	_add_hand_cube_edge(platform, "FrontTopRim", Vector3(0.0, 0.115, 1.49), Vector3(1.92, 0.06, 0.08), rim)
-	_add_hand_cube_edge(platform, "FrontBottomRim", Vector3(0.0, -0.115, 1.49), Vector3(1.92, 0.05, 0.08), rim)
-	_add_hand_cube_edge(platform, "BackTopRim", Vector3(0.0, 0.115, -1.49), Vector3(1.92, 0.06, 0.08), rim)
-	_add_hand_cube_edge(platform, "LeftTopRim", Vector3(-0.91, 0.115, 0.0), Vector3(0.08, 0.06, 2.98), rim)
-	_add_hand_cube_edge(platform, "RightTopRim", Vector3(0.91, 0.115, 0.0), Vector3(0.08, 0.06, 2.98), rim)
-	_add_hand_cube_edge(platform, "FrontLeftPost", Vector3(-0.91, 0.0, 1.49), Vector3(0.08, 0.22, 0.08), rim)
-	_add_hand_cube_edge(platform, "FrontRightPost", Vector3(0.91, 0.0, 1.49), Vector3(0.08, 0.22, 0.08), rim)
+	_add_hand_cube_edge(platform, "FrontTopRim", Vector3(0.0, 0.055, 1.09), Vector3(1.86, 0.045, 0.065), rim)
+	_add_hand_cube_edge(platform, "BackTopRim", Vector3(0.0, 0.055, -1.09), Vector3(1.86, 0.045, 0.065), rim)
+	_add_hand_cube_edge(platform, "LeftTopRim", Vector3(-0.88, 0.055, 0.0), Vector3(0.065, 0.045, 2.18), rim)
+	_add_hand_cube_edge(platform, "RightTopRim", Vector3(0.88, 0.055, 0.0), Vector3(0.065, 0.045, 2.18), rim)
 	add_child(platform)
 
 
@@ -476,7 +482,7 @@ func _build_foot_glow_ring() -> void:
 	ring.name = "FootGlowRing"
 	ring.position.y = 0.025
 	if _is_double_foot_cue():
-		ring.position.z = 2.28
+		ring.position.z = DOUBLE_FOOT_RAIL_TARGET_Z
 	var mesh := TorusMesh.new()
 	mesh.inner_radius = 0.78
 	mesh.outer_radius = 0.91
@@ -486,10 +492,10 @@ func _build_foot_glow_ring() -> void:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.18)
+	material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.10)
 	material.emission_enabled = true
 	material.emission = emission_color
-	material.emission_energy_multiplier = 2.4
+	material.emission_energy_multiplier = 1.35
 	ring.material_override = material
 	add_child(ring)
 
@@ -574,8 +580,8 @@ func _set_approach_energy(amount: float, distance_factor: float, heartbeat: floa
 	var glass := $GlassPanel.material_override as StandardMaterial3D
 	if glass != null:
 		if _is_double_foot_cue():
-			glass.emission_energy_multiplier = lerpf(1.8, 4.2, amount)
-			glass.albedo_color.a = lerpf(0.30, 0.58, amount)
+			glass.emission_energy_multiplier = lerpf(1.1, 2.8, amount)
+			glass.albedo_color.a = lerpf(0.20, 0.38, amount)
 		else:
 			glass.emission_energy_multiplier = lerpf(0.65, 2.2, amount)
 			glass.albedo_color.a = lerpf(0.16, 0.34, amount)
@@ -603,7 +609,7 @@ func _set_approach_energy(amount: float, distance_factor: float, heartbeat: floa
 	for child in $Border.get_children():
 		var material := (child as MeshInstance3D).material_override as StandardMaterial3D
 		if material != null:
-			var rail_boost := 1.35 if _is_double_foot_cue() else 1.0
+			var rail_boost := 0.92 if _is_double_foot_cue() else 1.0
 			material.emission_energy_multiplier = lerpf(5.0, 9.0, amount) * lerpf(0.88, 1.18, heartbeat) * rail_boost
 
 
