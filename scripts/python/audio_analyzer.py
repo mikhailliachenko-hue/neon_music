@@ -29,6 +29,8 @@ from lane_assignment import (
     DEFAULT_HOLD_MIN_DURATION,
     DEFAULT_HOLD_MIN_GAP,
     DEFAULT_HOLD_RATE_BARS,
+    DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
+    DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -90,13 +92,63 @@ def _demucs_device_candidates(requested_device: str) -> list[str]:
     if requested in ("", "auto"):
         return ["cuda", "cpu"]
     if requested == "cuda":
-        return ["cuda", "cpu"]
+        # An explicit GPU request is strict. The GUI uses this path so a CUDA
+        # problem is reported instead of silently turning a long run into CPU work.
+        return ["cuda"]
     return [requested]
+
+
+def demucs_gpu_status() -> dict[str, object]:
+    """Return a small, GUI-friendly report for the active PyTorch runtime."""
+    try:
+        import torch
+    except Exception as exc:
+        return {
+            "available": False,
+            "reason": f"PyTorch is unavailable: {type(exc).__name__}: {exc}",
+        }
+
+    torch_version = str(getattr(torch, "__version__", "unknown"))
+    cuda_version = getattr(getattr(torch, "version", None), "cuda", None)
+    if not cuda_version:
+        return {
+            "available": False,
+            "torch_version": torch_version,
+            "reason": f"PyTorch {torch_version} is a CPU-only build.",
+        }
+
+    try:
+        if not bool(torch.cuda.is_available()):
+            return {
+                "available": False,
+                "torch_version": torch_version,
+                "cuda_version": str(cuda_version),
+                "reason": "CUDA PyTorch is installed, but Windows cannot access the GPU.",
+            }
+        device_index = int(torch.cuda.current_device())
+        properties = torch.cuda.get_device_properties(device_index)
+        return {
+            "available": True,
+            "device": "cuda",
+            "device_index": device_index,
+            "name": str(torch.cuda.get_device_name(device_index)),
+            "torch_version": torch_version,
+            "cuda_version": str(cuda_version),
+            "memory_gb": round(float(properties.total_memory) / (1024.0 ** 3), 1),
+        }
+    except Exception as exc:
+        return {
+            "available": False,
+            "torch_version": torch_version,
+            "cuda_version": str(cuda_version),
+            "reason": f"CUDA initialization failed: {type(exc).__name__}: {exc}",
+        }
 
 
 def _run_demucs_separation(source_audio: Path, temp_root: Path, demucs_device: str) -> str:
     errors: list[str] = []
-    for device in _demucs_device_candidates(demucs_device):
+    candidates = _demucs_device_candidates(demucs_device)
+    for device in candidates:
         command = [
             sys.executable,
             "-m",
@@ -121,7 +173,7 @@ def _run_demucs_separation(source_audio: Path, temp_root: Path, demucs_device: s
             stderr = (exc.stderr or "").strip()
             detail = stderr or stdout or f"Demucs exited with code {exc.returncode}."
             errors.append(f"device={device}: {detail}")
-            if device == "cuda":
+            if device == "cuda" and len(candidates) > 1:
                 print("Demucs CUDA separation failed; retrying on CPU.")
                 continue
             raise RuntimeError("Demucs separation failed. " + "\n".join(errors)) from exc
@@ -1252,6 +1304,8 @@ def analyze_with_metadata(
     hold_min_duration: float = DEFAULT_HOLD_MIN_DURATION,
     hold_max_duration: float = DEFAULT_HOLD_MAX_DURATION,
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
+    reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
+    reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     bass_audio_path: Path | None = None,
     drums_audio_path: Path | None = None,
     music_audio_path: Path | None = None,
@@ -1283,6 +1337,8 @@ def analyze_with_metadata(
         hold_min_duration=hold_min_duration,
         hold_max_duration=hold_max_duration,
         hold_min_gap=hold_min_gap,
+        reference_hand_holds_enabled=reference_hand_holds_enabled,
+        reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
         lane_layout=lane_layout,
     )
 
@@ -1459,6 +1515,8 @@ def analyze(
     hold_min_duration: float = DEFAULT_HOLD_MIN_DURATION,
     hold_max_duration: float = DEFAULT_HOLD_MAX_DURATION,
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
+    reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
+    reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     phrase_length_beats: int = 32,
     subphrase_length_beats: int = 8,
     manual_downbeat_offset_seconds: float = 0.0,
@@ -1488,6 +1546,8 @@ def analyze(
         hold_min_duration=hold_min_duration,
         hold_max_duration=hold_max_duration,
         hold_min_gap=hold_min_gap,
+        reference_hand_holds_enabled=reference_hand_holds_enabled,
+        reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
         phrase_length_beats=phrase_length_beats,
         subphrase_length_beats=subphrase_length_beats,
         manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
@@ -1547,6 +1607,8 @@ def main() -> int:
     parser.add_argument("--hold-min-duration", type=float, default=DEFAULT_HOLD_MIN_DURATION)
     parser.add_argument("--hold-max-duration", type=float, default=DEFAULT_HOLD_MAX_DURATION)
     parser.add_argument("--hold-min-gap", type=float, default=DEFAULT_HOLD_MIN_GAP)
+    parser.add_argument("--reference-hand-holds", action=argparse.BooleanOptionalAction, default=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
+    parser.add_argument("--reference-hand-hold-rate-phrases", type=int, default=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
     parser.add_argument("--beatmap", type=Path, default=output_dir / "beatmap.json")
     parser.add_argument("--metadata", type=Path, default=output_dir / "beat_grid.json")
     parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt", help=argparse.SUPPRESS)
@@ -1589,6 +1651,8 @@ def main() -> int:
             hold_min_duration=args.hold_min_duration,
             hold_max_duration=args.hold_max_duration,
             hold_min_gap=args.hold_min_gap,
+            reference_hand_holds_enabled=args.reference_hand_holds,
+            reference_hand_hold_rate_phrases=args.reference_hand_hold_rate_phrases,
             bass_audio_path=stems["bass"],
             drums_audio_path=stems["drums"],
             music_audio_path=args.audio,

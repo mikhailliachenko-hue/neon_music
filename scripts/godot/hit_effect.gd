@@ -3,23 +3,43 @@ class_name HalftoneDiamond
 
 const VFX_SHADER := preload("res://assets/models/hit_vfx.gdshader")
 const IMPACT_CROWN_TEXTURE := preload("res://assets/images/vfx/kenney_particles/magic_03.png")
+const FINALE_RING_TEXTURE := preload("res://assets/images/vfx/kenney_light_masks/materialize_ring.png")
+const HAND_ARC_BLUE_FRAMES := [
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_01.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_02.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_03.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_04.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_05.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_2_06.png"),
+]
+const HAND_ARC_PURPLE_FRAMES := [
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_01.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_02.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_03.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_04.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_05.png"),
+	preload("res://assets/images/vfx/cethiel_weapon_slash/Alternative_1_06.png"),
+]
 const EFFECT_LIFETIME := 0.62
 
 var _color := Color.WHITE
 var _cue_archetype := ""
 var _movement := ""
 var _combo_index := 0
+var _finale_callback := false
 
 
-func setup(color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0) -> void:
+func setup(color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0, finale_callback: bool = false) -> void:
 	_color = Color(color.r, color.g, color.b, 1.0)
 	_cue_archetype = cue_archetype.to_upper()
 	_movement = movement.to_upper()
 	_combo_index = maxi(0, combo_index)
+	_finale_callback = finale_callback
 	_build_flash()
 	var family := _effect_family()
 	match family:
 		"hand":
+			_build_directional_hand_arc()
 			_build_impact_crown()
 			_build_trail()
 			_build_shards()
@@ -34,8 +54,11 @@ func setup(color: Color, cue_archetype: String = "", movement: String = "", comb
 			_build_trail()
 		_:
 			_build_step_wave()
+			_build_rings()
 	if _combo_index > 0:
 		_build_combo_echo()
+	if _finale_callback:
+		_build_finale_environment_echo()
 	get_tree().create_timer(EFFECT_LIFETIME).timeout.connect(Callable(self, "queue_free"))
 
 
@@ -167,6 +190,75 @@ func _build_impact_crown() -> void:
 	tween.tween_property(crown, "rotation_degrees:y", 24.0, 0.22)
 	tween.tween_property(material, "albedo_color:a", 0.0, 0.28).set_delay(0.06)
 	tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.28).set_delay(0.06)
+
+
+func _build_directional_hand_arc() -> void:
+	if "PUNCH" not in _movement:
+		return
+	var left_hand := "LEFT" in _movement
+	var frames: Array = HAND_ARC_BLUE_FRAMES if left_hand else HAND_ARC_PURPLE_FRAMES
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	material.albedo_color = Color(1.0, 1.0, 1.0, 0.98)
+	material.albedo_texture = frames[0]
+	material.emission_enabled = true
+	material.emission = Color.WHITE
+	material.emission_texture = frames[0]
+	material.emission_energy_multiplier = 5.8
+	var arc := MeshInstance3D.new()
+	arc.name = "ReadyMadePunchArcLeft" if left_hand else "ReadyMadePunchArcRight"
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(3.55, 3.55)
+	arc.mesh = mesh
+	arc.position = Vector3(-0.42 if left_hand else 0.42, 2.62, -0.18)
+	arc.rotation_degrees.z = -16.0 if left_hand else 16.0
+	arc.scale.x = -1.0 if left_hand else 1.0
+	arc.material_override = material
+	arc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(arc)
+	var frame_tween := create_tween()
+	for frame_index in range(frames.size()):
+		frame_tween.tween_callback(Callable(self, "_set_hand_arc_frame").bind(material, frames, frame_index))
+		frame_tween.tween_interval(0.042)
+	var motion_tween := create_tween().set_parallel(true)
+	motion_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	motion_tween.tween_property(arc, "position:x", arc.position.x + (-0.48 if left_hand else 0.48), 0.30)
+	motion_tween.tween_property(arc, "scale:y", 1.14, 0.30)
+	motion_tween.tween_property(material, "albedo_color:a", 0.0, 0.14).set_delay(0.22)
+	motion_tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.14).set_delay(0.22)
+
+
+func _set_hand_arc_frame(material: StandardMaterial3D, frames: Array, frame_index: int) -> void:
+	if material == null or frame_index < 0 or frame_index >= frames.size():
+		return
+	var texture := frames[frame_index] as Texture2D
+	material.albedo_texture = texture
+	material.emission_texture = texture
+
+
+func _build_finale_environment_echo() -> void:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_color = Color(1.0, 1.0, 1.0, 0.52)
+	material.albedo_texture = FINALE_RING_TEXTURE
+	material.emission_enabled = true
+	material.emission = Color.WHITE.lerp(_color, 0.55)
+	material.emission_texture = FINALE_RING_TEXTURE
+	material.emission_energy_multiplier = 7.8
+	var echo := _make_quad("ReadyMadeFinaleEnvironmentRing", Vector2(8.6, 8.6), material, 0.022)
+	echo.scale = Vector3.ONE * 0.32
+	var tween := create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	tween.tween_property(echo, "scale", Vector3.ONE * 1.25, 0.46)
+	tween.tween_property(material, "albedo_color:a", 0.0, 0.36).set_delay(0.08)
+	tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.36).set_delay(0.08)
 
 
 func _build_rings() -> void:

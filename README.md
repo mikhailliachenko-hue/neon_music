@@ -130,10 +130,14 @@ Import once in Godot, then render:
 
 ```powershell
 godot --path . --editor --quit-after 2
-godot --path . --resolution 2560x1440 --write-movie output/renders/output.avi --fixed-fps 60 -- "--audio=assets/audio/audio.wav" "--render-clock=frame" "--clock-fps=60"
+godot --rendering-driver vulkan --path . --resolution 2560x1440 --write-movie output/renders/output.avi --fixed-fps 60 -- "--audio=assets/audio/audio.wav" "--render-clock=frame" "--clock-fps=60"
 ```
 
-Or press F10 in a graphical run to launch a separate 2K frame-locked movie export into `output/renders/<track>_f10_<timestamp>.avi`; it copies the current live tuning GUI values and stops at the loaded track duration.
+F10 now triggers the same one-click final MP4 job as the `Снять MP4` button. It copies the current live tuning values, renders from 0:00 to the exact audio duration, encodes the final H.264/AAC file and opens `output/renders/` when complete.
+
+For live composition tuning, double-click `run_visual_tuning.bat`. The normal MP4 preview opens together with the `Track tuning` panel. Use `Whole track height` to move the complete gameplay road vertically and `Save default` to reuse the current values on the next launch. In `One-click MP4 Export`, choose the resolution/FPS and press `Снять MP4`: the job starts at 0:00, stops at the exact audio duration, encodes H.264 on NVIDIA when available (CPU fallback otherwise), removes its temporary AVI and opens the completed MP4 in `output/renders/`.
+
+For the fastest capture, press `● СНЯТЬ ВИДЕО — ВСЁ АВТОМАТИЧЕСКИ`. Godot opens OBS when needed and prepares a dedicated composition: the original MP4 is a silent looping lower Media Source, the complete source WAV is a separate non-monitored Media Source, and the transparent Godot window is the upper Window Capture source. This lets a short background clip cover a longer song without cutting its audio. It keeps Godot in a regular window so Windows Graphics Capture continues while other applications cover it, shows a 3-2-1 countdown, starts OBS recording and restarts all sources at 0:00. The desktop is never captured; desktop and microphone inputs are temporarily muted and later restored, while Godot is also muted locally, so the computer remains free for games, work and unrelated music. Do not manually minimize or close the Godot renderer while it is recording; simply switch to another app with Alt+Tab. A monotonic recording watchdog uses the actual WAV duration and stops OBS even after Godot's audio player resets its position at EOF. It then restores the previous scene and audio-input mute states, opens the finished MP4 and closes the renderer. The helper connects to OBS WebSocket through `127.0.0.1`, with password authentication kept enabled.
 
 Or run:
 
@@ -143,9 +147,27 @@ Or run:
 
 ## MP4 Background
 
-Place the background video at `assets/images/background/reference_fullhd.mp4`. On Windows, the project uses a checked FFmpeg binary to decode the MP4 into a transient frame texture at runtime, starts it with the scene, and loops it automatically if it ends before the audio. The original MP4 is not transcoded or modified. If FFmpeg is unavailable or the project runs headless, the renderer keeps the procedural tunnel fallback.
+Place one background video at `assets/images/background/background.mp4` and run the project normally with F5/F6. The newest MP4 in that folder is selected automatically. Do not pass `--no-background-video`; headless runs intentionally use the procedural fallback.
+
+Normal graphical preview uses the bundled `ffplay.exe` as a continuous borderless native player behind a per-pixel-transparent Godot window. Godot draws only the road, cues, obstacles, VFX and HUD above it. There is no raw-frame pipe, no frame queue, no `_process()`-driven MP4 frame selection, no Y/UV texture upload and no temporary frame directory. The original MP4 is never modified, plays at `1.000x`, keeps its own timestamps and loops inside the native player. Successful startup prints `backend=external_ffplay_window` and `manual_frame_upload=false`.
+
+Preview and Movie Writer intentionally use different backends. Preview is ordinary realtime playback independent of Godot FPS. Movie Writer/F10 cannot capture another native window, so it retains the internal deterministic FFmpeg sampler keyed by `output_frame_index / output_fps`. Source 25/30/60 FPS is not converted to a fixed preview FPS; a 25 FPS source remains 25 FPS and preserves its original duration.
+
+On Windows the project uses Direct3D 12 for correct per-pixel composition. Vulkan was rejected by a static color-reference test because its transparent swapchain visibly raised black levels; D3D12 reproduced the native-player control region (`YAVG 20.737` vs `20.602`) without any ffplay video-filter chain or brightness, contrast and saturation correction. FFprobe logs codec, dimensions, FPS, duration, pixel format, color range/space, bitrate, profile, level and VFR status. Pass `--debug-video` for source FPS, player position/duration, `1.000x` speed, render FPS and player state. For screen recording, capture the display/desktop composition; a recorder configured to capture only the Godot window may omit the separate background window.
+
+`--background-video=path/to/file.mp4` selects an explicit MP4 for a run. `--internal-background-video` forces the older in-Godot sampler for diagnostics; it is not the recommended recording path.
 
 Verified local dependency details are recorded in `third_party/ffmpeg/README.md`. The binary used here is BtbN `ffmpeg-master-latest-win64-lgpl.zip`, build `N-125773-g7002e01c19-20260726`, SHA-256 `593056977e17f97773dd81f538accdc3e720cb767a2e5014819238393790aa13`, LGPL FFmpeg build; BtbN build scripts are MIT licensed.
+
+Timing acceptance helpers:
+
+```powershell
+godot --path . --script res://scripts/godot/_test_external_background_realtime_speed.gd -- --video=res://output/diagnostics/background_video_tests/h264_1080p_25fps_4s.mp4
+godot --path . --script res://scripts/godot/_test_external_background_loop.gd -- --render-clock=audio --no-tuning-gui
+godot --path . --script res://scripts/godot/_test_background_offline_sampling.gd -- --video=res://output/diagnostics/background_video_tests/h264_1080p_25fps_4s.mp4 --test-output-fps=60 --test-duration=2
+```
+
+The audit, root cause and current 25/30/60 FPS evidence are in `docs/BACKGROUND_VIDEO_TIMING_AUDIT_2026-08-11.md`.
 
 ## Lane Validation
 

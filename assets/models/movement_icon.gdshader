@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_mix, cull_disabled, depth_draw_opaque;
+render_mode unshaded, blend_mix, cull_disabled, depth_test_disabled, depth_draw_never;
 
 uniform sampler2D icon_texture : source_color, filter_linear_mipmap;
 uniform vec4 icon_color : source_color = vec4(1.0);

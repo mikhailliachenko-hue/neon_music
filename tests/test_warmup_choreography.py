@@ -70,8 +70,73 @@ def test_warmup_keeps_hand_punches_playful():
     obstacle_count = sum(1 for cue in cues if cue in {"LOW_CLEARANCE_GATE", "FLOOR_PULSE_SMALL", "FLOOR_PULSE_LARGE"})
     assert {"PUNCH_LEFT", "PUNCH_RIGHT"} <= set(movements)
     assert "HAND_TARGET" in set(cues)
+    assert "DOUBLE_PUNCH" in {event["movement"] for event in plan["movement_events"]}
     assert punch_count >= obstacle_count
     assert punch_count / len(movements) >= 0.25
+
+
+def test_warmup_adds_reference_style_simultaneous_feet_after_teaching_phrase():
+    plan = _warmup_plan()
+    double_events = [
+        event for event in plan["movement_events"]
+        if event["movement"] == "DOUBLE_FOOT_PULSE"
+    ]
+    assert double_events
+    assert all(event["canonical_beat_index"] >= 32 for event in double_events)
+    for event in double_events:
+        notes = [
+            note for note in plan["notes"]
+            if note["movement_event_id"] == event["id"]
+        ]
+        assert notes
+        for group in {note["simultaneous_group"] for note in notes}:
+            paired = [note for note in notes if note["simultaneous_group"] == group]
+            assert {note["lane"] for note in paired} == {1, 3}
+            assert {note["cue_archetype"] for note in paired} == {
+                "FOOT_PAD_LEFT", "FOOT_PAD_RIGHT",
+            }
+
+
+def test_warmup_jump_calls_are_short_two_hit_series():
+    plan = _warmup_plan()
+    jump_events = [
+        event for event in plan["movement_events"]
+        if event["movement"] in {"SMALL_JUMP", "JUMP"}
+    ]
+    assert jump_events
+    interval = float(plan["beat_interval"])
+    for event in jump_events:
+        hits = event["internal_hits"]
+        assert [hit["beat_offset"] for hit in hits] == [0, 2]
+        # Canonical beat grids may carry a small local-tempo correction instead
+        # of an exactly constant interval. The two-hit call must remain within
+        # one rendered 30 FPS frame of the nominal two-beat spacing.
+        assert abs((hits[1]["time"] - hits[0]["time"]) - 2.0 * interval) <= 1.0 / 30.0
+        notes = [
+            note for note in plan["notes"]
+            if note["movement_event_id"] == event["id"]
+        ]
+        assert len(notes) == 2
+        assert len({note["time"] for note in notes}) == 2
+        assert all(note["cue_archetype"].startswith("FLOOR_PULSE") for note in notes)
+
+
+def test_warmup_never_mixes_hand_and_foot_in_a_simultaneous_group():
+    plan = _warmup_plan()
+    groups = {}
+    for note in plan["notes"]:
+        if note.get("simultaneous"):
+            groups.setdefault(note["simultaneous_group"], []).append(note)
+    assert groups
+    for paired in groups.values():
+        assert len(paired) == 2
+        cues = {note["cue_archetype"] for note in paired}
+        hand_pair = cues == {"HAND_TARGET"}
+        foot_pair = cues == {"FOOT_PAD_LEFT", "FOOT_PAD_RIGHT"}
+        assert hand_pair or foot_pair
+        assert {note["lane_side"] for note in paired} == {"left", "right"}
+
+
 def test_warmup_is_deterministic():
     first = _warmup_plan()
     second = _warmup_plan()

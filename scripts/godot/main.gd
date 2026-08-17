@@ -2,19 +2,18 @@ extends Node3D
 
 const NOTE_SCENE := preload("res://scenes/note.tscn")
 const BEATMAP_PARSER := preload("res://scripts/beatmap_parser.gd")
+const MUSIC_TIMELINE_ADAPTER := preload("res://scripts/godot/timeline/music_timeline_adapter.gd")
 const HIT_EFFECT_SCENE := preload("res://scenes/hit_effect.tscn")
 const HIT_PARTICLE_SCENE := preload("res://scenes/hit_particle.tscn")
 const CYAN := Color(0.0, 0.95, 1.0)
 const MAGENTA := Color(1.0, 0.0, 0.82)
 const HIT_Z := 0.0
 const SPAWN_Z := -100.0
-const FRAME_SPACING := 10.0
-const FRAME_SPEED := 11.0
-const FRAME_BACK_Z := -110.0
-const FRAME_FRONT_Z := 5.0
-const ENABLE_TUNNEL_FRAMES := false
 const DEFAULT_RENDER_FPS := 60.0
 const DEFAULT_RECORDING_RESOLUTION := "2560x1440"
+const MP4_RENDER_JOB_SCRIPT := "res://scripts/render_mp4_job.ps1"
+const MP4_RENDER_FFMPEG := "res://third_party/ffmpeg/ffmpeg-master-latest-win64-lgpl/bin/ffmpeg.exe"
+const OBS_AUTO_RECORD_SCRIPT := "res://scripts/obs_auto_record.ps1"
 const HUD_BAR_GLOSS_PATH := "res://assets/ui/kenney_sci_fi/bar_round_gloss_large.png"
 const HUD_BAR_OUTLINE_PATH := "res://assets/ui/kenney_sci_fi/bar_shadow_round_outline_large.png"
 const HUD_MARKER_BITMAP_PATH := "res://assets/ui/silhouettes/dancer_marker_glow.png"
@@ -28,6 +27,8 @@ const ENABLE_BACKGROUND_VIDEO := true
 const DODGE_OBSTACLE_PATH := "res://assets/models/obstacles/kenney/fence-straight.glb"
 const BACKGROUND_VIDEO_BASE_SIZE := Vector2(16.0, 9.0)
 const BACKGROUND_MP4_BACKEND_SCRIPT := preload("res://scripts/godot/background_mp4_backend.gd")
+const BACKGROUND_EXTERNAL_PLAYER_SCRIPT := preload("res://scripts/godot/background_external_player.gd")
+const BACKGROUND_NV12_SHADER := preload("res://assets/models/background_nv12.gdshader")
 const GHOST_CUE_CENTER_Z := -8.75
 const GHOST_CUE_LENGTH := 17.5
 const GHOST_CUE_WIDTH := 1.55
@@ -37,6 +38,7 @@ const WALL_PANEL_SCENE := preload("res://assets/models/wall_obstacle/template-wa
 const WALL_LED_SHADER := preload("res://assets/models/wall_led_wave.gdshader")
 const HOLD_EVENT_TYPE := "hold"
 const WALL_VISUAL_CONFIG_PATH := "res://assets/models/wall_visual_config.json"
+const DANCE_LEVEL_SELECTION_PATH := "user://dance_mode_selection.json"
 const DEFAULT_WALL_WIDTH_X := 3.9
 const DEFAULT_WALL_HEIGHT := 4.8
 const DEFAULT_WALL_LENGTH_Z := 24.0
@@ -68,7 +70,7 @@ const DEFAULT_CAMERA_DODGE_IN_DURATION := 0.55
 const DEFAULT_CAMERA_DODGE_HOLD := 0.25
 const DEFAULT_CAMERA_DODGE_RETURN_DURATION := 0.7
 const DEFAULT_CAMERA_DODGE_EASING := "sine"
-const HOLD_STRIP_WIDTH := 1.34
+const HOLD_STRIP_WIDTH := 1.08
 const HOLD_STRIP_MIN_LENGTH := 0.32
 const HOLD_DISSOLVE_DURATION := 0.48
 const HOLD_START_PAD_SIZE := Vector2(1.72, 2.92)
@@ -78,6 +80,9 @@ const DEFAULT_VISUAL_HIT_OFFSET_MS := 0.0
 const COMBO_LANE_CENTERS := [-3.0, -1.0, 1.0, 3.0]
 const COMBO_LINK_MAX_GAP := 1.65
 const MAX_ACTIVE_PUNCH_TRAILS := 12
+const TUNNEL_SPECTRUM_BUS := "TunnelSpectrum"
+const TUNNEL_SPECTRUM_BANDS := 32
+const TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC := 25000
 
 @export var scroll_speed: float = 20.0
 @export var time_to_hit: float = 4.0
@@ -89,6 +94,7 @@ const MAX_ACTIVE_PUNCH_TRAILS := 12
 @onready var notes_root: Node3D = $Notes
 @onready var receptors: Array[Node] = $Receptors.get_children()
 @onready var frames_root: Node3D = $TunnelFrames
+@onready var tunnel_generator: NeonTunnelGenerator = $TunnelFrames/NeonTunnelGenerator
 @onready var effects_root: Node3D = $HitEffects
 
 var beatmap: Array = []
@@ -111,6 +117,26 @@ var render_clock_fps := DEFAULT_RENDER_FPS
 var render_frame_index := 0
 var selected_audio_path := ""
 var recording_export_pid := 0
+var recording_resolution := DEFAULT_RECORDING_RESOLUTION
+var recording_fps := 60
+var recording_status_path := ""
+var recording_output_path := ""
+var recording_status_elapsed := 0.0
+var recording_last_state := ""
+var recording_status_label: Label
+var recording_button: Button
+var obs_auto_button: Button
+var obs_auto_pid := 0
+var obs_auto_status_path := ""
+var obs_auto_state_path := ""
+var obs_auto_phase := "idle"
+var obs_auto_poll_elapsed := 0.0
+var obs_auto_last_status := ""
+var obs_auto_recording := false
+var obs_auto_stop_requested := false
+var obs_auto_started_msec := 0
+var obs_auto_expected_duration := 0.0
+var obs_auto_countdown_layer: CanvasLayer
 var last_song_time := 0.0
 var clock_diagnostic_seconds := -1.0
 var clock_stop_after_seconds := -1.0
@@ -122,9 +148,11 @@ var background_video_path := ""
 var background_video_reason := "missing"
 var background_video_player
 var background_video_plane: MeshInstance3D
-var background_video_material: StandardMaterial3D
+var background_video_material: Material
 var background_video_backend := "none"
 var background_video_texture_seen := false
+var background_external_overlay_enabled := false
+var background_external_original_environment: Environment
 var tuning_values := {}
 var tuning_defaults := {}
 var tuning_labels := {}
@@ -163,20 +191,42 @@ var hit_feedback_label: Label
 var dance_hud_next_pulse_index := 0
 var combo_trails_root: Node3D
 var active_combo_trails: Array[Node3D] = []
+var music_timeline_adapter = MUSIC_TIMELINE_ADAPTER.new()
+var tunnel_music_state: Dictionary = {}
+var level_selector: OptionButton
+var level_title_label: Label
+var level_description_label: Label
+var level_meta_label: Label
+var level_palette_row: HBoxContainer
+var level_seed_spin: SpinBox
+var level_speed_slider: HSlider
+var level_speed_label: Label
+var level_preview_toggle: CheckButton
+var selected_level_index := 0
+var level_preview_mode := false
+var level_preview_forced_silent := false
+var tunnel_spectrum_bus_index := -1
+var tunnel_spectrum_effect_index := -1
+var tunnel_spectrum_analyzer: AudioEffectSpectrumAnalyzerInstance
+var tunnel_spectrum_cached_bands: Array[float] = []
+var tunnel_spectrum_last_sample_usec := -TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC
 
 
 func _ready() -> void:
 	_configure_render_clock()
 	_configure_frame_sequence_capture()
+	level_preview_mode = OS.get_cmdline_user_args().has("--preview-level")
 	debug_timeline_enabled = _debug_timeline_requested()
 	_open_clock_diagnostic_file()
-	Engine.max_fps = int(render_clock_fps) if render_clock_mode else 60
+	# Headless validation should advance the deterministic render clock as fast
+	# as the machine allows; graphical captures stay locked to their target FPS.
+	Engine.max_fps = 0 if render_clock_mode and _is_headless_runtime() else (int(render_clock_fps) if render_clock_mode else 60)
 	_configure_background_video()
 	_configure_track_shader()
 	_build_retrowave_environment()
 	_build_tunnel()
+	_restore_dance_level_selection()
 	_build_execution_deck()
-	_build_combo_trail_layer()
 	_init_tuning_values()
 	# Ghost brackets disabled: they read as extra gameplay objects.
 	_build_wall_anticipation_layer()
@@ -185,6 +235,8 @@ func _ready() -> void:
 		_build_tuning_gui()
 	if not _load_inputs():
 		return
+	await _warmup_tunnel_before_playback()
+	_seek_runtime_indices_for_song_time(render_clock_start_at)
 	if debug_timeline_enabled:
 		_build_debug_timeline_overlay()
 	if not _is_headless_runtime():
@@ -194,6 +246,48 @@ func _ready() -> void:
 		audio.play()
 	_start_background_video()
 	started = true
+	if _obs_auto_start_requested():
+		call_deferred("_start_obs_auto_recording")
+
+
+func _warmup_tunnel_before_playback() -> void:
+	if tunnel_generator == null or not tunnel_generator.is_enabled() or _is_headless_runtime():
+		return
+	var cover_layer := CanvasLayer.new()
+	cover_layer.name = "TunnelWarmupCover"
+	cover_layer.layer = 10000
+	var cover := ColorRect.new()
+	cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cover.color = Color(0.004, 0.006, 0.012, 1.0)
+	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cover_layer.add_child(cover)
+	var status := Label.new()
+	status.text = "NEON TUNNEL\nPREPARING VISUALS"
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	status.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	status.add_theme_color_override("font_color", Color(0.35, 0.92, 1.0, 0.9))
+	status.add_theme_font_size_override("font_size", 18)
+	cover_layer.add_child(status)
+	add_child(cover_layer)
+	await get_tree().process_frame
+	await tunnel_generator.warmup_render_pipelines()
+	# Wait for both GPU specialization and the FPS moving average to settle. A
+	# slightly longer explicit loading beat is preferable to exposing a one-second
+	# hitch as soon as the player sees the corridor.
+	var capped_fps := Engine.max_fps if Engine.max_fps > 0 else 60
+	var warmup_target_fps := minf(58.0, maxf(24.0, float(capped_fps) - 2.0))
+	var stable_frames := 0
+	for frame_index in range(120):
+		await get_tree().process_frame
+		if float(Performance.get_monitor(Performance.TIME_FPS)) >= warmup_target_fps:
+			stable_frames += 1
+		else:
+			stable_frames = 0
+		if frame_index >= 24 and stable_frames >= 8:
+			break
+	cover_layer.queue_free()
+	await get_tree().process_frame
 
 func _seek_runtime_indices_for_song_time(song_time: float) -> void:
 	if song_time <= 0.0:
@@ -288,24 +382,33 @@ func _toggle_fullscreen() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	if background_video_backend == "external_ffplay_window":
+		get_tree().create_timer(0.35).timeout.connect(_sync_external_background_window)
 
 func _process(delta: float) -> void:
+	_poll_recording_export(delta)
+	_poll_obs_auto_recording(delta)
 	var frame_delta := _clock_delta(delta)
-	_move_tunnel(frame_delta)
 	if not started:
 		return
 
 	if silent_mode and not render_clock_mode:
 		silent_clock += frame_delta
+		if level_preview_mode and song_duration > 0.0 and silent_clock >= song_duration:
+			_soft_restart()
+			return
 	var song_time := _precise_song_time()
+	if render_clock_mode and background_video_enabled and background_video_player != null and background_video_player.has_method("advance_offline"):
+		if not bool(background_video_player.call("advance_offline", song_time)):
+			push_warning("Background video offline sampling missed timestamp %.6f: %s" % [song_time, str(background_video_player.call("get_status"))])
 	_update_debug_timeline_overlay(song_time)
 	if song_time < last_song_time:
 		push_warning("Render clock moved backwards from %.6f to %.6f." % [last_song_time, song_time])
 	last_song_time = song_time
 	_apply_camera_transform(song_time)
 	_update_visual_profile(song_time)
+	_sync_tunnel(song_time)
 	_update_dance_hud(song_time)
-	_update_combo_trails(song_time)
 	_update_background_video_texture()
 	_move_retrowave_fog(frame_delta)
 	_update_wall_anticipation_cue(song_time)
@@ -324,8 +427,9 @@ func _process(delta: float) -> void:
 
 	for index in range(active_notes.size() - 1, -1, -1):
 		var note := active_notes[index]
-		note.sync_to_song_time(song_time, scroll_speed)
-		if song_time >= _hit_trigger_time(note.hit_time):
+		var ready_to_retire := note.sync_to_song_time(song_time, scroll_speed)
+		var hit_triggered := bool(note.get_meta("hit_triggered", false))
+		if not hit_triggered and song_time >= _hit_trigger_time(note.hit_time):
 			_trigger_hit_event(
 				"tap",
 				int(note.get_meta("note_index", -1)),
@@ -336,14 +440,21 @@ func _process(delta: float) -> void:
 				true,
 				note.cue_archetype,
 				String(note.get_meta("movement", "")),
-				int(note.get_meta("combo_index", 0))
+				int(note.get_meta("combo_index", 0)),
+				bool(note.get_meta("finale_callback", false))
 			)
+			note.set_meta("hit_triggered", true)
+			if note.continues_past_hit():
+				continue
 			active_notes.remove_at(index)
-			if note.cue_archetype.begins_with("HAND_TARGET"):
+			if note.supports_hit_shatter():
 				note.trigger_shatter()
-				get_tree().create_timer(0.24).timeout.connect(note.queue_free)
+				get_tree().create_timer(0.36).timeout.connect(note.queue_free)
 			else:
 				note.queue_free()
+		elif hit_triggered and ready_to_retire:
+			active_notes.remove_at(index)
+			note.queue_free()
 
 	if _should_quit(song_time):
 		_shutdown_and_quit()
@@ -355,6 +466,15 @@ func _process(delta: float) -> void:
 
 
 func _shutdown_and_quit() -> void:
+	if obs_auto_recording and not obs_auto_stop_requested:
+		obs_auto_stop_requested = true
+		obs_auto_phase = "stopping"
+		obs_auto_last_status = ""
+		started = false
+		audio.stop()
+		_stop_background_video()
+		_launch_obs_auto_helper("Stop")
+		return
 	audio.stop()
 	_stop_background_video()
 	audio.stream = null
@@ -363,6 +483,9 @@ func _shutdown_and_quit() -> void:
 
 
 func _exit_tree() -> void:
+	if obs_auto_recording and not obs_auto_stop_requested and not obs_auto_status_path.is_empty():
+		obs_auto_stop_requested = true
+		_launch_obs_auto_helper("Stop")
 	if is_instance_valid(audio):
 		audio.stop()
 		audio.stream = null
@@ -385,6 +508,7 @@ func _load_inputs() -> bool:
 	lane_layout = "4_lanes"
 	if parsed is Dictionary:
 		var track_document := parsed as Dictionary
+		music_timeline_adapter.configure(track_document)
 		lane_layout = String(track_document.get("lane_layout", lane_layout))
 		if track_document.has("beatmap"):
 			var embedded_beatmap = track_document.get("beatmap", {})
@@ -433,8 +557,9 @@ func _load_inputs() -> bool:
 	if not cli_audio.is_empty():
 		audio_candidates.append(cli_audio)
 	audio_candidates.append_array(["res://assets/audio/audio.wav", "res://assets/audio/audio.mp3"])
-	if OS.get_cmdline_user_args().has("--silent-render"):
+	if OS.get_cmdline_user_args().has("--silent-render") or OS.get_cmdline_user_args().has("--preview-level"):
 		audio_candidates.clear()
+		level_preview_mode = OS.get_cmdline_user_args().has("--preview-level")
 	for audio_path in audio_candidates:
 		if audio_path.begins_with("res://") and not FileAccess.file_exists(audio_path):
 			continue
@@ -457,7 +582,66 @@ func _load_inputs() -> bool:
 		if selected_audio_path.is_empty():
 			selected_audio_path = cli_audio if not cli_audio.is_empty() else "res://assets/audio/audio.wav"
 		print("Silent render mode: add music in CapCut.")
+	else:
+		if tunnel_generator != null and tunnel_generator.is_enabled() and tunnel_generator.config.spectrum_enabled:
+			_configure_tunnel_spectrum_analyzer()
+		else:
+			audio.bus = "Master"
+			print("Tunnel spectrum: disabled; audio remains on Master")
 	return true
+
+
+func _configure_tunnel_spectrum_analyzer() -> void:
+	tunnel_spectrum_bus_index = AudioServer.get_bus_index(TUNNEL_SPECTRUM_BUS)
+	if tunnel_spectrum_bus_index < 0:
+		AudioServer.add_bus(AudioServer.bus_count)
+		tunnel_spectrum_bus_index = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(tunnel_spectrum_bus_index, TUNNEL_SPECTRUM_BUS)
+		AudioServer.set_bus_send(tunnel_spectrum_bus_index, "Master")
+	tunnel_spectrum_effect_index = -1
+	for effect_index in range(AudioServer.get_bus_effect_count(tunnel_spectrum_bus_index)):
+		if AudioServer.get_bus_effect(tunnel_spectrum_bus_index, effect_index) is AudioEffectSpectrumAnalyzer:
+			tunnel_spectrum_effect_index = effect_index
+			break
+	if tunnel_spectrum_effect_index < 0:
+		var analyzer_effect := AudioEffectSpectrumAnalyzer.new()
+		analyzer_effect.buffer_length = 1.5
+		analyzer_effect.fft_size = AudioEffectSpectrumAnalyzer.FFT_SIZE_1024
+		AudioServer.add_bus_effect(tunnel_spectrum_bus_index, analyzer_effect)
+		tunnel_spectrum_effect_index = AudioServer.get_bus_effect_count(tunnel_spectrum_bus_index) - 1
+	audio.bus = TUNNEL_SPECTRUM_BUS
+	tunnel_spectrum_analyzer = AudioServer.get_bus_effect_instance(tunnel_spectrum_bus_index, tunnel_spectrum_effect_index) as AudioEffectSpectrumAnalyzerInstance
+
+
+func _sample_tunnel_spectrum() -> Array:
+	if tunnel_generator == null or not tunnel_generator.is_enabled() or not tunnel_generator.config.spectrum_enabled:
+		return []
+	if tunnel_spectrum_bus_index < 0 or tunnel_spectrum_effect_index < 0:
+		return []
+	var now_usec := Time.get_ticks_usec()
+	if not tunnel_spectrum_cached_bands.is_empty() and now_usec - tunnel_spectrum_last_sample_usec < TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC:
+		return tunnel_spectrum_cached_bands
+	if tunnel_spectrum_analyzer == null:
+		tunnel_spectrum_analyzer = AudioServer.get_bus_effect_instance(tunnel_spectrum_bus_index, tunnel_spectrum_effect_index) as AudioEffectSpectrumAnalyzerInstance
+	if tunnel_spectrum_analyzer == null:
+		return []
+	var bands: Array[float] = []
+	var minimum_hz := 42.0
+	var maximum_hz := 16000.0
+	for index in range(TUNNEL_SPECTRUM_BANDS):
+		var low_ratio := float(index) / float(TUNNEL_SPECTRUM_BANDS)
+		var high_ratio := float(index + 1) / float(TUNNEL_SPECTRUM_BANDS)
+		var low_hz := minimum_hz * pow(maximum_hz / minimum_hz, low_ratio)
+		var high_hz := minimum_hz * pow(maximum_hz / minimum_hz, high_ratio)
+		var magnitude := tunnel_spectrum_analyzer.get_magnitude_for_frequency_range(
+			low_hz, high_hz, AudioEffectSpectrumAnalyzerInstance.MAGNITUDE_MAX
+		)
+		var linear_magnitude := maxf(magnitude.x, magnitude.y)
+		var normalized := clampf((linear_to_db(maxf(linear_magnitude, 0.000001)) + 58.0) / 58.0, 0.0, 1.0)
+		bands.append(normalized)
+	tunnel_spectrum_cached_bands = bands
+	tunnel_spectrum_last_sample_usec = now_usec
+	return tunnel_spectrum_cached_bands
 
 func _apply_lane_layout() -> void:
 	var two_cells := lane_layout == "2_cells"
@@ -565,6 +749,19 @@ func _find_beatmap_path() -> String:
 
 
 func _configure_background_video() -> void:
+	# OBS is the only mode that is allowed to expose a transparent Godot window.
+	# Tunnel mode otherwise owns its complete background inside the Godot scene.
+	if _obs_overlay_requested():
+		background_video_path = _find_background_video_path()
+		_configure_obs_background_overlay()
+		return
+	if _tunnel_replaces_background_video():
+		_force_opaque_tunnel_output()
+		background_video_requested = false
+		background_video_enabled = false
+		background_video_reason = "neon_tunnel_mode"
+		print("Background video: disabled reason=neon_tunnel_mode; modular tunnel is active")
+		return
 	if not ENABLE_BACKGROUND_VIDEO:
 		background_video_requested = false
 		background_video_enabled = false
@@ -574,18 +771,18 @@ func _configure_background_video() -> void:
 		background_video_requested = false
 		background_video_enabled = false
 		background_video_reason = "disabled_by_args"
-		print("Background video: fallback=procedural_tunnel reason=disabled_by_args")
+		print("Background video: fallback=%s reason=disabled_by_args" % _background_fallback_label())
 		return
 	background_video_path = _find_background_video_path()
 	background_video_requested = not background_video_path.is_empty()
 	if not background_video_requested:
 		background_video_reason = "missing"
-		print("Background video: fallback=procedural_tunnel reason=missing")
+		print("Background video: fallback=%s reason=missing" % _background_fallback_label())
 		return
 
 	if _is_headless_runtime():
 		background_video_reason = "headless_skip"
-		print("Background video: fallback=procedural_tunnel reason=headless_skip path=%s" % background_video_path)
+		print("Background video: fallback=%s reason=headless_skip path=%s" % [_background_fallback_label(), background_video_path])
 		return
 
 	if background_video_path.get_extension().to_lower() == "mp4":
@@ -595,7 +792,7 @@ func _configure_background_video() -> void:
 	if not _background_video_extension_supported(background_video_path):
 		background_video_reason = "unsupported_extension"
 		background_video_enabled = false
-		print("Background video: fallback=procedural_tunnel reason=unsupported_extension path=%s" % background_video_path)
+		print("Background video: fallback=%s reason=unsupported_extension path=%s" % [_background_fallback_label(), background_video_path])
 		return
 
 	var native_player := VideoStreamPlayer.new()
@@ -615,7 +812,7 @@ func _configure_background_video() -> void:
 		native_player.queue_free()
 		background_video_player = null
 		background_video_enabled = false
-		print("Background video: fallback=procedural_tunnel reason=unsupported_stream path=%s" % unsupported_path)
+		print("Background video: fallback=%s reason=unsupported_stream path=%s" % [_background_fallback_label(), unsupported_path])
 		return
 
 	native_player.stream = stream
@@ -629,18 +826,63 @@ func _configure_background_video() -> void:
 
 
 func _configure_mp4_background_video() -> void:
-	background_video_material = _create_background_video_material()
+	if _obs_overlay_requested():
+		_configure_obs_background_overlay()
+		return
+	if not render_clock_mode and not _internal_background_video_requested():
+		_configure_external_mp4_background_video()
+		return
+
+	background_video_material = _create_background_nv12_material()
 	var backend = BACKGROUND_MP4_BACKEND_SCRIPT.new()
 	backend.name = "BackgroundVideoPlayer"
-	backend.call("configure", background_video_path, 30.0)
-	backend.connect("texture_changed", Callable(self, "_on_background_video_texture_changed"))
+	backend.call("configure", background_video_path, {
+		"mode": "offline" if render_clock_mode else "preview",
+		"output_fps": render_clock_fps,
+		"project_fps": render_clock_fps,
+		"loop": true,
+		"diagnostics": _video_diagnostics_requested(),
+	})
+	backend.connect("planes_changed", Callable(self, "_on_background_nv12_planes_changed"))
 	add_child(backend)
 	background_video_player = backend
 	_attach_background_video_plane()
 	background_video_enabled = true
 	background_video_reason = "ready"
-	background_video_backend = "ffmpeg_frame_backend"
+	background_video_backend = "ffmpeg_nv12_pipe"
 	print("Background video: enabled backend=%s path=%s" % [background_video_backend, background_video_path])
+
+
+func _configure_external_mp4_background_video() -> void:
+	var rendering_driver := RenderingServer.get_current_rendering_driver_name()
+	if OS.get_name() == "Windows" and rendering_driver.to_lower() != "d3d12":
+		push_warning("Background native overlay expects D3D12 on Windows for color-accurate transparency; current driver=%s" % rendering_driver)
+	_enable_external_background_overlay()
+	var backend = BACKGROUND_EXTERNAL_PLAYER_SCRIPT.new()
+	backend.name = "BackgroundVideoPlayer"
+	backend.call("configure", background_video_path, {
+		"loop": true,
+		"diagnostics": _video_diagnostics_requested(),
+		"window_position": DisplayServer.window_get_position(),
+		"window_size": DisplayServer.window_get_size(),
+	})
+	add_child(backend)
+	background_video_player = backend
+	background_video_enabled = true
+	background_video_reason = "ready"
+	background_video_backend = "external_ffplay_window"
+	print("Background video: enabled backend=%s path=%s manual_frame_upload=false rendering_driver=%s" % [background_video_backend, background_video_path, rendering_driver])
+
+
+func _configure_obs_background_overlay() -> void:
+	# OBS owns the MP4 in this mode. Godot contributes only its transparent game
+	# layer, so OBS captures one composited canvas without a second native player.
+	_enable_external_background_overlay(false)
+	background_video_player = null
+	background_video_enabled = false
+	background_video_reason = "obs_compositor"
+	background_video_backend = "obs_transparent_overlay"
+	print("Background video: OBS compositor overlay enabled path=%s external_player=false" % background_video_path)
 
 
 func _attach_background_video_plane() -> void:
@@ -658,13 +900,19 @@ func _attach_background_video_plane() -> void:
 func _start_background_video() -> void:
 	if background_video_player == null or not background_video_enabled:
 		return
-	if background_video_backend == "ffmpeg_frame_backend":
+	if background_video_backend.begins_with("ffmpeg_") or background_video_backend.begins_with("external_"):
 		if not bool(background_video_player.call("start")):
 			var status: Dictionary = background_video_player.call("get_status")
 			background_video_reason = String(status.get("reason", "backend_start_failed"))
 			background_video_enabled = false
 			_clear_background_video_nodes()
-			print("Background video: fallback=procedural_tunnel reason=%s path=%s" % [background_video_reason, background_video_path])
+			_disable_external_background_overlay()
+			print("Background video: fallback=%s reason=%s path=%s" % [_background_fallback_label(), background_video_reason, background_video_path])
+		elif render_clock_mode and background_video_player.has_method("advance_offline"):
+			if not bool(background_video_player.call("advance_offline", render_clock_start_at)):
+				push_error("Background video failed to prime offline frame: %s" % str(background_video_player.call("get_status")))
+		elif background_video_backend == "external_ffplay_window":
+			_refocus_game_window_after_external_player_start()
 		return
 	if background_video_player is VideoStreamPlayer:
 		(background_video_player as VideoStreamPlayer).play()
@@ -674,7 +922,7 @@ func _start_background_video() -> void:
 func _stop_background_video() -> void:
 	if background_video_player == null:
 		return
-	if background_video_backend == "ffmpeg_frame_backend" and background_video_player.has_method("stop"):
+	if (background_video_backend.begins_with("ffmpeg_") or background_video_backend.begins_with("external_")) and background_video_player.has_method("stop"):
 		background_video_player.call("stop")
 	elif background_video_player is VideoStreamPlayer:
 		(background_video_player as VideoStreamPlayer).stop()
@@ -691,6 +939,70 @@ func _clear_background_video_nodes() -> void:
 	background_video_backend = "none"
 	background_video_texture_seen = false
 
+
+func _enable_external_background_overlay(always_on_top: bool = false) -> void:
+	background_external_overlay_enabled = true
+	get_viewport().transparent_bg = true
+	get_window().transparent = true
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, true)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, always_on_top)
+	RenderingServer.set_default_clear_color(Color(0.0, 0.0, 0.0, 0.0))
+	var world_environment := $WorldEnvironment as WorldEnvironment
+	if world_environment.environment != null:
+		if background_external_original_environment == null:
+			background_external_original_environment = world_environment.environment
+		var overlay_environment := background_external_original_environment.duplicate(true) as Environment
+		overlay_environment.background_mode = Environment.BG_CLEAR_COLOR
+		# SSR cannot sample through a transparent native window. Other scene effects
+		# remain active and affect only Godot geometry, never the MP4 window below.
+		overlay_environment.ssr_enabled = false
+		world_environment.environment = overlay_environment
+
+
+func _disable_external_background_overlay() -> void:
+	if not background_external_overlay_enabled:
+		return
+	background_external_overlay_enabled = false
+	get_viewport().transparent_bg = false
+	get_window().transparent = false
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, false)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, false)
+	RenderingServer.set_default_clear_color(Color(0.0, 0.0, 0.0, 1.0))
+	var world_environment := $WorldEnvironment as WorldEnvironment
+	if background_external_original_environment != null:
+		world_environment.environment = background_external_original_environment
+		background_external_original_environment = null
+
+
+func _force_opaque_tunnel_output() -> void:
+	background_external_overlay_enabled = false
+	get_viewport().transparent_bg = false
+	if not _is_headless_runtime():
+		get_window().transparent = false
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, false)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, false)
+	RenderingServer.set_default_clear_color(Color(0.003, 0.012, 0.032, 1.0))
+	print("Tunnel output: opaque viewport=true internal_backdrop=true obs_overlay=false")
+
+
+func _refocus_game_window_after_external_player_start() -> void:
+	for delay in [0.20, 0.65]:
+		get_tree().create_timer(delay).timeout.connect(func() -> void:
+			if background_video_backend == "external_ffplay_window":
+				DisplayServer.window_move_to_foreground()
+		)
+
+
+func _sync_external_background_window() -> void:
+	if background_video_backend != "external_ffplay_window" or background_video_player == null:
+		return
+	_enable_external_background_overlay(false)
+	if background_video_player.has_method("restart_for_window"):
+		if not bool(background_video_player.call("restart_for_window", DisplayServer.window_get_position(), DisplayServer.window_get_size())):
+			push_warning("Background native player could not follow the resized game window: %s" % str(background_video_player.call("get_status")))
+			return
+		_refocus_game_window_after_external_player_start()
+
 func _background_video_disabled_by_args() -> bool:
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--no-background-video":
@@ -698,7 +1010,29 @@ func _background_video_disabled_by_args() -> bool:
 	return false
 
 
+func _tunnel_replaces_background_video() -> bool:
+	if tunnel_generator == null or not tunnel_generator.is_enabled():
+		return false
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--obs-overlay" or arg == "--internal-background-video" or arg.begins_with("--background-video="):
+			return false
+	return tunnel_generator.replaces_background_video()
+
+
+func _background_fallback_label() -> String:
+	if tunnel_generator != null and tunnel_generator.is_enabled():
+		return "modular_tunnel"
+	return "none"
+
+
 func _find_background_video_path() -> String:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--background-video="):
+			var requested := arg.trim_prefix("--background-video=")
+			if not requested.begins_with("res://"):
+				requested = "res://" + requested.replace("\\", "/")
+			if FileAccess.file_exists(requested):
+				return requested
 	var newest_mp4 := ""
 	var newest_mp4_time := -1
 	var newest_ogv := ""
@@ -738,6 +1072,17 @@ func _create_background_video_material() -> StandardMaterial3D:
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
 	return material
 
+
+func _create_background_nv12_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = BACKGROUND_NV12_SHADER
+	material.set_shader_parameter("brightness", 1.08)
+	material.set_shader_parameter("texture_aspect", 16.0 / 9.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var viewport_aspect := viewport_size.x / viewport_size.y if viewport_size.y > 0.0 else 16.0 / 9.0
+	material.set_shader_parameter("viewport_aspect", viewport_aspect)
+	return material
+
 func _background_video_extension_supported(video_path: String) -> bool:
 	var extension := video_path.get_extension().to_lower()
 	if extension.is_empty():
@@ -760,29 +1105,67 @@ func _background_plane_size() -> Vector2:
 func _update_background_video_texture() -> void:
 	if not background_video_enabled or background_video_player == null or background_video_material == null:
 		return
-	if background_video_backend == "ffmpeg_frame_backend":
+	if background_video_backend.begins_with("ffmpeg_") or background_video_backend.begins_with("external_"):
 		return
 	if background_video_player is VideoStreamPlayer:
 		var texture := (background_video_player as VideoStreamPlayer).get_video_texture()
-		if texture != null:
-			background_video_material.albedo_texture = texture
+		var standard_material := background_video_material as StandardMaterial3D
+		if texture != null and standard_material != null:
+			standard_material.albedo_texture = texture
 
 func _on_background_video_texture_changed(texture: Texture2D) -> void:
-	if background_video_material != null and texture != null:
-		background_video_material.albedo_texture = texture
+	var standard_material := background_video_material as StandardMaterial3D
+	if standard_material != null and texture != null:
+		standard_material.albedo_texture = texture
 		if not background_video_texture_seen:
 			background_video_texture_seen = true
 			print("Background video: texture_ready backend=%s" % background_video_backend)
 
 
+func _on_background_nv12_planes_changed(y_texture: Texture2D, uv_texture: Texture2D) -> void:
+	var nv12_material := background_video_material as ShaderMaterial
+	if nv12_material == null or y_texture == null or uv_texture == null:
+		return
+	nv12_material.set_shader_parameter("y_plane", y_texture)
+	nv12_material.set_shader_parameter("uv_plane", uv_texture)
+	if not background_video_texture_seen:
+		background_video_texture_seen = true
+		var status: Dictionary = background_video_player.call("get_status") if background_video_player != null else {}
+		print("Background video: texture_ready backend=%s decoder=%s mode=%s disk_frames=false" % [background_video_backend, String(status.get("decoder_mode", "unknown")), String(status.get("playback_mode", "unknown"))])
+
+
 func get_background_video_status() -> Dictionary:
-	return {
+	var status := {
 		"requested": background_video_requested,
 		"enabled": background_video_enabled,
 		"path": background_video_path,
 		"reason": background_video_reason,
 		"backend": background_video_backend,
 	}
+	if background_video_player != null and background_video_player.has_method("get_status"):
+		status["decoder"] = background_video_player.call("get_status")
+	return status
+
+
+func _video_diagnostics_requested() -> bool:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--debug-video" or arg == "--qa-overlay":
+			return true
+	return false
+
+
+func _internal_background_video_requested() -> bool:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--internal-background-video":
+			return true
+	return false
+
+
+func _obs_overlay_requested() -> bool:
+	for arg in OS.get_cmdline_user_args():
+		if arg == "--obs-overlay":
+			return true
+	return false
 
 func _init_tuning_values() -> void:
 	tuning_values = {
@@ -803,6 +1186,8 @@ func _init_tuning_values() -> void:
 		"visual_hit_offset_ms": DEFAULT_VISUAL_HIT_OFFSET_MS,
 	}
 	var wall_config := _load_wall_visual_config()
+	for key in ["camera_x", "camera_pitch", "camera_y", "camera_z", "camera_fov", "track_y", "receptor_y", "note_y", "rail_y"]:
+		tuning_values[key] = float(wall_config.get(key, tuning_values[key]))
 	tuning_values["wall_height"] = float(wall_config.get("wall_height", DEFAULT_WALL_HEIGHT))
 	tuning_values["wall_width_x"] = float(wall_config.get("wall_width_x", wall_config.get("wall_width", DEFAULT_WALL_WIDTH_X)))
 	tuning_values["wall_length_z"] = float(wall_config.get("wall_length_z", wall_config.get("wall_depth", DEFAULT_WALL_LENGTH_Z)))
@@ -922,6 +1307,14 @@ func _color_from_config(value, fallback: Color) -> Color:
 func _clamp_wall_tuning_values() -> void:
 	if tuning_values.is_empty():
 		return
+	tuning_values["camera_x"] = clampf(float(tuning_values.get("camera_x", 0.0)), -2.0, 2.0)
+	tuning_values["camera_pitch"] = clampf(float(tuning_values.get("camera_pitch", -28.0)), -85.0, 20.0)
+	tuning_values["camera_y"] = clampf(float(tuning_values.get("camera_y", 0.0)), -0.5, 5.5)
+	tuning_values["camera_z"] = clampf(float(tuning_values.get("camera_z", 7.0)), 4.0, 12.0)
+	tuning_values["camera_fov"] = clampf(float(tuning_values.get("camera_fov", 65.0)), 45.0, 90.0)
+	tuning_values["track_y"] = clampf(float(tuning_values.get("track_y", -1.7)), -2.5, -0.8)
+	for key in ["receptor_y", "note_y", "rail_y"]:
+		tuning_values[key] = clampf(float(tuning_values.get(key, -1.7)), -2.4, -0.8)
 	tuning_values["wall_height"] = clampf(float(tuning_values.get("wall_height", DEFAULT_WALL_HEIGHT)), 2.4, 6.2)
 	tuning_values["wall_width_x"] = clampf(float(tuning_values.get("wall_width_x", DEFAULT_WALL_WIDTH_X)), 3.2, 4.4)
 	tuning_values["wall_length_z"] = clampf(float(tuning_values.get("wall_length_z", DEFAULT_WALL_LENGTH_Z)), 8.0, 36.0)
@@ -960,7 +1353,7 @@ func _build_tuning_gui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	panel.position = Vector2(12, 12)
-	panel.custom_minimum_size = Vector2(390, minf(640.0, maxf(420.0, viewport_size.y - 24.0)))
+	panel.custom_minimum_size = Vector2(420, minf(680.0, maxf(420.0, viewport_size.y - 24.0)))
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.0, 0.0, 0.0, 0.84)
 	panel_style.border_color = Color(0.0, 0.95, 1.0, 0.95)
@@ -981,7 +1374,7 @@ func _build_tuning_gui() -> void:
 	scroll.name = "TrackTuningScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.custom_minimum_size = Vector2(366, minf(540.0, maxf(320.0, viewport_size.y - 110.0)))
+	scroll.custom_minimum_size = Vector2(396, minf(450.0, maxf(260.0, viewport_size.y - 210.0)))
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 
@@ -989,14 +1382,15 @@ func _build_tuning_gui() -> void:
 	box.add_theme_constant_override("separation", 7)
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(box)
+	_build_level_selector_ui(box)
 
 	var camera_section := _add_tuning_section(box, "Camera & Track", true)
 	_add_tuning_slider(camera_section, "camera_x", "Camera X", -2.0, 2.0, 0.05)
 	_add_tuning_slider(camera_section, "camera_pitch", "Camera pitch", -85.0, 20.0, 0.1)
-	_add_tuning_slider(camera_section, "camera_y", "Camera height", 2.0, 8.0, 0.05)
+	_add_tuning_slider(camera_section, "camera_y", "Camera eye height", -0.5, 5.5, 0.05)
 	_add_tuning_slider(camera_section, "camera_z", "Camera distance", 4.0, 12.0, 0.05)
 	_add_tuning_slider(camera_section, "camera_fov", "Camera FOV", 45.0, 90.0, 0.5)
-	_add_tuning_slider(camera_section, "track_y", "Track height", -2.5, -0.8, 0.02)
+	_add_tuning_slider(camera_section, "track_y", "Whole track height", -2.5, -0.8, 0.02)
 	_add_tuning_slider(camera_section, "receptor_y", "Receptor height", -2.4, -0.8, 0.02)
 	_add_tuning_slider(camera_section, "note_y", "Note height", -2.4, -0.8, 0.02)
 	_add_tuning_slider(camera_section, "rail_y", "Lane line height", -2.4, -0.8, 0.02)
@@ -1031,6 +1425,56 @@ func _build_tuning_gui() -> void:
 	_add_tuning_slider(advanced_section, "wall_strip_emission", "Strip emission", 0.8, 10.0, 0.1)
 	_add_tuning_slider(advanced_section, "wall_edge_emission", "Edge emission", 2.0, 24.0, 0.25)
 
+	var export_section := _add_tuning_section(box, "One-click MP4 Export", true)
+	var export_hint := Label.new()
+	export_hint.text = "Uses the current settings, starts at 0:00 and stops with the song."
+	export_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	export_section.add_child(export_hint)
+
+	var resolution_option := OptionButton.new()
+	resolution_option.add_item("Full HD — 1920×1080")
+	resolution_option.set_item_metadata(0, "1920x1080")
+	resolution_option.add_item("2K — 2560×1440")
+	resolution_option.set_item_metadata(1, "2560x1440")
+	resolution_option.add_item("4K — 3840×2160")
+	resolution_option.set_item_metadata(2, "3840x2160")
+	resolution_option.select(1)
+	resolution_option.item_selected.connect(func(index: int) -> void:
+		recording_resolution = String(resolution_option.get_item_metadata(index))
+	)
+	export_section.add_child(resolution_option)
+
+	var fps_option := OptionButton.new()
+	fps_option.add_item("30 FPS")
+	fps_option.set_item_metadata(0, 30)
+	fps_option.add_item("60 FPS")
+	fps_option.set_item_metadata(1, 60)
+	fps_option.select(1)
+	fps_option.item_selected.connect(func(index: int) -> void:
+		recording_fps = int(fps_option.get_item_metadata(index))
+	)
+	export_section.add_child(fps_option)
+
+	recording_button = Button.new()
+	recording_button.text = "Снять MP4"
+	recording_button.custom_minimum_size = Vector2(0.0, 48.0)
+	recording_button.tooltip_text = "Render the full song from the beginning and return a finished MP4"
+	recording_button.pressed.connect(_launch_recording_export)
+	export_section.add_child(recording_button)
+
+	recording_status_label = Label.new()
+	recording_status_label.text = "Готово к съёмке"
+	recording_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	export_section.add_child(recording_status_label)
+
+	var realtime_button := Button.new()
+	obs_auto_button = realtime_button
+	realtime_button.text = "● СНЯТЬ ВИДЕО — ВСЁ АВТОМАТИЧЕСКИ"
+	realtime_button.custom_minimum_size = Vector2(0.0, 52.0)
+	realtime_button.tooltip_text = "Open OBS, record the complete screen composition from 0:00, stop with the song and return the MP4"
+	realtime_button.pressed.connect(_start_obs_auto_recording)
+	root.add_child(realtime_button)
+
 	var buttons := HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 6)
 	root.add_child(buttons)
@@ -1039,6 +1483,12 @@ func _build_tuning_gui() -> void:
 	print_button.text = "Print"
 	print_button.pressed.connect(_print_tuning_values)
 	buttons.add_child(print_button)
+
+	var save_button := Button.new()
+	save_button.text = "Save default"
+	save_button.tooltip_text = "Save current camera, track and visual values for future launches"
+	save_button.pressed.connect(_save_tuning_defaults)
+	buttons.add_child(save_button)
 
 	var reset_button := Button.new()
 	reset_button.text = "Reset"
@@ -1050,6 +1500,223 @@ func _build_tuning_gui() -> void:
 	hide_button.pressed.connect(_hide_tuning_gui)
 	buttons.add_child(hide_button)
 	print("Track tuning GUI: shown with scrollable categories")
+
+
+func _build_level_selector_ui(parent: VBoxContainer) -> void:
+	var section := _add_tuning_section(parent, "Dance Mode Levels", true)
+	var presets := tunnel_generator.level_presets()
+	if presets.is_empty():
+		var missing := Label.new()
+		missing.text = "No TunnelLevelPreset resources configured."
+		section.add_child(missing)
+		return
+
+	level_selector = OptionButton.new()
+	for index in range(presets.size()):
+		var preset := presets[index]
+		level_selector.add_item("%02d  %s" % [index + 1, preset.display_name()])
+		level_selector.set_item_metadata(index, preset.level_id)
+	section.add_child(level_selector)
+	selected_level_index = clampi(tunnel_generator.current_level_index(), 0, presets.size() - 1)
+	level_selector.select(selected_level_index)
+	level_selector.item_selected.connect(func(index: int) -> void:
+		selected_level_index = index
+		_refresh_level_selector_details()
+	)
+
+	level_title_label = Label.new()
+	level_title_label.add_theme_font_size_override("font_size", 19)
+	level_title_label.add_theme_color_override("font_color", Color(0.2, 0.92, 1.0))
+	section.add_child(level_title_label)
+	level_description_label = Label.new()
+	level_description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	level_description_label.custom_minimum_size.y = 44.0
+	section.add_child(level_description_label)
+	level_meta_label = Label.new()
+	section.add_child(level_meta_label)
+	level_palette_row = HBoxContainer.new()
+	level_palette_row.custom_minimum_size.y = 24.0
+	level_palette_row.add_theme_constant_override("separation", 2)
+	section.add_child(level_palette_row)
+
+	var navigation := HBoxContainer.new()
+	navigation.add_theme_constant_override("separation", 6)
+	section.add_child(navigation)
+	var previous_button := Button.new()
+	previous_button.text = "Previous"
+	previous_button.pressed.connect(func() -> void:
+		selected_level_index = posmod(selected_level_index - 1, presets.size())
+		_refresh_level_selector_details()
+	)
+	navigation.add_child(previous_button)
+	var next_button := Button.new()
+	next_button.text = "Next"
+	next_button.pressed.connect(func() -> void:
+		selected_level_index = posmod(selected_level_index + 1, presets.size())
+		_refresh_level_selector_details()
+	)
+	navigation.add_child(next_button)
+	var select_button := Button.new()
+	select_button.text = "Select Level"
+	select_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	select_button.pressed.connect(_select_gui_level)
+	navigation.add_child(select_button)
+
+	var seed_row := HBoxContainer.new()
+	section.add_child(seed_row)
+	var seed_label := Label.new()
+	seed_label.text = "Seed"
+	seed_label.custom_minimum_size.x = 72.0
+	seed_row.add_child(seed_label)
+	level_seed_spin = SpinBox.new()
+	level_seed_spin.min_value = 1
+	level_seed_spin.max_value = 2147483646
+	level_seed_spin.step = 1
+	level_seed_spin.allow_greater = false
+	level_seed_spin.value = int(tunnel_generator.get_runtime_stats().get("seed", 4202026))
+	level_seed_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	level_seed_spin.value_changed.connect(func(value: float) -> void:
+		tunnel_generator.set_runtime_seed(int(value))
+		_save_dance_level_selection()
+	)
+	seed_row.add_child(level_seed_spin)
+
+	level_speed_label = Label.new()
+	section.add_child(level_speed_label)
+	level_speed_slider = HSlider.new()
+	level_speed_slider.min_value = 6.0
+	level_speed_slider.max_value = 24.0
+	level_speed_slider.step = 0.25
+	level_speed_slider.value = tunnel_generator.config.tunnel_speed
+	level_speed_slider.value_changed.connect(func(value: float) -> void:
+		tunnel_generator.set_runtime_speed(value)
+		level_speed_label.text = "Preview speed: %.2f" % value
+		_save_dance_level_selection()
+	)
+	section.add_child(level_speed_slider)
+
+	level_preview_toggle = CheckButton.new()
+	level_preview_toggle.text = "Preview Level — no music"
+	level_preview_toggle.set_pressed_no_signal(level_preview_mode)
+	level_preview_toggle.toggled.connect(_set_level_preview_mode)
+	section.add_child(level_preview_toggle)
+
+	var random_button := Button.new()
+	random_button.text = "Random Dance Mode"
+	random_button.tooltip_text = "Choose a reproducible random level and save its seed"
+	random_button.pressed.connect(_select_random_dance_level)
+	section.add_child(random_button)
+	_refresh_level_selector_details()
+
+
+func _refresh_level_selector_details() -> void:
+	var presets := tunnel_generator.level_presets()
+	if presets.is_empty():
+		return
+	selected_level_index = posmod(selected_level_index, presets.size())
+	var preset := presets[selected_level_index]
+	if level_selector != null:
+		level_selector.select(selected_level_index)
+	if level_title_label != null:
+		level_title_label.text = preset.display_name()
+	if level_description_label != null:
+		level_description_label.text = preset.description
+	if level_meta_label != null:
+		level_meta_label.text = "Theme: %s    Difficulty: %s\nSegments: %s" % [
+			preset.theme.theme_name if preset.theme != null else "Custom", preset.difficulty,
+			" → ".join(preset.effective_segment_sequence()),
+		]
+	if level_palette_row != null:
+		for child in level_palette_row.get_children():
+			level_palette_row.remove_child(child)
+			child.queue_free()
+		var palette := preset.color_palette
+		if palette.is_empty() and preset.theme != null:
+			palette = PackedColorArray([preset.theme.emission_color, preset.theme.accent_color, preset.theme.background_color])
+		for color in palette:
+			var swatch := ColorRect.new()
+			swatch.color = color
+			swatch.custom_minimum_size = Vector2(40.0, 24.0)
+			swatch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			level_palette_row.add_child(swatch)
+	if level_speed_label != null and level_speed_slider != null:
+		level_speed_label.text = "Preview speed: %.2f" % level_speed_slider.value
+
+
+func _select_gui_level() -> void:
+	var seed := int(level_seed_spin.value) if level_seed_spin != null else int(tunnel_generator.get_runtime_stats().get("seed", 4202026))
+	if tunnel_generator.select_level_by_index(selected_level_index, seed):
+		if level_speed_slider != null:
+			tunnel_generator.set_runtime_speed(level_speed_slider.value)
+		_save_dance_level_selection()
+		_refresh_level_selector_details()
+
+
+func _select_random_dance_level() -> void:
+	var random_seed := int(posmod(Time.get_ticks_usec(), 2147483645)) + 1
+	var index := tunnel_generator.select_random_level(random_seed)
+	if index < 0:
+		return
+	selected_level_index = index
+	if level_seed_spin != null:
+		level_seed_spin.set_value_no_signal(random_seed)
+	_save_dance_level_selection(true)
+	_refresh_level_selector_details()
+
+
+func _set_level_preview_mode(enabled: bool) -> void:
+	level_preview_mode = enabled
+	if enabled and not silent_mode:
+		var preview_time := _precise_song_time()
+		audio.stop()
+		silent_clock = preview_time
+		silent_mode = true
+		level_preview_forced_silent = true
+	elif not enabled and level_preview_forced_silent and audio.stream != null:
+		var resume_time := silent_clock
+		silent_mode = false
+		level_preview_forced_silent = false
+		audio.play(resume_time)
+	print("DANCE_LEVEL_PREVIEW no_music=%s seed=%d speed=%.2f" % [
+		str(level_preview_mode), int(tunnel_generator.get_runtime_stats().get("seed", 0)),
+		tunnel_generator.config.tunnel_speed,
+	])
+
+
+func _save_dance_level_selection(random_mode := false) -> void:
+	if tunnel_generator == null or tunnel_generator.current_level_preset() == null:
+		return
+	var file := FileAccess.open(DANCE_LEVEL_SELECTION_PATH, FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify({
+		"level_name": tunnel_generator.current_level_preset().display_name(),
+		"seed": int(tunnel_generator.get_runtime_stats().get("seed", 4202026)),
+		"speed": tunnel_generator.config.tunnel_speed,
+		"random_mode": random_mode,
+	}, "  "))
+
+
+func _restore_dance_level_selection() -> void:
+	selected_level_index = maxi(0, tunnel_generator.current_level_index())
+	# Explicit launch arguments are useful for captures, QA and authored demos.
+	# They must win over the last interactive choice stored by the tuning GUI.
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--tunnel-preset=") \
+		or argument.begins_with("--tunnel-theme=") \
+		or argument.begins_with("--tunnel-seed=") \
+		or argument.begins_with("--tunnel-speed="):
+			return
+	if not FileAccess.file_exists(DANCE_LEVEL_SELECTION_PATH):
+		return
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(DANCE_LEVEL_SELECTION_PATH))
+	if not parsed is Dictionary:
+		return
+	var data := parsed as Dictionary
+	var seed := int(data.get("seed", tunnel_generator.get_runtime_stats().get("seed", 4202026)))
+	tunnel_generator.set_runtime_speed(float(data.get("speed", tunnel_generator.config.tunnel_speed)))
+	if tunnel_generator.select_level_by_name(String(data.get("level_name", "CYBER AWAKENING")), seed):
+		selected_level_index = maxi(0, tunnel_generator.current_level_index())
 
 
 func _add_tuning_section(parent: VBoxContainer, title: String, expanded: bool) -> VBoxContainer:
@@ -1100,7 +1767,15 @@ func _add_tuning_toggle(parent: VBoxContainer, key: String, label_text: String) 
 
 
 func _on_tuning_slider_changed(value: float, key: String) -> void:
+	var previous_value := float(tuning_values.get(key, value))
 	tuning_values[key] = value
+	if key == "track_y":
+		# Moving the road should move its gameplay surface with it. The three
+		# dedicated sliders remain available for small relative corrections.
+		var delta := value - previous_value
+		for linked_key in ["receptor_y", "note_y", "rail_y"]:
+			tuning_values[linked_key] = clampf(float(tuning_values[linked_key]) + delta, -2.4, -0.8)
+			_sync_tuning_control(linked_key)
 	_apply_tuning_values()
 	var label_data: Dictionary = tuning_labels.get(key, {})
 	var label := label_data.get("node") as Label
@@ -1180,6 +1855,23 @@ func _hide_tuning_gui() -> void:
 		tuning_gui_layer.visible = false
 	print("Track tuning GUI: hidden")
 
+
+func _save_tuning_defaults() -> void:
+	var config := _load_wall_visual_config()
+	for key in tuning_values.keys():
+		config[key] = tuning_values[key]
+	# The historical config key is kept for compatibility with the analyzer GUI.
+	config["anticipation_duration"] = tuning_values.get("wall_anticipation_duration", DEFAULT_WALL_ANTICIPATION_DURATION)
+	config.erase("wall_anticipation_duration")
+	var file := FileAccess.open(WALL_VISUAL_CONFIG_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("Track tuning GUI: could not save %s" % WALL_VISUAL_CONFIG_PATH)
+		return
+	file.store_string(JSON.stringify(config, "  ") + "\n")
+	file.close()
+	tuning_defaults = tuning_values.duplicate()
+	print("Track tuning GUI: saved defaults to %s" % WALL_VISUAL_CONFIG_PATH)
+
 func _print_tuning_values() -> void:
 	print("TRACK_TUNING camera_pitch=%.2f camera_y=%.2f camera_z=%.2f camera_fov=%.2f track_y=%.2f receptor_y=%.2f note_y=%.2f rail_y=%.2f next_cell_ring_enabled=%s next_cell_ring_lead_time=%.2f next_cell_ring_brightness=%.2f next_cell_ring_fade_duration=%.2f wall_height=%.2f wall_width_x=%.2f wall_length_z=%.2f wall_opacity=%.2f wall_emission_strength=%.2f wall_edge_glow=%.2f wall_segment_count=%.0f wall_segment_spacing=%.2f wall_strip_emission=%.2f wall_edge_emission=%.2f wall_anticipation_duration=%.2f safe_lane_emission=%.2f safe_lane_opacity=%.2f safe_lane_pulse=%.2f global_audio_offset_ms=%.1f visual_hit_offset_ms=%.1f" % [
 		float(tuning_values["camera_pitch"]),
@@ -1231,49 +1923,322 @@ func _configure_frame_sequence_capture() -> void:
 
 func _launch_recording_export() -> void:
 	if recording_export_pid > 0:
-		print("F10 recording export already launched pid=%d" % recording_export_pid)
+		_set_recording_status("Рендер уже выполняется…")
+		print("MP4 recording export already launched pid=%d" % recording_export_pid)
 		return
 	if _movie_writer_is_active():
-		print("F10 recording export skipped because movie writer is already active.")
+		_set_recording_status("Нельзя запустить экспорт из Movie Writer")
+		print("MP4 recording export skipped because movie writer is already active.")
+		return
+	if song_duration <= 0.0:
+		_set_recording_status("Ошибка: длительность песни не определена")
 		return
 
 	var executable := OS.get_executable_path()
 	if executable.is_empty():
-		push_error("F10 recording export failed: executable path is empty.")
+		_set_recording_status("Ошибка: Godot executable не найден")
+		push_error("MP4 recording export failed: executable path is empty.")
 		return
 
 	var project_path := ProjectSettings.globalize_path("res://")
 	var output_dir := ProjectSettings.globalize_path("res://output/renders")
+	var jobs_dir := ProjectSettings.globalize_path("res://output/renders/.jobs")
 	DirAccess.make_dir_recursive_absolute(output_dir)
+	DirAccess.make_dir_recursive_absolute(jobs_dir)
 
 	var audio_path := _recording_audio_path()
-	var output_path := "%s/%s_f10_%s.avi" % [output_dir, _sanitize_filename(_recording_output_basename(audio_path)), str(Time.get_unix_time_from_system())]
-	var args := PackedStringArray()
-	args.append("--path")
-	args.append(project_path)
-	args.append("--write-movie")
-	args.append(output_path)
-	args.append("--fixed-fps")
-	args.append(str(int(render_clock_fps)))
-	args.append("--resolution")
-	args.append(DEFAULT_RECORDING_RESOLUTION)
-	args.append("--")
-	for arg in _recording_passthrough_args():
-		args.append(arg)
-	for arg in _recording_tuning_args():
-		args.append(arg)
-	if not audio_path.is_empty():
-		args.append("--audio=%s" % audio_path)
-	args.append("--render-clock=frame")
-	args.append("--clock-fps=%.3f" % render_clock_fps)
-	args.append("--clock-stop-after=%.3f" % song_duration)
+	var absolute_audio_path := ProjectSettings.globalize_path(audio_path) if audio_path.begins_with("res://") else audio_path
+	var stamp := str(int(Time.get_unix_time_from_system()))
+	var basename := "%s_%s" % [_sanitize_filename(_recording_output_basename(audio_path)), stamp]
+	var avi_path := "%s/%s_intermediate.avi" % [jobs_dir, basename]
+	recording_output_path = "%s/%s.mp4" % [output_dir, basename]
+	recording_status_path = "%s/%s_status.json" % [jobs_dir, basename]
+	var request_path := "%s/%s_request.json" % [jobs_dir, basename]
 
-	recording_export_pid = OS.create_process(executable, args, false)
+	var user_args: Array[String] = []
+	for arg in _recording_passthrough_args():
+		user_args.append(arg)
+	for arg in _recording_tuning_args():
+		user_args.append(arg)
+
+	var request := {
+		"godot": executable,
+		"project": project_path,
+		"ffmpeg": ProjectSettings.globalize_path(MP4_RENDER_FFMPEG),
+		"audio": absolute_audio_path,
+		"duration": song_duration,
+		"fps": recording_fps,
+		"resolution": recording_resolution,
+		"avi": avi_path,
+		"mp4": recording_output_path,
+		"status": recording_status_path,
+		"log": "%s/%s.log" % [jobs_dir, basename],
+		"user_args": user_args,
+	}
+	var request_file := FileAccess.open(request_path, FileAccess.WRITE)
+	if request_file == null:
+		_set_recording_status("Ошибка: не удалось создать задание")
+		push_error("MP4 recording export failed to write request: %s" % request_path)
+		return
+	request_file.store_string(JSON.stringify(request, "  ") + "\n")
+	request_file.close()
+
+	_save_tuning_defaults()
+	var powershell_args := PackedStringArray([
+		"-NoProfile",
+		"-ExecutionPolicy", "Bypass",
+		"-File", ProjectSettings.globalize_path(MP4_RENDER_JOB_SCRIPT),
+		"-RequestPath", request_path,
+	])
+	recording_export_pid = OS.create_process("powershell.exe", powershell_args, false)
 	if recording_export_pid <= 0:
 		recording_export_pid = 0
-		push_error("F10 recording export failed to launch.")
+		_set_recording_status("Ошибка запуска рендера")
+		push_error("MP4 recording export failed to launch.")
 		return
-	print("F10 recording export launched pid=%d output=%s" % [recording_export_pid, output_path])
+	recording_last_state = ""
+	recording_status_elapsed = 0.0
+	if recording_button != null:
+		recording_button.disabled = true
+	_set_recording_status("Рендер с 0:00… Можно дождаться результата здесь")
+	_soft_restart()
+	print("MP4 recording export launched pid=%d output=%s" % [recording_export_pid, recording_output_path])
+
+
+func _poll_recording_export(delta: float) -> void:
+	if recording_export_pid <= 0:
+		return
+	recording_status_elapsed += delta
+	if recording_status_elapsed < 0.5:
+		return
+	recording_status_elapsed = 0.0
+	if not recording_status_path.is_empty() and FileAccess.file_exists(recording_status_path):
+		var file := FileAccess.open(recording_status_path, FileAccess.READ)
+		if file != null:
+			var parsed = JSON.parse_string(file.get_as_text())
+			if parsed is Dictionary:
+				var state := String((parsed as Dictionary).get("state", "working"))
+				var message := _localized_recording_status(state, String((parsed as Dictionary).get("encoder", "")), String((parsed as Dictionary).get("message", "")))
+				if state != recording_last_state:
+					recording_last_state = state
+					_set_recording_status(message)
+					print("MP4 recording status: state=%s message=%s" % [state, message])
+				if state == "complete":
+					recording_export_pid = 0
+					if recording_button != null:
+						recording_button.disabled = false
+					OS.shell_show_in_file_manager(recording_output_path)
+				elif state == "error":
+					recording_export_pid = 0
+					if recording_button != null:
+						recording_button.disabled = false
+				return
+	if not OS.is_process_running(recording_export_pid):
+		recording_export_pid = 0
+		if recording_button != null:
+			recording_button.disabled = false
+		_set_recording_status("Рендер завершился без файла статуса — смотри .jobs log")
+
+
+func _set_recording_status(message: String) -> void:
+	if recording_status_label != null:
+		recording_status_label.text = message
+
+
+func _localized_recording_status(state: String, encoder: String, raw_message: String) -> String:
+	match state:
+		"rendering":
+			return "Рендер кадров с 0:00…"
+		"encoding":
+			return "Собираю MP4 на процессоре…" if encoder == "libx264" else "Собираю MP4 на видеокарте…"
+		"complete":
+			return "Готово: MP4 создан, открываю папку"
+		"error":
+			return "Ошибка: %s" % raw_message.trim_prefix("Render error: ")
+	return raw_message if not raw_message.is_empty() else "Рендер…"
+
+
+func _start_realtime_screen_capture() -> void:
+	if _movie_writer_is_active():
+		return
+	_save_tuning_defaults()
+	var mode := DisplayServer.window_get_mode()
+	if mode != DisplayServer.WINDOW_MODE_FULLSCREEN and mode != DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+		_toggle_fullscreen()
+	_hide_tuning_gui()
+
+	var countdown_layer := CanvasLayer.new()
+	countdown_layer.layer = 220
+	add_child(countdown_layer)
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.0, 0.0, 0.0, 0.38)
+	countdown_layer.add_child(shade)
+	var countdown := Label.new()
+	countdown.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	countdown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	countdown.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	countdown.add_theme_font_size_override("font_size", 112)
+	countdown.add_theme_color_override("font_color", CYAN)
+	countdown_layer.add_child(countdown)
+
+	for number in [3, 2, 1]:
+		countdown.text = str(number)
+		await get_tree().create_timer(1.0).timeout
+	countdown.text = "REC"
+	countdown.add_theme_color_override("font_color", Color(1.0, 0.12, 0.32, 1.0))
+	await get_tree().create_timer(0.45).timeout
+	countdown_layer.queue_free()
+	_soft_restart()
+	print("Realtime screen capture: started from 0:00 duration=%.3f" % song_duration)
+
+
+func _start_obs_auto_recording() -> void:
+	if _movie_writer_is_active() or obs_auto_phase != "idle":
+		return
+	_save_tuning_defaults()
+	var jobs_dir := ProjectSettings.globalize_path("res://output/.obs_auto")
+	DirAccess.make_dir_recursive_absolute(jobs_dir)
+	var stamp := Time.get_datetime_string_from_system().replace(":", "-")
+	obs_auto_status_path = "%s/status_%s.json" % [jobs_dir, stamp]
+	obs_auto_state_path = "%s/state_%s.json" % [jobs_dir, stamp]
+	obs_auto_phase = "preparing"
+	obs_auto_last_status = ""
+	obs_auto_recording = false
+	obs_auto_stop_requested = false
+	if obs_auto_button != null:
+		obs_auto_button.disabled = true
+	_set_recording_status("Открываю и настраиваю OBS…")
+	_launch_obs_auto_helper("Prepare")
+
+
+func _launch_obs_auto_helper(mode: String) -> void:
+	var script_path := ProjectSettings.globalize_path(OBS_AUTO_RECORD_SCRIPT)
+	var args := PackedStringArray([
+		"-NoProfile",
+		"-WindowStyle", "Hidden",
+		"-ExecutionPolicy", "Bypass",
+		"-File", script_path,
+		"-Action", mode,
+		"-StatusPath", obs_auto_status_path,
+		"-StatePath", obs_auto_state_path,
+		"-BackgroundPath", ProjectSettings.globalize_path(background_video_path),
+		"-AudioPath", ProjectSettings.globalize_path(_recording_audio_path()),
+	])
+	obs_auto_pid = OS.create_process("powershell.exe", args, false)
+	if obs_auto_pid <= 0:
+		_fail_obs_auto_recording("Не удалось запустить управление OBS")
+
+
+func _poll_obs_auto_recording(delta: float) -> void:
+	if obs_auto_phase == "idle" or obs_auto_status_path.is_empty():
+		return
+	# AudioStreamPlayer resets its playback position when a WAV reaches EOF.
+	# Therefore recording completion must not depend on the audio position.
+	# Use a monotonic wall clock measured from OBS' confirmed StartRecord instead.
+	if obs_auto_phase == "recording" and obs_auto_recording and not obs_auto_stop_requested and obs_auto_started_msec > 0:
+		var recorded_seconds := float(Time.get_ticks_msec() - obs_auto_started_msec) / 1000.0
+		if recorded_seconds >= obs_auto_expected_duration:
+			print("OBS auto recording watchdog reached WAV duration: elapsed=%.3f expected=%.3f" % [recorded_seconds, obs_auto_expected_duration])
+			_shutdown_and_quit()
+			return
+	obs_auto_poll_elapsed += delta
+	if obs_auto_poll_elapsed < 0.15:
+		return
+	obs_auto_poll_elapsed = 0.0
+	if not FileAccess.file_exists(obs_auto_status_path):
+		return
+	var file := FileAccess.open(obs_auto_status_path, FileAccess.READ)
+	if file == null:
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if not (parsed is Dictionary):
+		return
+	var state := String((parsed as Dictionary).get("state", ""))
+	var message := String((parsed as Dictionary).get("message", ""))
+	if state == obs_auto_last_status:
+		return
+	obs_auto_last_status = state
+	_set_recording_status(message)
+	print("OBS auto recording: phase=%s state=%s message=%s" % [obs_auto_phase, state, message])
+	if state == "error":
+		_fail_obs_auto_recording(message)
+	elif state == "ready" and obs_auto_phase == "preparing":
+		obs_auto_phase = "countdown"
+		_begin_obs_auto_countdown()
+	elif state == "recording" and obs_auto_phase == "starting":
+		obs_auto_phase = "recording"
+		obs_auto_recording = true
+		obs_auto_started_msec = Time.get_ticks_msec()
+		obs_auto_expected_duration = song_duration
+		if audio.stream != null:
+			obs_auto_expected_duration = audio.stream.get_length()
+		if clock_stop_after_seconds >= 0.0:
+			obs_auto_expected_duration = minf(obs_auto_expected_duration, clock_stop_after_seconds)
+		obs_auto_expected_duration = maxf(0.25, obs_auto_expected_duration)
+		audio.volume_db = -80.0
+		_stop_background_video()
+		if is_instance_valid(obs_auto_countdown_layer):
+			obs_auto_countdown_layer.queue_free()
+		obs_auto_countdown_layer = null
+		_soft_restart()
+		_stop_background_video()
+		print("OBS auto recording started from 0:00 duration=%.3f" % song_duration)
+	elif state == "complete" and obs_auto_phase == "stopping":
+		obs_auto_recording = false
+		var output_path := String((parsed as Dictionary).get("output_path", ""))
+		if not output_path.is_empty():
+			OS.shell_show_in_file_manager(output_path)
+		obs_auto_phase = "done"
+		await get_tree().create_timer(0.8).timeout
+		_shutdown_and_quit()
+
+
+func _begin_obs_auto_countdown() -> void:
+	# Keep a regular, non-minimized window. Windows Graphics Capture can keep
+	# capturing it while other applications cover it; exclusive/fullscreen
+	# windows are commonly minimized when the user Alt-Tabs away.
+	var mode := DisplayServer.window_get_mode()
+	if mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	_hide_tuning_gui()
+	obs_auto_countdown_layer = CanvasLayer.new()
+	obs_auto_countdown_layer.layer = 220
+	add_child(obs_auto_countdown_layer)
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.0, 0.0, 0.0, 0.46)
+	obs_auto_countdown_layer.add_child(shade)
+	var countdown := Label.new()
+	countdown.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	countdown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	countdown.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	countdown.add_theme_font_size_override("font_size", 112)
+	countdown.add_theme_color_override("font_color", CYAN)
+	obs_auto_countdown_layer.add_child(countdown)
+	for number in [3, 2, 1]:
+		countdown.text = str(number)
+		await get_tree().create_timer(1.0).timeout
+	countdown.text = "REC"
+	countdown.add_theme_color_override("font_color", Color(1.0, 0.12, 0.32, 1.0))
+	obs_auto_phase = "starting"
+	obs_auto_last_status = ""
+	_launch_obs_auto_helper("Start")
+
+
+func _fail_obs_auto_recording(message: String) -> void:
+	push_error("OBS auto recording failed: %s" % message)
+	obs_auto_phase = "idle"
+	obs_auto_recording = false
+	obs_auto_stop_requested = false
+	obs_auto_started_msec = 0
+	obs_auto_expected_duration = 0.0
+	if is_instance_valid(obs_auto_countdown_layer):
+		obs_auto_countdown_layer.queue_free()
+	obs_auto_countdown_layer = null
+	if obs_auto_button != null:
+		obs_auto_button.disabled = false
+	_set_recording_status("Ошибка OBS: %s" % message)
 
 
 func _recording_audio_path() -> String:
@@ -1307,7 +2272,7 @@ func _sanitize_filename(text: String) -> String:
 func _recording_passthrough_args() -> PackedStringArray:
 	var args := PackedStringArray()
 	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--write-movie") or arg.begins_with("--frame-sequence-dir=") or arg.begins_with("--clock-stop-after=") or arg.begins_with("--clock-start-at=") or arg.begins_with("--clock-fps=") or arg.begins_with("--render-clock=") or arg.begins_with("--audio=") or arg.begins_with("--tuning-"):
+		if arg == "--obs-overlay" or arg == "--internal-background-video" or arg.begins_with("--write-movie") or arg.begins_with("--frame-sequence-dir=") or arg.begins_with("--clock-stop-after=") or arg.begins_with("--clock-start-at=") or arg.begins_with("--clock-fps=") or arg.begins_with("--render-clock=") or arg.begins_with("--audio=") or arg.begins_with("--tuning-"):
 			continue
 		args.append(arg)
 	return args
@@ -1361,22 +2326,27 @@ func _audio_path_from_args() -> String:
 
 
 func _load_audio_stream(audio_path: String) -> AudioStream:
+	var file_path := audio_path
 	if audio_path.begins_with("res://") or audio_path.begins_with("user://"):
-		return load(audio_path)
+		file_path = ProjectSettings.globalize_path(audio_path)
 	var extension := audio_path.get_extension().to_lower()
 	match extension:
 		"mp3":
-			return AudioStreamMP3.load_from_file(audio_path)
+			return AudioStreamMP3.load_from_file(file_path)
 		"wav":
-			return AudioStreamWAV.load_from_file(audio_path)
+			return AudioStreamWAV.load_from_file(file_path)
 		"ogg":
-			return AudioStreamOggVorbis.load_from_file(audio_path)
+			return AudioStreamOggVorbis.load_from_file(file_path)
 	return load(audio_path)
+
+
+func _obs_auto_start_requested() -> bool:
+	return OS.get_cmdline_user_args().has("--obs-auto-start")
 
 
 func _precise_song_time() -> float:
 	if render_clock_mode:
-		return float(render_frame_index) / render_clock_fps
+		return render_clock_start_at + float(render_frame_index) / render_clock_fps
 	if silent_mode:
 		return maxf(0.0, silent_clock - visual_offset)
 	var current_song_position := audio.get_playback_position() + AudioServer.get_time_since_last_mix() - AudioServer.get_output_latency()
@@ -1475,10 +2445,14 @@ func _should_quit(song_time: float) -> bool:
 func _apply_camera_transform(song_time: float) -> void:
 	if tuning_values.is_empty():
 		return
-	camera.rotation_degrees.x = float(tuning_values["camera_pitch"])
-	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + _camera_dodge_offset(song_time)
-	camera.position.y = float(tuning_values["camera_y"]) + _camera_duck_y_offset(song_time)
-	camera.position.z = float(tuning_values["camera_z"])
+	var dodge_offset := _camera_dodge_offset(song_time)
+	var duck_shake := _camera_duck_shake(song_time)
+	var double_foot_bob := _camera_double_foot_bob(song_time)
+	camera.rotation_degrees.x = float(tuning_values["camera_pitch"]) + duck_shake.z * 13.0 + double_foot_bob.x
+	camera.rotation_degrees.z = -dodge_offset * 1.55 + duck_shake.x * 5.0
+	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + dodge_offset + duck_shake.x
+	camera.position.y = float(tuning_values["camera_y"]) + _camera_duck_y_offset(song_time) + duck_shake.y + double_foot_bob.y
+	camera.position.z = float(tuning_values["camera_z"]) + duck_shake.z + double_foot_bob.z
 	if not _movie_writer_is_active() and frame_sequence_dir.is_empty():
 		camera.set_perspective(float(tuning_values["camera_fov"]), camera.near, camera.far)
 
@@ -1517,6 +2491,54 @@ func _is_camera_duck_event(event: Dictionary) -> bool:
 	var movement := String(event.get("movement", "")).to_upper()
 	var cue := String(event.get("cue_archetype", "")).to_upper()
 	return movement == "DUCK" or cue == "LOW_CLEARANCE_GATE"
+
+
+func _camera_duck_shake(song_time: float) -> Vector3:
+	var best_shake := Vector3.ZERO
+	for raw_event in movement_events:
+		if not raw_event is Dictionary:
+			continue
+		var event := raw_event as Dictionary
+		if not _is_camera_duck_event(event):
+			continue
+		var hit_time := float(event.get("hit_time", event.get("time", 0.0)))
+		var local_time := song_time - hit_time
+		if local_time < -0.055 or local_time > 0.255:
+			continue
+		var phase := clampf((local_time + 0.055) / 0.31, 0.0, 1.0)
+		var envelope := sin(phase * PI)
+		envelope = envelope * envelope * (1.0 - phase * 0.28)
+		var shake := Vector3(
+			sin(local_time * TAU * 21.0) * 0.032,
+			cos(local_time * TAU * 17.0) * 0.020,
+			sin(local_time * TAU * 13.0) * 0.018
+		) * envelope
+		if shake.length_squared() > best_shake.length_squared():
+			best_shake = shake
+	return best_shake
+
+
+func _camera_double_foot_bob(song_time: float) -> Vector3:
+	var best_bob := Vector3.ZERO
+	for raw_event in movement_events:
+		if not raw_event is Dictionary:
+			continue
+		var event := raw_event as Dictionary
+		if String(event.get("movement", "")).to_upper() != "DOUBLE_FOOT_PULSE":
+			continue
+		for raw_hit in event.get("internal_hits", []):
+			if not raw_hit is Dictionary:
+				continue
+			var local_time := song_time - float((raw_hit as Dictionary).get("time", event.get("hit_time", 0.0)))
+			if local_time < -0.045 or local_time > 0.22:
+				continue
+			var phase := clampf((local_time + 0.045) / 0.265, 0.0, 1.0)
+			var envelope := sin(phase * PI)
+			envelope *= envelope
+			var bob := Vector3(-0.72, -0.105, 0.055) * envelope
+			if bob.length_squared() > best_bob.length_squared():
+				best_bob = bob
+	return best_bob
 
 func _camera_dodge_offset(song_time: float) -> float:
 	var best_offset := 0.0
@@ -1585,8 +2607,6 @@ func _spawn_due_hold_events(song_time: float) -> void:
 
 
 func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
-	# Holds are not part of the reference warm-up vocabulary.
-	return
 	var lane := clampi(int(event.get("lane", 0)), 0, 3)
 	var start := float(event.get("start", event.get("time", 0.0)))
 	var end_time := float(event.get("end_time", event.get("end", start + float(event.get("duration", 0.0)))))
@@ -1615,7 +2635,7 @@ func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
 	var core := MeshInstance3D.new()
 	core.name = "HoldEnergyCore"
 	var core_mesh := QuadMesh.new()
-	core_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.68, HOLD_STRIP_MIN_LENGTH)
+	core_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.24, HOLD_STRIP_MIN_LENGTH)
 	core.mesh = core_mesh
 	core.position.y = 0.018
 	core.rotation_degrees.x = -90.0
@@ -1623,30 +2643,16 @@ func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
 	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(core)
 
-	for side in [-1.0, 1.0]:
-		var rail := MeshInstance3D.new()
-		rail.name = "HoldRailLeft" if side < 0.0 else "HoldRailRight"
-		var rail_mesh := BoxMesh.new()
-		rail_mesh.size = Vector3(0.055, 0.04, HOLD_STRIP_MIN_LENGTH)
-		rail.mesh = rail_mesh
-		rail.position = Vector3(side * HOLD_STRIP_WIDTH * 0.47, 0.035, 0.0)
-		rail.material_override = _create_hold_rail_material(color)
-		rail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		hold.add_child(rail)
-
 	var end_marker := MeshInstance3D.new()
 	end_marker.name = "HoldEndMarker"
 	var end_mesh := QuadMesh.new()
-	end_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.82, 0.34)
+	end_mesh.size = Vector2(HOLD_STRIP_WIDTH * 0.58, 0.26)
 	end_marker.mesh = end_mesh
 	end_marker.position.y = 0.028
 	end_marker.rotation_degrees.x = -90.0
 	end_marker.material_override = _create_hold_end_material(color)
 	end_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(end_marker)
-
-	var cap := _create_hold_start_pad(lane, color)
-	hold.add_child(cap)
 
 	notes_root.add_child(hold)
 	active_holds.append(hold)
@@ -1699,17 +2705,18 @@ func _update_hold_geometry(hold: Node3D, song_time: float, fade: float) -> void:
 			(strip.mesh as QuadMesh).size = Vector2(HOLD_STRIP_WIDTH, length)
 		var material := strip.material_override as StandardMaterial3D
 		if material != null:
-			material.albedo_color.a = 0.82 * fade
-			material.emission_energy_multiplier = 0.8 * fade
+			material.albedo_color.a = 0.78 * fade
+			material.emission_energy_multiplier = (1.28 + 0.22 * sin(song_time * TAU * 1.5)) * fade
 	var core := hold.get_node_or_null("HoldEnergyCore") as MeshInstance3D
 	if core != null:
 		core.position.z = center_z
 		if core.mesh is QuadMesh:
-			(core.mesh as QuadMesh).size = Vector2(HOLD_STRIP_WIDTH * 0.68, length)
+			(core.mesh as QuadMesh).size = Vector2(HOLD_STRIP_WIDTH * 0.24, length)
 		var core_material := core.material_override as StandardMaterial3D
 		if core_material != null:
-			core_material.albedo_color.a = 0.22 * fade
-			core_material.emission_energy_multiplier = 3.8 * fade
+			var flow_pulse := 0.5 + 0.5 * sin(song_time * TAU * 2.0)
+			core_material.albedo_color.a = (0.54 + flow_pulse * 0.22) * fade
+			core_material.emission_energy_multiplier = (4.5 + flow_pulse * 1.8) * fade
 	for rail_name in ["HoldRailLeft", "HoldRailRight"]:
 		var rail := hold.get_node_or_null(rail_name) as MeshInstance3D
 		if rail != null:
@@ -1740,10 +2747,10 @@ func _create_hold_strip_material(color: Color) -> StandardMaterial3D:
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_color = Color(0.008 + color.r * 0.035, 0.012 + color.g * 0.035, 0.02 + color.b * 0.035, 0.82)
+	material.albedo_color = Color(0.025 + color.r * 0.18, 0.035 + color.g * 0.18, 0.055 + color.b * 0.18, 0.82)
 	material.emission_enabled = true
-	material.emission = Color(color.r * 0.12, color.g * 0.12, color.b * 0.12)
-	material.emission_energy_multiplier = 0.8
+	material.emission = Color(color.r * 0.34, color.g * 0.34, color.b * 0.34)
+	material.emission_energy_multiplier = 1.35
 	return material
 
 
@@ -1920,16 +2927,47 @@ func _trigger_hit_event(
 	visual_enabled: bool,
 	cue_archetype: String = "",
 	movement: String = "",
-	combo_index: int = 0
+	combo_index: int = 0,
+	finale_callback: bool = false
 ) -> void:
 	var clamped_lane := clampi(lane, 0, receptors.size() - 1)
 	var receptor := receptors[clamped_lane] as NoteReceptor
+	var hit_strength := _hit_strength_for_time(hit_time)
 	if visual_enabled:
-		_pulse_execution_lane(clamped_lane, color, _hit_strength_for_time(hit_time))
+		_pulse_execution_lane(clamped_lane, color, hit_strength)
 		receptor.flash()
-		_spawn_hit_effect(receptor.global_position, color, cue_archetype, movement, combo_index)
+		_spawn_hit_effect(receptor.global_position, color, cue_archetype, movement, combo_index, finale_callback)
 		_show_hit_feedback(hit_time, combo_index)
+		var camera_action := _camera_action_for_cue(kind, cue_archetype, movement)
+		if not camera_action.is_empty():
+			var lane_bias := (float(clamped_lane) - 1.5) / 1.5
+			var action_scale := 1.0
+			match camera_action:
+				"JUMP": action_scale = 0.82
+				"DUCK": action_scale = 0.62
+				"HAND", "PUNCH": action_scale = 0.34
+				"HOLD": action_scale = 0.46
+				_: action_scale = 1.08 if "DOUBLE" in movement.to_upper() else 1.0
+			tunnel_generator.trigger_action_camera_impact(camera_action, hit_strength * action_scale, lane_bias)
 	_print_hit_timing_diagnostic(kind, source_index, clamped_lane, hit_time, actual_trigger_time)
+
+
+func _camera_action_for_cue(kind: String, cue_archetype: String, movement: String) -> String:
+	var cue := cue_archetype.to_upper()
+	var action := movement.to_upper()
+	if "DUCK" in cue or "DUCK" in action or cue == "LOW_CLEARANCE_GATE":
+		return "DUCK"
+	if "JUMP" in cue or "JUMP" in action:
+		return "JUMP"
+	if "PUNCH" in cue or "PUNCH" in action:
+		return "PUNCH"
+	if "HAND" in cue or "HAND" in action or cue == "DOUBLE_TARGET":
+		return "HAND"
+	if "FOOT" in cue or "STEP" in cue or "PAD" in cue:
+		return "STEP"
+	if "STEP" in action or "LUNGE" in action or "FOOT" in action:
+		return "STEP"
+	return "HOLD" if kind == "hold_start" else ""
 
 
 func _show_hit_feedback(hit_time: float, combo_index: int) -> void:
@@ -1977,13 +3015,15 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 	var spawn_z := -(seconds_until_hit * scroll_speed)
 	var lane := clampi(int(beat.get("lane", 0)), 0, 3)
 	var choreography_lanes = beat.get("lanes", [lane])
-	var visual_cue := _visual_cue_for_note(cue_name, choreography_lanes, lane)
-	note.setup(lane, float(beat.time), spawn_z, visual_cue)
+	var semantic_movement := String(beat.get("semantic_movement", beat.get("movement", "")))
+	var visual_cue := _visual_cue_for_note(cue_name, choreography_lanes, lane, semantic_movement)
+	note.setup(lane, float(beat.time), spawn_z, visual_cue, float(beat.get("duration", 0.0)))
 	if tuning_values.has("note_y"):
 		note.position.y = float(tuning_values["note_y"])
 	note.set_meta("note_index", int(beat.get("source_note_index", note_index)))
 	note.set_meta("choreography_type", String(beat.get("type", "step")))
 	note.set_meta("movement", String(beat.get("movement", "MARCH")))
+	note.set_meta("semantic_movement", semantic_movement)
 	note.set_meta("cue_archetype", cue_name)
 	note.set_meta("visual_cue_archetype", visual_cue)
 	note.set_meta("choreography_lanes", choreography_lanes)
@@ -1991,17 +3031,30 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 	var combo_context := _combo_context_for_note(beat, note_index)
 	note.set_meta("combo_index", int(combo_context.get("index", 0)))
 	note.set_meta("combo_key", String(combo_context.get("key", "")))
+	note.set_meta("finale_callback", bool(beat.get("finale_callback", false)))
 	notes_root.add_child(note)
 	active_notes.append(note)
-	if _punch_trail_allowed(beat, combo_context):
-		_spawn_combo_trail(combo_context, song_time)
 	_print_clock_diagnostic("spawn", song_time, note_index, note.lane, note.hit_time, spawn_z)
 
 
-func _visual_cue_for_note(cue_name: String, choreography_lanes: Variant, lane: int) -> String:
+func _visual_cue_for_note(cue_name: String, choreography_lanes: Variant, lane: int, semantic_movement: String = "") -> String:
+	# A jump is two simultaneous familiar step platforms, not a new beam icon.
+	# SMALL_JUMP/JUMP already emit two short hits, so the player reads a clear
+	# pair of landings: jump, reset, jump.
+	if semantic_movement.to_upper() in ["SMALL_JUMP", "JUMP"] and cue_name.begins_with("FLOOR_PULSE"):
+		return "FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT"
+	if semantic_movement.to_upper() == "DOUBLE_FOOT_PULSE":
+		return "DOUBLE_FOOT_PAD_LEFT" if lane < 2 else "DOUBLE_FOOT_PAD_RIGHT"
+	# March/run/reset silhouettes were visually ambiguous. They are all ground
+	# actions, so present the same ordinary shoe-print language as step-touch.
+	if cue_name in ["ALTERNATING_FOOT_PULSES", "HIGH_FOOT_PULSES", "ROAD_PULSE", "RESET_MARKER"]:
+		return "FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT"
+	# Architectural double-foot actions are serialized as one centered note with
+	# two semantic lanes. Keep their real cue instead of collapsing the only
+	# obstacle instance back into an ordinary footprint.
 	if choreography_lanes is Array and (choreography_lanes as Array).size() == 2:
 		if cue_name.begins_with("FLOOR_PULSE") or cue_name == "LOW_CLEARANCE_GATE" or cue_name == "OVERHEAD_BAR":
-			return "FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT"
+			return cue_name
 	return cue_name if not cue_name.is_empty() else ("FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT")
 
 
@@ -2037,7 +3090,7 @@ func _close_clock_diagnostic_file() -> void:
 		clock_diagnostic_file = null
 
 
-func _spawn_hit_effect(world_position: Vector3, color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0) -> void:
+func _spawn_hit_effect(world_position: Vector3, color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0, finale_callback: bool = false) -> void:
 	if _movie_writer_is_active():
 		_spawn_movie_safe_hit_effect(world_position, color, cue_archetype, movement)
 		return
@@ -2048,7 +3101,7 @@ func _spawn_hit_effect(world_position: Vector3, color: Color, cue_archetype: Str
 	var layered := HIT_EFFECT_SCENE.instantiate()
 	effects_root.add_child(layered)
 	layered.global_position = world_position + Vector3(0.0, 0.10, 0.0)
-	layered.setup(color, cue_archetype, movement, combo_index)
+	layered.setup(color, cue_archetype, movement, combo_index, finale_callback)
 
 
 func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color, cue_archetype: String = "", movement: String = "") -> void:
@@ -2072,7 +3125,9 @@ func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color, cue_arc
 	var mesh := QuadMesh.new()
 	var cue := cue_archetype.to_upper()
 	var move := movement.to_upper()
-	if cue.begins_with("FLOOR_PULSE") or "JUMP" in move or "HOP" in move:
+	if cue.begins_with("DOUBLE_FOOT_PAD"):
+		mesh.size = Vector2(3.1, 1.05)
+	elif cue.begins_with("FLOOR_PULSE") or "JUMP" in move or "HOP" in move:
 		mesh.size = Vector2(7.65, 1.0)
 	elif cue.begins_with("SIDE_SWEEP") or "DODGE" in move or "SQUAT" in move:
 		mesh.size = Vector2(3.8, 0.72)
@@ -2086,7 +3141,56 @@ func _spawn_movie_safe_hit_effect(world_position: Vector3, color: Color, cue_arc
 	flash.material_override = material
 	flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(flash)
-	get_tree().create_timer(0.12).timeout.connect(Callable(root, "queue_free"))
+	flash.scale = Vector3.ONE * 0.42
+	var flash_tween := create_tween().set_parallel(true)
+	flash_tween.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	flash_tween.tween_property(flash, "scale", Vector3.ONE * 1.18, 0.18)
+
+	# Standard emissive meshes remain deterministic in Movie Writer, unlike the
+	# richer screen-space shader layer. A radial ring plus irregular shards keeps
+	# the final video punchy without the recording crash.
+	var ring := MeshInstance3D.new()
+	ring.name = "MovieSafeImpactRing"
+	var ring_mesh := TorusMesh.new()
+	ring_mesh.inner_radius = 0.52
+	ring_mesh.outer_radius = 0.66
+	ring_mesh.rings = 24
+	ring_mesh.ring_segments = 8
+	ring.mesh = ring_mesh
+	ring.position.y = 0.055
+	ring.material_override = material
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	ring.scale = Vector3.ONE * 0.38
+	root.add_child(ring)
+	var ring_tween := create_tween().set_parallel(true)
+	ring_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_property(ring, "scale", Vector3.ONE * 1.42, 0.30)
+
+	var seed_value: int = int(absf(world_position.x) * 1000.0 + absf(world_position.z) * 100.0)
+	seed_value += int(abs(cue_archetype.hash()))
+	seed_value += int(abs(movement.hash()))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	for index in range(16):
+		var angle := TAU * float(index) / 16.0 + rng.randf_range(-0.12, 0.12)
+		var direction := Vector3(cos(angle), rng.randf_range(0.10, 0.52), sin(angle))
+		var shard := MeshInstance3D.new()
+		shard.name = "MovieSafeShard%02d" % index
+		var shard_mesh := BoxMesh.new()
+		shard_mesh.size = Vector3(rng.randf_range(0.08, 0.24), rng.randf_range(0.035, 0.10), rng.randf_range(0.12, 0.42))
+		shard.mesh = shard_mesh
+		shard.position = Vector3(direction.x * 0.18, 0.07, direction.z * 0.18)
+		shard.rotation_degrees.y = -rad_to_deg(angle)
+		shard.material_override = material
+		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(shard)
+		var travel := direction * rng.randf_range(0.82, 1.46)
+		var duration := rng.randf_range(0.22, 0.32)
+		var shard_tween := create_tween().set_parallel(true)
+		shard_tween.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		shard_tween.tween_property(shard, "position", travel, duration)
+		shard_tween.tween_property(shard, "scale", Vector3.ZERO, duration).set_delay(0.08)
+	get_tree().create_timer(0.36).timeout.connect(Callable(root, "queue_free"))
 
 
 func _build_ghost_cue_layer() -> void:
@@ -2439,15 +3543,15 @@ func _update_active_walls(song_time: float) -> void:
 		var fade := clampf((song_time - start + 0.65) / 0.65, 0.32, 1.0)
 		if song_time > start + duration - 0.65:
 			fade = clampf((start + duration - song_time) / 0.65, 0.0, 1.0)
-		var panel_material = wall.get_meta("panel_material") as ShaderMaterial
+		var panel_material = wall.get_meta("panel_material") as ShaderMaterial if wall.has_meta("panel_material") else null
 		if panel_material != null:
 			panel_material.set_shader_parameter("opacity", 0.76 * fade)
 			panel_material.set_shader_parameter("brightness", 3.6 * (0.45 + fade * 0.55))
-		var strip_material = wall.get_meta("strip_material") as StandardMaterial3D
+		var strip_material = wall.get_meta("strip_material") as StandardMaterial3D if wall.has_meta("strip_material") else null
 		if strip_material != null:
 			strip_material.albedo_color.a = 0.82 * fade
 			strip_material.emission_energy_multiplier = _wall_strip_emission() * (0.35 + fade)
-		var edge_material = wall.get_meta("edge_material") as StandardMaterial3D
+		var edge_material = wall.get_meta("edge_material") as StandardMaterial3D if wall.has_meta("edge_material") else null
 		if edge_material != null:
 			edge_material.albedo_color.a = fade
 			edge_material.emission_energy_multiplier = _wall_edge_emission() * (0.42 + fade)
@@ -2615,54 +3719,11 @@ func _print_wall_diagnostic(event_name: String, song_time: float, event_index: i
 
 
 func _build_tunnel() -> void:
-	if not ENABLE_TUNNEL_FRAMES:
+	if tunnel_generator == null:
+		push_warning("NeonTunnelGenerator is missing from TunnelFrames.")
 		return
-	for index in range(12):
-		var frame := _create_square_frame(index)
-		frame.position.z = FRAME_BACK_Z + float(index) * FRAME_SPACING
-		frames_root.add_child(frame)
-
-
-func _create_square_frame(index: int) -> Node3D:
-	var root := Node3D.new()
-	root.name = "NeonFrame%02d" % index
-	var cyan_material := _emissive_material(CYAN, 6.0)
-	var magenta_material := _emissive_material(MAGENTA, 6.0)
-	var white_material := _emissive_material(Color(0.82, 0.92, 1.0), 8.5)
-	var bars := [
-		[Vector3(-3.0, 4.0, 0), Vector3(6.0, 0.14, 0.18), cyan_material],
-		[Vector3(3.0, 4.0, 0), Vector3(6.0, 0.14, 0.18), magenta_material],
-		[Vector3(-3.0, -1.75, 0), Vector3(6.0, 0.14, 0.18), cyan_material],
-		[Vector3(3.0, -1.75, 0), Vector3(6.0, 0.14, 0.18), magenta_material],
-		[Vector3(-5.95, 1.12, 0), Vector3(0.18, 5.75, 0.18), cyan_material],
-		[Vector3(5.95, 1.12, 0), Vector3(0.18, 5.75, 0.18), magenta_material],
-	]
-	for bar_data in bars:
-		var bar := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = bar_data[1]
-		box.material = bar_data[2]
-		bar.mesh = box
-		bar.position = bar_data[0]
-		root.add_child(bar)
-	var liners := [[Vector3(0, 3.91, -0.02), Vector3(11.7, 0.035, 0.035)], [Vector3(0, -1.66, -0.02), Vector3(11.7, 0.035, 0.035)]]
-	for liner_data in liners:
-		var liner := MeshInstance3D.new()
-		var liner_box := BoxMesh.new()
-		liner_box.size = liner_data[1]
-		liner_box.material = white_material
-		liner.mesh = liner_box
-		liner.position = liner_data[0]
-		root.add_child(liner)
-	for pole_x in [-4.25, 0.0, 4.25]:
-		var pole := MeshInstance3D.new()
-		var pole_box := BoxMesh.new()
-		pole_box.size = Vector3(0.07, 4.45, 0.07)
-		pole_box.material = white_material
-		pole.mesh = pole_box
-		pole.position = Vector3(pole_x, 0.48, 0)
-		root.add_child(pole)
-	return root
+	var environment := $WorldEnvironment.environment as Environment
+	tunnel_generator.configure_runtime(camera, environment)
 
 
 func _emissive_material(color: Color, energy: float) -> StandardMaterial3D:
@@ -2675,18 +3736,15 @@ func _emissive_material(color: Color, energy: float) -> StandardMaterial3D:
 	return material
 
 
-func _move_tunnel(delta: float) -> void:
-	for frame in frames_root.get_children():
-		if frame.name.begins_with("LaneRail"):
-			continue
-		frame.position.z += scroll_speed * delta
-		if frame.position.z > FRAME_FRONT_Z:
-			frame.queue_free()
-			if not ENABLE_TUNNEL_FRAMES:
-				continue
-			var replacement := _create_square_frame(frames_root.get_child_count())
-			replacement.position.z = FRAME_BACK_Z
-			frames_root.add_child(replacement)
+func _sync_tunnel(song_time: float) -> void:
+	if tunnel_generator == null or not tunnel_generator.is_enabled():
+		return
+	tunnel_generator.set_camera_base_transform(camera.position, camera.rotation_degrees, camera.fov)
+	tunnel_music_state = music_timeline_adapter.sample(song_time)
+	var spectrum_bands := _sample_tunnel_spectrum()
+	if not spectrum_bands.is_empty():
+		tunnel_music_state["spectrum_bands"] = spectrum_bands
+	tunnel_generator.sync_to_song_time(song_time, tunnel_music_state)
 
 
 
@@ -2901,17 +3959,20 @@ func _update_dance_hud(song_time: float) -> void:
 	if dance_hud_elapsed_label != null:
 		dance_hud_elapsed_label.position = Vector2(bar_x + fill_left, bar_y + bar_height + 2.0)
 		dance_hud_elapsed_label.text = _format_hud_time(song_time)
-		dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82 + pulse * 0.08, 0.98, 1.0, 0.98))
+		if not _movie_writer_is_active():
+			dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82 + pulse * 0.08, 0.98, 1.0, 0.98))
 	if dance_hud_remaining_label != null:
 		dance_hud_remaining_label.position = Vector2(bar_x + bar_width - fill_left - dance_hud_remaining_label.size.x, bar_y + bar_height + 2.0)
 		dance_hud_remaining_label.text = "-" + _format_hud_time(maxf(song_duration - song_time, 0.0))
-		dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72 + pulse * 0.08, 0.92 + pulse * 0.05, 0.96))
+		if not _movie_writer_is_active():
+			dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72 + pulse * 0.08, 0.92 + pulse * 0.05, 0.96))
 	var stream_label: Label = null
 	if dance_hud_layer != null:
 		stream_label = dance_hud_layer.get_node_or_null("ProgressRoot/StreamLabel") as Label
 	if stream_label != null:
 		stream_label.position = Vector2(bar_x + fill_left, 7.0)
-		stream_label.add_theme_color_override("font_color", Color(0.70 + pulse * 0.10, 0.95, 1.0, 0.90 + pulse * 0.08))
+		if not _movie_writer_is_active():
+			stream_label.add_theme_color_override("font_color", Color(0.70 + pulse * 0.10, 0.95, 1.0, 0.90 + pulse * 0.08))
 
 
 func _dance_hud_beat_pulse(song_time: float) -> float:

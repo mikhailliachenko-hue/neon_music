@@ -75,6 +75,7 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 	var duration := maxf(0.0, float(raw_note.get("duration", 0.0)))
 	var hit_time := maxf(0.0, float(raw_note.get("hit_time", time)))
 	var movement := String(raw_note.get("movement", raw_note.get("choreography_type", DEFAULT_NOTE_TYPE)))
+	var semantic_movement := String(raw_note.get("semantic_movement", movement))
 	var cue_archetype := String(raw_note.get("cue_archetype", "FOOT_LANE_TARGET"))
 	var lead_beats := int(raw_note.get("lead_beats", 2))
 	var instruction_time := maxf(0.0, float(raw_note.get("instruction_time", hit_time)))
@@ -89,7 +90,14 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 		"duration": duration,
 		"hit_time": hit_time,
 		"movement": movement,
+		"semantic_movement": semantic_movement,
 		"cue_archetype": cue_archetype,
+		"movement_event_id": String(raw_note.get("movement_event_id", "")),
+		"cell_function": String(raw_note.get("cell_function", "")),
+		"dynamic_role": String(raw_note.get("dynamic_role", "")),
+		"finale_callback": bool(raw_note.get("finale_callback", false)),
+		"simultaneous": bool(raw_note.get("simultaneous", false)),
+		"simultaneous_group": raw_note.get("simultaneous_group"),
 		"lead_beats": lead_beats,
 		"instruction_time": instruction_time,
 		"phrase_id": String(raw_note.get("phrase_id", "")),
@@ -113,7 +121,14 @@ static func expanded_notes(notes: Array) -> Array:
 				"duration": float(note.get("duration", 0.0)),
 				"hit_time": float(note.get("hit_time", note.get("time", 0.0))),
 				"movement": String(note.get("movement", DEFAULT_NOTE_TYPE)),
+				"semantic_movement": String(note.get("semantic_movement", note.get("movement", DEFAULT_NOTE_TYPE))),
 				"cue_archetype": String(note.get("cue_archetype", "FOOT_LANE_TARGET")),
+				"movement_event_id": String(note.get("movement_event_id", "")),
+				"cell_function": String(note.get("cell_function", "")),
+				"dynamic_role": String(note.get("dynamic_role", "")),
+				"finale_callback": bool(note.get("finale_callback", false)),
+				"simultaneous": bool(note.get("simultaneous", false)),
+				"simultaneous_group": note.get("simultaneous_group"),
 				"lead_beats": int(note.get("lead_beats", 2)),
 				"instruction_time": float(note.get("instruction_time", note.get("time", 0.0))),
 				"phrase_id": String(note.get("phrase_id", "")),

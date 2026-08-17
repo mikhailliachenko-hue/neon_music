@@ -2,6 +2,7 @@
 """Generate the V4 regression audit and full-track choreography artifact."""
 from __future__ import annotations
 import argparse
+import copy
 import json
 from pathlib import Path
 from audio_analyzer import write_srt
@@ -9,6 +10,41 @@ from choreography_v4 import WARMUP_PROFILE, audit_legacy, build_full_track, buil
 from neon_track_io import build_neon_track, extract_beat_grid, extract_beatmap, load_neon_track
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def synchronize_grid_projection(
+    grid: dict[str, object],
+    beatmap: dict[str, object],
+    report: dict[str, object],
+    profile: str,
+) -> dict[str, object]:
+    """Keep the embedded timing view aligned with the regenerated V4 map."""
+    synchronized = copy.deepcopy(grid)
+    movements = copy.deepcopy(beatmap.get("movement_events", []))
+    synchronized["movement_events"] = movements
+    generation_settings = dict(synchronized.get("generation_settings", {}))
+    reference_holds = dict(beatmap.get("settings", {}).get("reference_hand_holds", {}))
+    generation_settings["reference_hand_holds"] = {
+        "enabled": bool(reference_holds.get("enabled", True)),
+        "rate_phrases": max(2, int(reference_holds.get("rate_phrases", 4))),
+    }
+    synchronized["generation_settings"] = generation_settings
+    bridge = dict(synchronized.get("choreography_v4", {}))
+    bridge.update({
+        "schema": "neon_music.choreography_bridge.v1",
+        "engine": "v4_full_track",
+        "runtime_contract": "v4_runtime_notes",
+        "profile": profile,
+        "generation_mode": beatmap.get("generation_mode", "full_track"),
+        "runtime_note_count": len(beatmap.get("notes", [])),
+        "runtime_event_count": len(beatmap.get("events", [])),
+        "runtime_movement_event_count": len(movements),
+        "validation": report.get("summary", {}),
+        "hard_errors": report.get("hard_errors", []),
+        "warnings": report.get("warnings", []),
+    })
+    synchronized["choreography_v4"] = bridge
+    return synchronized
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -32,6 +68,7 @@ def main() -> int:
     beatmap = (build_vertical_slice(grid, legacy_map, args.seed, profile=args.profile) if args.vertical_slice else build_full_track(grid, legacy_map, args.seed, profile=args.profile))
     report = validate_v4(grid, beatmap)
     beatmap["validation_summary"] = report["summary"]
+    grid = synchronize_grid_projection(grid, beatmap, report, args.profile)
     combo_srt = write_srt(beatmap, args.subtitles)
     dump_json(args.track, build_neon_track(
         beatmap=beatmap,

@@ -37,4 +37,4 @@ $Python = $pythonCandidates | Where-Object { $_ -eq "python" -or (Test-Path -Lit
 
 & $Python (Join-Path $project "scripts\python\audio_analyzer.py") --audio "$Audio"
 & $Godot --path $project --editor --quit-after 2
-& $Godot --path $project --resolution $Resolution --write-movie $Output --fixed-fps $FixedFps -- "--audio=$Audio" "--render-clock=frame" "--clock-fps=$FixedFps"
+& $Godot --rendering-driver vulkan --path $project --resolution $Resolution --write-movie $Output --fixed-fps $FixedFps -- "--audio=$Audio" "--render-clock=frame" "--clock-fps=$FixedFps"

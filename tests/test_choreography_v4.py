@@ -12,6 +12,7 @@ from choreography_v4 import (  # noqa: E402
     _motif_memory_metrics, _movement_transition_cost,
     _metrics, _body_counterpoint_fit,
 )
+from generate_choreography_v4 import synchronize_grid_projection  # noqa: E402
 
 legacy_grid_path = ROOT / "output/beat_grid.json"
 legacy_map_path = ROOT / "output/beatmap.json"
@@ -101,8 +102,8 @@ def test_scoring_metrics_are_data_dependent():
 
 def test_syncopated_track_profile_rewards_phase_appropriate_families():
     sequence = [{
-        "movement": "SYNC_STEP_PUNCH_LEFT",
-        "body_side": "left",
+        "movement": "DOUBLE_PUNCH",
+        "body_side": "center",
         "start_beat": 0,
         "duration_beats": 4,
         "internal_hit_offsets": [0, 2],
@@ -281,10 +282,17 @@ def test_compound_movements_have_safe_two_component_projection():
         assert grammar["simultaneous"] is True
         assert len(grammar["components"]) == 2
         assert MOVEMENTS[movement_id]["coordination_cost"] <= .62
+        channels = []
+        for component in grammar["components"]:
+            parts = set(MOVEMENTS[component]["body_parts"])
+            channels.append("hand" if "arms" in parts and "legs" not in parts else "foot" if "legs" in parts and "arms" not in parts else "mixed")
+        assert len(set(channels)) == 1
+        assert channels[0] in {"hand", "foot"}
 
 
 def test_compound_renderer_emits_synchronized_distinct_components():
-    _, beatmap = products()
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
     compounds = [event for event in beatmap["movement_events"] if event.get("compound_grammar")]
     assert compounds
     by_event = {}
@@ -302,14 +310,179 @@ def test_compound_renderer_emits_synchronized_distinct_components():
             assert len({note["movement"] for note in paired}) == 2
 
 
-def test_cross_step_punch_is_prepared_by_simple_sync_pattern():
-    candidates, selection = generate_candidates(5, "normal", set(MOVEMENTS), music_context={"section_role": "chorus"})
-    selected = selection["selected"]
-    movements = [item["movement"] for item in selected["sequence"]]
-    cross_positions = [index for index, movement in enumerate(movements) if movement.startswith("CROSS_STEP_PUNCH")]
-    for position in cross_positions:
-        assert any(movement.startswith("SYNC_STEP_PUNCH") for movement in movements[:position])
-    assert not selected["hard_violations"]
+def test_active_simultaneous_groups_are_homogeneous_left_right_pairs():
+    grid, _ = products()
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    forbidden = {
+        "SYNC_STEP_PUNCH_LEFT", "SYNC_STEP_PUNCH_RIGHT",
+        "CROSS_STEP_PUNCH_LEFT", "CROSS_STEP_PUNCH_RIGHT",
+    }
+    assert all(event["movement"] not in forbidden for event in beatmap["movement_events"])
+    groups = {}
+    for note in beatmap["notes"]:
+        if note.get("simultaneous"):
+            groups.setdefault(note["simultaneous_group"], []).append(note)
+    assert groups
+    kinds = set()
+    for paired in groups.values():
+        assert len(paired) == 2
+        channels = []
+        for note in paired:
+            parts = set(MOVEMENTS[note["movement"]]["body_parts"])
+            channels.append("hand" if "arms" in parts and "legs" not in parts else "foot" if "legs" in parts and "arms" not in parts else "mixed")
+        assert len(set(channels)) == 1
+        assert channels[0] in {"hand", "foot"}
+        assert {note["lane_side"] for note in paired} == {"left", "right"}
+        kinds.add(channels[0])
+    assert kinds == {"hand", "foot"}
+
+
+def test_reference_hand_holds_are_rare_paired_sustained_accents():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {})["reference_hand_holds"] = {
+        "enabled": True,
+        "rate_phrases": 4,
+    }
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    events = [event for event in beatmap["movement_events"] if event["movement"] == "DOUBLE_HAND_HOLD"]
+    assert len(events) >= 2
+    phrase_indices = [event["phrase_index"] for event in events]
+    assert all(right - left >= 4 for left, right in zip(phrase_indices, phrase_indices[1:]))
+    for event in events:
+        notes = [note for note in beatmap["notes"] if note["movement_event_id"] == event["id"]]
+        assert len(notes) == 2
+        assert {note["movement"] for note in notes} == {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}
+        assert all(note["sustained"] and note["duration"] == event["duration"] for note in notes)
+        assert {note["lane_side"] for note in notes} == {"left", "right"}
+
+
+def test_reference_hand_holds_can_be_disabled_without_changing_contract():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {})["reference_hand_holds"] = {
+        "enabled": False,
+        "rate_phrases": 4,
+    }
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    assert not any(event["movement"] == "DOUBLE_HAND_HOLD" for event in beatmap["movement_events"])
+    assert not any(note["movement"].startswith("HAND_HOLD_") for note in beatmap["notes"])
+
+
+def test_long_double_foot_rails_require_readable_lower_body_setup():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    events = beatmap["movement_events"]
+    allowed_setup = {
+        "MARCH_IN_PLACE",
+        "WEIGHT_SHIFT",
+        "STEP_TOUCH_LEFT",
+        "STEP_TOUCH_RIGHT",
+        "SMALL_JUMP",
+        "JUMP",
+    }
+    double_foot_indices = [index for index, event in enumerate(events) if event["movement"] == "DOUBLE_FOOT_PULSE"]
+    assert double_foot_indices
+    recovery = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER"}
+    assert all(index > 0 and events[index - 1]["movement"] in allowed_setup for index in double_foot_indices)
+    assert all(events[index]["dynamic_role"] == "PAYOFF" for index in double_foot_indices)
+    assert all(index + 1 < len(events) and events[index + 1]["movement"] in recovery for index in double_foot_indices)
+    for index in double_foot_indices:
+        event = events[index]
+        assert len(event["internal_hits"]) == 2
+        assert {hit["beat_offset"] for hit in event["internal_hits"]} == {0}
+        notes = [note for note in beatmap["notes"] if note["movement_event_id"] == event["id"]]
+        assert len(notes) == 2
+        assert all(not note["sustained"] and note["duration"] == event["duration"] for note in notes)
+
+
+def test_reference_hands_teach_call_response_before_bilateral_payoff():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    events = beatmap["movement_events"]
+    assert not any(
+        event["movement"] == "DOUBLE_PUNCH" and event["dynamic_role"] in {"SETUP", "DEVELOP"}
+        for event in events
+    )
+    calls = [event for event in events if event["cell_function"] == "REFERENCE_HAND_CALL"]
+    responses = [event for event in events if event["cell_function"] == "REFERENCE_HAND_RESPONSE"]
+    assert calls and len(calls) == len(responses)
+    assert all(event["movement"] in {"PUNCH_LEFT", "PUNCH_RIGHT"} for event in [*calls, *responses])
+    paired = [event for event in events if event["movement"] == "DOUBLE_PUNCH"]
+    assert paired
+    assert all(event["dynamic_role"] in {"LIFT", "PAYOFF"} for event in paired)
+    assert all(len(event["internal_hits"]) == 2 and {hit["beat_offset"] for hit in event["internal_hits"]} == {0} for event in paired)
+    recovery = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER"}
+    hold_indices = [index for index, event in enumerate(events) if event["movement"] == "DOUBLE_HAND_HOLD"]
+    assert hold_indices
+    assert all(index + 1 < len(events) and events[index + 1]["movement"] in recovery for index in hold_indices)
+
+
+def test_reference_jump_repeat_uses_two_landings_then_breath_duck_and_recovery():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    phrase_indices = beatmap["settings"]["reference_jump_repeat_challenges"]["applied_phrase_indices"]
+    assert phrase_indices
+    for phrase_index in phrase_indices:
+        events = [event for event in beatmap["movement_events"] if event["phrase_index"] == phrase_index]
+        challenge = [
+            event for event in events
+            if event["cell_function"] in {
+                "REFERENCE_JUMP_REPEAT", "REFERENCE_JUMP_BREATH",
+                "REFERENCE_DUCK_ANSWER", "REFERENCE_JUMP_RECOVERY",
+            }
+        ]
+        assert [event["movement"] for event in challenge] == [
+            "SMALL_JUMP", "WEIGHT_SHIFT", "DUCK", "STEP_TOUCH_RIGHT",
+        ]
+        jump = challenge[0]
+        assert [hit["beat_offset"] for hit in jump["internal_hits"]] == [0, 2]
+        jump_notes = [note for note in beatmap["notes"] if note["movement_event_id"] == jump["id"]]
+        assert len(jump_notes) == 2
+        assert all(note["lanes"] and len(note["lanes"]) == 2 for note in jump_notes)
+
+
+def test_finale_callback_is_inside_track_and_recalls_rail_then_hand_call():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    callback = beatmap["settings"]["reference_finale_callback"]
+    assert callback["applied"]
+    phrase_index = callback["phrase_index"]
+    phrase = beatmap["phrase_plan"][phrase_index]
+    assert not phrase["partial"]
+    events = [
+        event for event in beatmap["movement_events"]
+        if event["cell_function"].startswith("FINALE_CALLBACK_")
+    ]
+    assert [event["movement"] for event in events] == [
+        "STEP_TOUCH_LEFT", "DOUBLE_FOOT_PULSE", "WEIGHT_SHIFT",
+        "PUNCH_LEFT", "PUNCH_RIGHT", "DOUBLE_PUNCH", "STEP_TOUCH_RIGHT",
+    ]
+    assert events[-1]["canonical_beat_index"] < len(grid["canonical_beats"])
+    finale_notes = [note for note in beatmap["notes"] if note.get("finale_callback")]
+    assert finale_notes
+    assert {note["cell_function"] for note in finale_notes} == {event["cell_function"] for event in events}
+
+
+def test_legacy_ground_pictograms_export_as_ordinary_step_pads():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    ambiguous = {"ALTERNATING_FOOT_PULSES", "HIGH_FOOT_PULSES", "ROAD_PULSE", "RESET_MARKER"}
+    assert not any(note["cue_archetype"] in ambiguous for note in beatmap["notes"])
+    assert all(
+        note["cue_archetype"] in {"FOOT_PAD_LEFT", "FOOT_PAD_RIGHT"}
+        for note in beatmap["notes"]
+        if note["semantic_movement"] in {"MARCH_IN_PLACE", "RUN_BURST", "IDLE_BOUNCE", "WEIGHT_SHIFT", "RESET_CENTER"}
+    )
+
+
+def test_grid_projection_cannot_keep_stale_mixed_movement_events():
+    grid, beatmap = products()
+    dirty_grid = copy.deepcopy(grid)
+    dirty_grid["movement_events"] = [{"movement": "SYNC_STEP_PUNCH_LEFT"}]
+    report = validate_v4(grid, beatmap)
+    synchronized = synchronize_grid_projection(dirty_grid, beatmap, report, "normal")
+    assert synchronized["movement_events"] == beatmap["movement_events"]
+    assert all(event["movement"] != "SYNC_STEP_PUNCH_LEFT" for event in synchronized["movement_events"])
+    assert synchronized["choreography_v4"]["runtime_movement_event_count"] == len(beatmap["movement_events"])
 
 
 def test_motif_memory_rewards_recognizable_variation_not_exact_copy():
@@ -322,7 +495,7 @@ def test_motif_memory_rewards_recognizable_variation_not_exact_copy():
 
 
 def test_transition_graph_penalizes_low_to_jump_more_than_neutral_flow():
-    safe = _movement_transition_cost({"movement": "WEIGHT_SHIFT"}, {"movement": "SYNC_STEP_PUNCH_LEFT"})
+    safe = _movement_transition_cost({"movement": "WEIGHT_SHIFT"}, {"movement": "DOUBLE_PUNCH"})
     demanding = _movement_transition_cost({"movement": "DUCK"}, {"movement": "JUMP"})
     assert safe < demanding
 
@@ -367,9 +540,11 @@ def test_partial_final_phrase():
     phrase = {"duration_beats": 32, "actual_duration_beats": 27, "partial": True}
     assert phrase["partial"] and phrase["actual_duration_beats"] < phrase["duration_beats"]
 
-def test_final_pose():
+def test_final_step_and_no_confusing_hold_or_side_sweep():
     _, beatmap = products()
-    assert beatmap["movement_events"][-1]["movement"] in {"POSE", "FREEZE"}
+    assert beatmap["movement_events"][-1]["movement"] == "STEP_TOUCH_RIGHT"
+    assert all(event["movement"] not in {"POSE", "FREEZE", "LEAN_LEFT", "LEAN_RIGHT"} for event in beatmap["movement_events"])
+    assert all(event["cue_archetype"] not in {"POSE_FRAME", "HOLD_RIBBON", "SIDE_SWEEP_WALL"} for event in beatmap["movement_events"])
 
 def test_deterministic_seed():
     grid = migrate_beat_grid_v1(LEGACY_GRID)

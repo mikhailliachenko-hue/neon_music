@@ -27,6 +27,8 @@ DEFAULT_HOLD_RATE_BARS = 8
 DEFAULT_HOLD_MIN_DURATION = 1.0
 DEFAULT_HOLD_MAX_DURATION = 2.4
 DEFAULT_HOLD_MIN_GAP = 1.35
+DEFAULT_REFERENCE_HAND_HOLDS_ENABLED = True
+DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES = 4
 DIFFICULTY_PROFILES: dict[str, dict[str, float]] = {
     "Calm": {
         "min_time_between_notes": 0.68,
@@ -198,6 +200,8 @@ def build_generation_settings(
     hold_min_duration: float = DEFAULT_HOLD_MIN_DURATION,
     hold_max_duration: float = DEFAULT_HOLD_MAX_DURATION,
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
+    reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
+    reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     lane_layout: str = DEFAULT_LANE_LAYOUT,
 ) -> dict[str, Any]:
     profile_name = normalize_difficulty_name(difficulty)
@@ -252,6 +256,10 @@ def build_generation_settings(
             "min_duration": max(0.25, float(hold_min_duration)),
             "max_duration": max(max(0.25, float(hold_min_duration)), float(hold_max_duration)),
             "min_gap": max(0.0, float(hold_min_gap)),
+        },
+        "reference_hand_holds": {
+            "enabled": bool(reference_hand_holds_enabled),
+            "rate_phrases": max(2, int(reference_hand_hold_rate_phrases)),
         },
     }
 

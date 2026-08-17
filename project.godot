@@ -21,6 +21,7 @@ window/size/viewport_height=1440
 window/size/window_width_override=2560
 window/size/window_height_override=1440
 window/stretch/mode="canvas_items"
+window/per_pixel_transparency/allowed=true
 
 [editor]
 
@@ -34,6 +35,7 @@ fps=60
 
 [rendering]
 
+rendering_device/driver.windows="d3d12"
 renderer/rendering_method.mobile="forward_plus"
 anti_aliasing/quality/msaa_3d=2
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)

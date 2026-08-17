@@ -26,7 +26,8 @@ SEED = 3407
 FRAME_30 = 1.0 / 30.0
 IMPACT_VALUE = {"low": 0.25, "medium": 0.55, "high": 0.85}
 WARMUP_PROFILE = "warmup_first"
-WARMUP_MOVEMENTS = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "PUNCH_LEFT", "PUNCH_RIGHT", "STEP_PUNCH_LEFT", "STEP_PUNCH_RIGHT", "SIDE_REACH_LEFT", "SIDE_REACH_RIGHT", "RESET_CENTER", "SMALL_JUMP", "JUMP", "DUCK", "POSE"}
+WARMUP_MOVEMENTS = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT", "STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT", "PUNCH_LEFT", "PUNCH_RIGHT", "DOUBLE_PUNCH", "STEP_PUNCH_LEFT", "STEP_PUNCH_RIGHT", "SIDE_REACH_LEFT", "SIDE_REACH_RIGHT", "RESET_CENTER", "SMALL_JUMP", "JUMP", "DUCK", "POSE"}
+AMBIGUOUS_FOOT_CUES = {"ALTERNATING_FOOT_PULSES", "HIGH_FOOT_PULSES", "ROAD_PULSE", "RESET_MARKER"}
 
 FAMILY_BODY_PARTS = {
     "base_groove": {"legs"},
@@ -118,7 +119,7 @@ def _movement(
     weight_end: str = "center", free_foot: str = "either", impact: str = "low",
     mirror: str | None = None, low_impact: str | None = None,
     body_parts: set[str] | None = None, difficulty_tier: int | None = None,
-    coordination_cost: float | None = None,
+    coordination_cost: float | None = None, sustained: bool = False,
 ) -> dict[str, Any]:
     parts = sorted(body_parts or FAMILY_BODY_PARTS.get(family, {"legs"}))
     tier = int(difficulty_tier if difficulty_tier is not None else FAMILY_DIFFICULTY_TIER.get(family, 2))
@@ -142,6 +143,7 @@ def _movement(
         "forbidden_followers": [], "preferred_section_roles": [],
         "preferred_audio_features": [], "cue_archetype": cue,
         "low_impact_alternative": low_impact, "side": side,
+        "sustained": bool(sustained),
     }
 
 
@@ -159,17 +161,20 @@ MOVEMENTS: dict[str, dict[str, Any]] = {
     "RESET_CENTER": _movement("RESET_CENTER", "base_groove", "RESET_MARKER"),
     "SHALLOW_SQUAT": _movement("SHALLOW_SQUAT", "squat", "OVERHEAD_BAR", duration=(4,), hits=(0,), low_impact="WEIGHT_SHIFT"),
     "DUCK": _movement("DUCK", "duck", "LOW_CLEARANCE_GATE", duration=(4,), hits=(0,), low_impact="WEIGHT_SHIFT"),
-    "SMALL_JUMP": _movement("SMALL_JUMP", "jump", "FLOOR_PULSE_SMALL", duration=(4,), hits=(0,), impact="medium", low_impact="WEIGHT_SHIFT", difficulty_tier=2, coordination_cost=0.46),
-    "JUMP": _movement("JUMP", "jump", "FLOOR_PULSE_LARGE", duration=(4,), hits=(0,), impact="medium", low_impact="SMALL_JUMP"),
+    # Reference-style jump calls are short two-hit phrases: jump, reset, jump.
+    # Keeping the hits two beats apart makes the pair readable and physically
+    # safe at warm-up tempo while still feeling like one compact command.
+    "SMALL_JUMP": _movement("SMALL_JUMP", "jump", "FLOOR_PULSE_SMALL", duration=(4,), hits=(0, 2), impact="medium", low_impact="WEIGHT_SHIFT", difficulty_tier=2, coordination_cost=0.46),
+    "JUMP": _movement("JUMP", "jump", "FLOOR_PULSE_LARGE", duration=(4,), hits=(0, 2), impact="medium", low_impact="SMALL_JUMP"),
     "WEIGHT_SHIFT": _movement("WEIGHT_SHIFT", "base_groove", "ROAD_PULSE", duration=(4, 8), hits=(0, 2)),
     "RUN_BURST": _movement("RUN_BURST", "rhythm_runner", "ALTERNATING_FOOT_PULSES", duration=(4,), hits=(0, 1, 2, 3), impact="medium", low_impact="MARCH_IN_PLACE"),
     "STEP_PUNCH_LEFT": _movement("STEP_PUNCH_LEFT", "composite", "DOUBLE_TARGET", side="left", duration=(4,), hits=(0, 2), mirror="STEP_PUNCH_RIGHT"),
     "STEP_PUNCH_RIGHT": _movement("STEP_PUNCH_RIGHT", "composite", "DOUBLE_TARGET", side="right", duration=(4,), hits=(0, 2), mirror="STEP_PUNCH_LEFT"),
-    "SYNC_STEP_PUNCH_LEFT": _movement("SYNC_STEP_PUNCH_LEFT", "composite", "DOUBLE_TARGET", side="left", duration=(4,), hits=(0, 2), mirror="SYNC_STEP_PUNCH_RIGHT", difficulty_tier=2, coordination_cost=.46),
-    "SYNC_STEP_PUNCH_RIGHT": _movement("SYNC_STEP_PUNCH_RIGHT", "composite", "DOUBLE_TARGET", side="right", duration=(4,), hits=(0, 2), mirror="SYNC_STEP_PUNCH_LEFT", difficulty_tier=2, coordination_cost=.46),
-    "CROSS_STEP_PUNCH_LEFT": _movement("CROSS_STEP_PUNCH_LEFT", "composite", "DOUBLE_TARGET", side="left", duration=(4,), hits=(0, 2), mirror="CROSS_STEP_PUNCH_RIGHT", difficulty_tier=3, coordination_cost=.62),
-    "CROSS_STEP_PUNCH_RIGHT": _movement("CROSS_STEP_PUNCH_RIGHT", "composite", "DOUBLE_TARGET", side="right", duration=(4,), hits=(0, 2), mirror="CROSS_STEP_PUNCH_LEFT", difficulty_tier=3, coordination_cost=.62),
-    "DOUBLE_FOOT_PULSE": _movement("DOUBLE_FOOT_PULSE", "base_groove", "DOUBLE_FOOT_PADS", duration=(4,), hits=(0, 2), impact="low", difficulty_tier=2, coordination_cost=.34),
+    "DOUBLE_PUNCH": _movement("DOUBLE_PUNCH", "boxing", "DOUBLE_HAND_TARGETS", duration=(4,), hits=(0,), impact="medium", difficulty_tier=2, coordination_cost=.40),
+    "HAND_HOLD_LEFT": _movement("HAND_HOLD_LEFT", "boxing", "HAND_HOLD_TARGET", side="left", duration=(4,), hits=(0,), mirror="HAND_HOLD_RIGHT", difficulty_tier=2, coordination_cost=.34, sustained=True),
+    "HAND_HOLD_RIGHT": _movement("HAND_HOLD_RIGHT", "boxing", "HAND_HOLD_TARGET", side="right", duration=(4,), hits=(0,), mirror="HAND_HOLD_LEFT", difficulty_tier=2, coordination_cost=.34, sustained=True),
+    "DOUBLE_HAND_HOLD": _movement("DOUBLE_HAND_HOLD", "boxing", "DOUBLE_HAND_HOLD_TARGETS", duration=(4,), hits=(0,), impact="medium", difficulty_tier=2, coordination_cost=.42, sustained=True),
+    "DOUBLE_FOOT_PULSE": _movement("DOUBLE_FOOT_PULSE", "base_groove", "DOUBLE_FOOT_PADS", duration=(4,), hits=(0,), impact="medium", difficulty_tier=2, coordination_cost=.34),
     "SIDE_STEP_CLAP": _movement("SIDE_STEP_CLAP", "composite", "DOUBLE_TARGET", duration=(4,), hits=(0, 2)),
     "SQUAT_REACH": _movement("SQUAT_REACH", "composite", "OVERHEAD_BAR", duration=(4,), hits=(0, 2), low_impact="SIDE_REACH_LEFT"),
     "KNEE_PULL_LEFT": _movement("KNEE_PULL_LEFT", "rhythm_runner", "FOOT_PAD_LEFT", side="left", mirror="KNEE_PULL_RIGHT"),
@@ -188,19 +193,15 @@ COMPOSITE_HITS = {
     "SQUAT_REACH": [(0, "SHALLOW_SQUAT"), (2, "SIDE_REACH_LEFT")],
     "LEAN_PUNCH_LEFT": [(0, "LEAN_LEFT"), (2, "PUNCH_LEFT")],
     "LEAN_PUNCH_RIGHT": [(0, "LEAN_RIGHT"), (2, "PUNCH_RIGHT")],
-    "SIGNATURE_COMBO": [(0, "STEP_PUNCH_LEFT"), (4, "LEAN_PUNCH_RIGHT")],
-    "SYNC_STEP_PUNCH_LEFT": [(0, "STEP_TOUCH_LEFT"), (0, "PUNCH_LEFT"), (2, "STEP_TOUCH_LEFT"), (2, "PUNCH_LEFT")],
-    "SYNC_STEP_PUNCH_RIGHT": [(0, "STEP_TOUCH_RIGHT"), (0, "PUNCH_RIGHT"), (2, "STEP_TOUCH_RIGHT"), (2, "PUNCH_RIGHT")],
-    "CROSS_STEP_PUNCH_LEFT": [(0, "STEP_TOUCH_LEFT"), (0, "PUNCH_RIGHT"), (2, "STEP_TOUCH_LEFT"), (2, "PUNCH_RIGHT")],
-    "CROSS_STEP_PUNCH_RIGHT": [(0, "STEP_TOUCH_RIGHT"), (0, "PUNCH_LEFT"), (2, "STEP_TOUCH_RIGHT"), (2, "PUNCH_LEFT")],
-    "DOUBLE_FOOT_PULSE": [(0, "STEP_TOUCH_LEFT"), (0, "STEP_TOUCH_RIGHT"), (2, "STEP_TOUCH_LEFT"), (2, "STEP_TOUCH_RIGHT")],
+    "SIGNATURE_COMBO": [(0, "STEP_PUNCH_LEFT"), (4, "STEP_PUNCH_RIGHT")],
+    "DOUBLE_PUNCH": [(0, "PUNCH_LEFT"), (0, "PUNCH_RIGHT")],
+    "DOUBLE_HAND_HOLD": [(0, "HAND_HOLD_LEFT"), (0, "HAND_HOLD_RIGHT")],
+    "DOUBLE_FOOT_PULSE": [(0, "STEP_TOUCH_LEFT"), (0, "STEP_TOUCH_RIGHT")],
 }
 
 COMPOUND_GRAMMAR = {
-    "SYNC_STEP_PUNCH_LEFT": {"pattern": "ipsilateral", "components": ["STEP_TOUCH_LEFT", "PUNCH_LEFT"], "simultaneous": True, "escape": "weight_center"},
-    "SYNC_STEP_PUNCH_RIGHT": {"pattern": "ipsilateral", "components": ["STEP_TOUCH_RIGHT", "PUNCH_RIGHT"], "simultaneous": True, "escape": "weight_center"},
-    "CROSS_STEP_PUNCH_LEFT": {"pattern": "contralateral", "components": ["STEP_TOUCH_LEFT", "PUNCH_RIGHT"], "simultaneous": True, "escape": "weight_center"},
-    "CROSS_STEP_PUNCH_RIGHT": {"pattern": "contralateral", "components": ["STEP_TOUCH_RIGHT", "PUNCH_LEFT"], "simultaneous": True, "escape": "weight_center"},
+    "DOUBLE_PUNCH": {"pattern": "bilateral_upper", "components": ["PUNCH_LEFT", "PUNCH_RIGHT"], "simultaneous": True, "escape": "neutral"},
+    "DOUBLE_HAND_HOLD": {"pattern": "bilateral_upper_hold", "components": ["HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"], "simultaneous": True, "escape": "neutral"},
     "DOUBLE_FOOT_PULSE": {"pattern": "bilateral_grounded", "components": ["STEP_TOUCH_LEFT", "STEP_TOUCH_RIGHT"], "simultaneous": True, "escape": "neutral"},
 }
 
@@ -372,22 +373,22 @@ SLICE_CELLS = [
     ("MOBILIZE", [("SIDE_REACH_LEFT", 2), ("SIDE_REACH_RIGHT", 2), ("SHALLOW_SQUAT", 4)]),
     ("BUILD", [("STEP_TOUCH_LEFT", 4), ("SMALL_JUMP", 4)]),
         ("BUILD", [("RUN_BURST", 4), ("STEP_PUNCH_LEFT", 4)]),
-    ("SIGNATURE", [("STEP_PUNCH_LEFT", 4), ("LEAN_RIGHT", 2), ("RESET_CENTER", 2)]),
-    ("SIGNATURE", [("STEP_PUNCH_RIGHT", 4), ("LEAN_LEFT", 2), ("RESET_CENTER", 2)]),
+    ("SIGNATURE", [("STEP_PUNCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 2), ("RESET_CENTER", 2)]),
+    ("SIGNATURE", [("STEP_PUNCH_RIGHT", 4), ("STEP_TOUCH_LEFT", 2), ("RESET_CENTER", 2)]),
     ("RECOVERY", [("WEIGHT_SHIFT", 8)]),
-    ("CALLBACK_FINAL_POSE", [("STEP_PUNCH_LEFT", 4), ("POSE", 4)]),
+    ("CALLBACK_FINAL_STEP", [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]),
 ]
 ROLE_PHRASE_CELLS = {
     "intro": [
         ("TEACH", [("MARCH_IN_PLACE", 8)]),
         ("PRACTICE", [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]),
         ("MIRROR", [("STEP_TOUCH_RIGHT", 4), ("STEP_TOUCH_LEFT", 4)]),
-        ("COMBINE", [("SYNC_STEP_PUNCH_LEFT", 4), ("SYNC_STEP_PUNCH_RIGHT", 4)]),
+        ("COMBINE", [("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("DOUBLE_PUNCH", 4)]),
     ],
     "verse": [
         ("GROOVE", [("MARCH_IN_PLACE", 4), ("STEP_TOUCH_LEFT", 4)]),
         ("ANSWER", [("STEP_TOUCH_RIGHT", 4), ("SIDE_REACH_RIGHT", 4)]),
-        ("COMBINE", [("SYNC_STEP_PUNCH_LEFT", 4), ("SYNC_STEP_PUNCH_RIGHT", 4)]),
+        ("COMBINE", [("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("DOUBLE_PUNCH", 4)]),
         ("PAYOFF", [("DOUBLE_FOOT_PULSE", 4), ("WEIGHT_SHIFT", 4)]),
     ],
     "bridge": [
@@ -400,7 +401,7 @@ ROLE_PHRASE_CELLS = {
         ("RECOVERY", [("WEIGHT_SHIFT", 8)]),
         ("UPPER_BODY", [("SIDE_REACH_LEFT", 4), ("SIDE_REACH_RIGHT", 4)]),
         ("RESET", [("RESET_CENTER", 4), ("IDLE_BOUNCE", 4)]),
-        ("HOLD", [("POSE", 8)]),
+        ("STEP_PAIR", [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]),
     ],
     "build": [
         ("MOBILIZE", [("SIDE_REACH_LEFT", 2), ("SIDE_REACH_RIGHT", 2), ("SHALLOW_SQUAT", 4)]),
@@ -408,29 +409,29 @@ ROLE_PHRASE_CELLS = {
         ("BUILD", [("RUN_BURST", 4), ("STEP_PUNCH_LEFT", 4)]),
         ("COMBINE", [("STEP_TOUCH_LEFT", 4), ("PUNCH_RIGHT", 2), ("PUNCH_LEFT", 2)]),
         ("BUILD", [("RUN_BURST", 4), ("STEP_PUNCH_RIGHT", 4)]),
-        ("PAYOFF", [("SYNC_STEP_PUNCH_LEFT", 4), ("DOUBLE_FOOT_PULSE", 4)]),
+        ("PAYOFF", [("DOUBLE_PUNCH", 4), ("DOUBLE_FOOT_PULSE", 4)]),
     ],
     "drop": [
         ("POWER", [("STEP_TOUCH_LEFT", 4), ("JUMP", 4)]),
-        ("SIGNATURE", [("SYNC_STEP_PUNCH_LEFT", 4), ("SYNC_STEP_PUNCH_RIGHT", 4)]),
-        ("SIGNATURE", [("STEP_PUNCH_RIGHT", 4), ("LEAN_LEFT", 2), ("RESET_CENTER", 2)]),
+        ("SIGNATURE", [("DOUBLE_PUNCH", 4), ("DOUBLE_FOOT_PULSE", 4)]),
+        ("SIGNATURE", [("STEP_PUNCH_RIGHT", 4), ("STEP_TOUCH_LEFT", 2), ("RESET_CENTER", 2)]),
         ("POWER", [("RUN_BURST", 4), ("SIDE_STEP_CLAP", 4)]),
         ("SIGNATURE", [("SIGNATURE_COMBO", 8)]),
-        ("POWER", [("CROSS_STEP_PUNCH_LEFT", 4), ("CROSS_STEP_PUNCH_RIGHT", 4)]),
+        ("POWER", [("DOUBLE_PUNCH", 4), ("RUN_BURST", 4)]),
     ],
     "chorus": [
-        ("COMBINE", [("SYNC_STEP_PUNCH_LEFT", 4), ("SYNC_STEP_PUNCH_RIGHT", 4)]),
+        ("COMBINE", [("DOUBLE_PUNCH", 4), ("WEIGHT_SHIFT", 4)]),
         ("CALL_RESPONSE", [("STEP_TOUCH_LEFT", 4), ("DUCK", 4)]),
         ("PUNCH_RESPONSE", [("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("SIDE_STEP_CLAP", 4)]),
-        ("DODGE", [("LEAN_LEFT", 2), ("RESET_CENTER", 2), ("LEAN_RIGHT", 2), ("RESET_CENTER", 2)]),
+        ("STEP_PAIR", [("STEP_TOUCH_LEFT", 2), ("RESET_CENTER", 2), ("STEP_TOUCH_RIGHT", 2), ("RESET_CENTER", 2)]),
         ("SIGNATURE", [("SIGNATURE_COMBO", 8)]),
-        ("PAYOFF", [("CROSS_STEP_PUNCH_LEFT", 4), ("CROSS_STEP_PUNCH_RIGHT", 4)]),
+        ("PAYOFF", [("DOUBLE_PUNCH", 4), ("DOUBLE_FOOT_PULSE", 4)]),
     ],
     "outro": [
         ("RECOVERY", [("WEIGHT_SHIFT", 8)]),
-        ("HOLD", [("FREEZE", 8)]),
+        ("STEP_PAIR", [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]),
         ("RESET", [("IDLE_BOUNCE", 4), ("RESET_CENTER", 4)]),
-        ("CALLBACK_FINAL_POSE", [("STEP_PUNCH_LEFT", 4), ("POSE", 4)]),
+        ("CALLBACK_FINAL_STEP", [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]),
     ],
 }
 
@@ -478,8 +479,8 @@ def _candidate_sequence(
             items = [(MOVEMENTS.get(move, {}).get("mirror_id", move), duration) for move, duration in items]
         elif mode == 2 and cell_index == 1:
             items = list(reversed(items))
-        elif mode == 3 and cell_index == 3 and function not in {"CALLBACK_FINAL_POSE"}:
-            items = [("WEIGHT_SHIFT", 4), ("SIDE_STEP_CLAP", 4)]
+        elif mode == 3 and cell_index == 3 and function not in {"CALLBACK_FINAL_STEP"}:
+            items = [("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)]
         elif mode == 4 and cell_index == 0 and function not in {"ORIENT"}:
             items = [("MARCH_IN_PLACE", 4), *items]
             items[-1] = (items[-1][0], max(2, items[-1][1] - 4))
@@ -552,18 +553,16 @@ def _warmup_sequence(phrase_index: int, variant: int) -> list[dict[str, Any]]:
             ]
     elif variant % 2 == 0:
         blocks = [
-            ("TEACH", "STEP_TOUCH_LEFT", 4), ("BOX_RIGHT", "PUNCH_RIGHT", 2),
-            ("BOX_LEFT", "PUNCH_LEFT", 2), ("REPEAT", jump_move, 4),
-            ("RECOVERY", "STEP_TOUCH_RIGHT", 4), ("MIRROR", "STEP_PUNCH_RIGHT", 4),
-            ("BOX_LEFT", "PUNCH_LEFT", 2), ("BOX_RIGHT", "PUNCH_RIGHT", 2),
+            ("TEACH", "STEP_TOUCH_LEFT", 4), ("DOUBLE_HANDS", "DOUBLE_PUNCH", 4),
+            ("REPEAT", jump_move, 4), ("DOUBLE_STEP", "DOUBLE_FOOT_PULSE", 4),
+            ("MIRROR", "STEP_TOUCH_RIGHT", 4), ("REPEAT_HANDS", "DOUBLE_PUNCH", 4),
             ("ACCENT_RESET", "DUCK", 4), ("RECOVERY", "STEP_TOUCH_LEFT", 4),
         ]
     else:
         blocks = [
-            ("TEACH", "WEIGHT_SHIFT", 4), ("BOX_LEFT", "PUNCH_LEFT", 2),
-            ("BOX_RIGHT", "PUNCH_RIGHT", 2), ("REPEAT", "DUCK", 4),
-            ("RECOVERY", "STEP_TOUCH_LEFT", 4), ("MIRROR", "STEP_PUNCH_LEFT", 4),
-            ("BOX_RIGHT", "PUNCH_RIGHT", 2), ("BOX_LEFT", "PUNCH_LEFT", 2),
+            ("TEACH", "STEP_TOUCH_RIGHT", 4), ("DOUBLE_HANDS", "DOUBLE_PUNCH", 4),
+            ("REPEAT", "DUCK", 4), ("DOUBLE_STEP", "DOUBLE_FOOT_PULSE", 4),
+            ("MIRROR", "STEP_TOUCH_LEFT", 4), ("REPEAT_HANDS", "DOUBLE_PUNCH", 4),
             ("ACCENT_RESET", jump_move, 4), ("RECOVERY", "STEP_TOUCH_RIGHT", 4),
         ]
     sequence: list[dict[str, Any]] = []
@@ -582,6 +581,325 @@ def _warmup_sequence(phrase_index: int, variant: int) -> list[dict[str, Any]]:
         })
         cursor += duration
     return sequence
+
+
+def _apply_reference_hand_hold_accents(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    *,
+    enabled: bool,
+    rate_phrases: int,
+    profile: str,
+) -> list[int]:
+    """Replace rare four-beat accents with the reference's paired hand hold.
+
+    This is an explicit post-selection music-direction pass. It never adds an
+    event on top of an existing step, so the hand/foot simultaneity contract is
+    preserved. Candidate diagnostics remain the raw composer choices while the
+    phrase plan records every applied visual accent.
+    """
+    if not enabled or profile == WARMUP_PROFILE:
+        return []
+    spacing = max(2, int(rate_phrases))
+    applied: list[int] = []
+    last_phrase = -spacing
+    strong_roles = {"build", "chorus", "drop", "peak", "finale"}
+    unsafe_replacements = {"DUCK", "SHALLOW_SQUAT", "SMALL_JUMP", "JUMP", "DOUBLE_FOOT_PULSE"}
+    upper_body_choices = {"DOUBLE_PUNCH", "PUNCH_LEFT", "PUNCH_RIGHT", "SIDE_REACH_LEFT", "SIDE_REACH_RIGHT", "SIDE_STEP_CLAP"}
+    for phrase_index, phrase in enumerate(selected_sequences):
+        role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
+        if phrase_index == 0 or role not in strong_roles or phrase_index - last_phrase < spacing:
+            continue
+        candidates = [
+            (index, item)
+            for index, item in enumerate(phrase)
+            if int(item.get("duration_beats", 0)) == 4
+            and str(item.get("movement", "")) not in unsafe_replacements
+        ]
+        if not candidates:
+            continue
+        replace_index, original = max(
+            candidates,
+            key=lambda pair: (
+                {"PAYOFF": 3, "LIFT": 2, "DEVELOP": 1, "SETUP": 0}.get(str(pair[1].get("dynamic_role", "")), 0),
+                str(pair[1].get("movement", "")) in upper_body_choices,
+                int(pair[1].get("start_beat", 0)),
+            ),
+        )
+        hold_meta = MOVEMENTS["DOUBLE_HAND_HOLD"]
+        phrase[replace_index] = {
+            **original,
+            "movement": "DOUBLE_HAND_HOLD",
+            "body_side": hold_meta["side"],
+            "mirror_mode": False,
+            "internal_hit_offsets": [0],
+            "cell_function": "REFERENCE_HAND_HOLD",
+        }
+        applied.append(phrase_index)
+        last_phrase = phrase_index
+    return applied
+
+
+DOUBLE_FOOT_SETUP_MOVEMENTS = {
+    "MARCH_IN_PLACE",
+    "WEIGHT_SHIFT",
+    "STEP_TOUCH_LEFT",
+    "STEP_TOUCH_RIGHT",
+    "SMALL_JUMP",
+    "JUMP",
+}
+REFERENCE_RECOVERY_MOVEMENTS = {
+    "MARCH_IN_PLACE",
+    "IDLE_BOUNCE",
+    "WEIGHT_SHIFT",
+    "STEP_TOUCH_LEFT",
+    "STEP_TOUCH_RIGHT",
+    "RESET_CENTER",
+}
+
+
+def _retarget_sequence_item(item: dict[str, Any], movement_id: str, cell_function: str) -> None:
+    meta = MOVEMENTS[movement_id]
+    duration = int(item.get("duration_beats", 4))
+    item.update({
+        "movement": movement_id,
+        "body_side": meta["side"],
+        "mirror_mode": meta["side"] == "right",
+        "internal_hit_offsets": [offset for offset in meta["internal_hit_offsets"] if offset < duration] or [0],
+        "cell_function": cell_function,
+    })
+
+
+def _reference_sequence_item(
+    template: dict[str, Any],
+    movement_id: str,
+    start_beat: int,
+    duration_beats: int,
+    cell_function: str,
+    dynamic_role: str,
+) -> dict[str, Any]:
+    """Build one post-selection item without changing the movement contract."""
+    item = copy.deepcopy(template)
+    item["start_beat"] = int(start_beat)
+    item["duration_beats"] = int(duration_beats)
+    item["dynamic_role"] = dynamic_role
+    _retarget_sequence_item(item, movement_id, cell_function)
+    return item
+
+
+def _replace_reference_window(
+    phrase: list[dict[str, Any]],
+    start_beat: int,
+    end_beat: int,
+    replacements: list[tuple[str, int, str, str]],
+) -> bool:
+    """Replace an exact phrase window while refusing partial movement cuts."""
+    ordered = sorted(phrase, key=lambda item: int(item.get("start_beat", 0)))
+    inside = [
+        item for item in ordered
+        if start_beat <= int(item.get("start_beat", 0)) < end_beat
+    ]
+    if not inside:
+        return False
+    if int(inside[0].get("start_beat", -1)) != start_beat:
+        return False
+    if int(inside[-1].get("start_beat", 0)) + int(inside[-1].get("duration_beats", 0)) != end_beat:
+        return False
+    if any(
+        int(item.get("start_beat", 0)) < start_beat < int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0))
+        or int(item.get("start_beat", 0)) < end_beat < int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0))
+        for item in ordered
+    ):
+        return False
+    if sum(duration for _, duration, _, _ in replacements) != end_beat - start_beat:
+        return False
+    template = inside[0]
+    rewritten = [item for item in ordered if item not in inside]
+    cursor = start_beat
+    for movement_id, duration, cell_function, dynamic_role in replacements:
+        rewritten.append(_reference_sequence_item(
+            template, movement_id, cursor, duration, cell_function, dynamic_role,
+        ))
+        cursor += duration
+    phrase[:] = sorted(rewritten, key=lambda item: int(item.get("start_beat", 0)))
+    return True
+
+
+def _apply_reference_jump_repeat_challenges(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    profile: str,
+) -> list[int]:
+    """Add the reference's jump-jump, breath, duck mini challenge.
+
+    SMALL_JUMP already owns two internal hits (beats zero and two). The renderer
+    presents each hit as a pair of ordinary step platforms, so this remains a
+    familiar two-foot instruction instead of introducing another obstacle icon.
+    """
+    if profile == WARMUP_PROFILE:
+        return []
+    applied: list[int] = []
+    last_phrase = -6
+    strong_roles = {"build", "chorus", "drop", "peak", "finale"}
+    for phrase_index, phrase in enumerate(selected_sequences):
+        role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
+        if phrase_index == 0 or phrase_index >= len(selected_sequences) - 2:
+            continue
+        if role not in strong_roles or phrase_index - last_phrase < 6:
+            continue
+        phrase_start = phrase_index * 32
+        if _replace_reference_window(phrase, phrase_start + 8, phrase_start + 24, [
+            ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
+            ("WEIGHT_SHIFT", 4, "REFERENCE_JUMP_BREATH", "DEVELOP"),
+            ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
+            ("STEP_TOUCH_RIGHT", 4, "REFERENCE_JUMP_RECOVERY", "LIFT"),
+        ]):
+            applied.append(phrase_index)
+            last_phrase = phrase_index
+    return applied
+
+
+def _apply_reference_finale_callback(
+    selected_sequences: list[list[dict[str, Any]]],
+    profile: str,
+    total_beats: int,
+) -> int:
+    """Recall the clearest long-step and hand call without raising difficulty."""
+    if profile == WARMUP_PROFILE:
+        return -1
+    for phrase_index in range(len(selected_sequences) - 1, 0, -1):
+        phrase = selected_sequences[phrase_index]
+        phrase_start = phrase_index * 32
+        if phrase_start + 32 > total_beats:
+            continue
+        phrase_end = max(
+            (int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0)) for item in phrase),
+            default=phrase_start,
+        )
+        if phrase_end - phrase_start < 32:
+            continue
+        if _replace_reference_window(phrase, phrase_start + 8, phrase_start + 32, [
+            ("STEP_TOUCH_LEFT", 4, "FINALE_CALLBACK_SETUP", "DEVELOP"),
+            ("DOUBLE_FOOT_PULSE", 4, "FINALE_CALLBACK_LONG_STEP", "PAYOFF"),
+            ("WEIGHT_SHIFT", 4, "FINALE_CALLBACK_BREATH", "LIFT"),
+            ("PUNCH_LEFT", 2, "FINALE_CALLBACK_HAND_CALL", "LIFT"),
+            ("PUNCH_RIGHT", 2, "FINALE_CALLBACK_HAND_RESPONSE", "LIFT"),
+            ("DOUBLE_PUNCH", 4, "FINALE_CALLBACK_HAND_PAYOFF", "PAYOFF"),
+            ("STEP_TOUCH_RIGHT", 4, "FINALE_CALLBACK_RESOLVE", "PAYOFF"),
+        ]):
+            return phrase_index
+    return -1
+
+
+def _apply_reference_hand_call_response(selected_sequences: list[list[dict[str, Any]]], profile: str) -> int:
+    """Teach left/right punches before reserving the pair for a climax.
+
+    Both competitors use sparse single-hand call/response in early blocks and
+    keep the simultaneous two-hand hit as a visually louder punctuation. A
+    four-beat setup/develop pair therefore becomes left then right, while lift
+    and payoff pairs retain their bilateral hit.
+    """
+    if profile == WARMUP_PROFILE:
+        return 0
+    rewrites = 0
+    for phrase_index, phrase in enumerate(selected_sequences):
+        rewritten: list[dict[str, Any]] = []
+        for item in phrase:
+            if (
+                item.get("movement") == "DOUBLE_PUNCH"
+                and int(item.get("duration_beats", 0)) == 4
+                and str(item.get("dynamic_role", "")) in {"SETUP", "DEVELOP"}
+            ):
+                order = ("PUNCH_LEFT", "PUNCH_RIGHT") if phrase_index % 2 == 0 else ("PUNCH_RIGHT", "PUNCH_LEFT")
+                for offset, movement_id in enumerate(order):
+                    meta = MOVEMENTS[movement_id]
+                    rewritten.append({
+                        **item,
+                        "movement": movement_id,
+                        "start_beat": int(item["start_beat"]) + offset * 2,
+                        "duration_beats": 2,
+                        "body_side": meta["side"],
+                        "mirror_mode": meta["side"] == "right",
+                        "internal_hit_offsets": [0],
+                        "cell_function": "REFERENCE_HAND_CALL" if offset == 0 else "REFERENCE_HAND_RESPONSE",
+                    })
+                rewrites += 1
+            else:
+                rewritten.append(item)
+        selected_sequences[phrase_index] = rewritten
+    return rewrites
+
+
+def _apply_reference_recovery_after_hand_holds(selected_sequences: list[list[dict[str, Any]]]) -> int:
+    """Give a short readable breath after a sustained bilateral hand cue."""
+    flattened = [item for phrase in selected_sequences for item in phrase]
+    rewrites = 0
+    for index, item in enumerate(flattened[:-1]):
+        if item.get("movement") != "DOUBLE_HAND_HOLD":
+            continue
+        following = flattened[index + 1]
+        if str(following.get("movement", "")) not in REFERENCE_RECOVERY_MOVEMENTS:
+            _retarget_sequence_item(following, "WEIGHT_SHIFT", "REFERENCE_HAND_RECOVERY")
+            rewrites += 1
+    return rewrites
+
+
+def _shape_reference_long_step_accents(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    profile: str,
+) -> dict[str, int]:
+    """Treat a long rail as a music-directed mini-scene, never filler.
+
+    The retained rail must be a payoff, follow readable feet, and land in a
+    phrase with real accent evidence. It is followed by a simple recovery so
+    the burst has room to resolve before another mechanic begins.
+    """
+    flattened: list[tuple[int, dict[str, Any]]] = [
+        (phrase_index, item)
+        for phrase_index, phrase in enumerate(selected_sequences)
+        for item in phrase
+    ]
+    if profile == WARMUP_PROFILE:
+        retained = 0
+        for _, item in flattened:
+            if item.get("movement") == "DOUBLE_FOOT_PULSE":
+                item["cell_function"] = "REFERENCE_WARMUP_DOUBLE_STEP"
+                retained += 1
+        return {"replaced": 0, "retained": retained, "recovery_rewrites": 0}
+    replaced = 0
+    retained = 0
+    recovery_rewrites = 0
+    previous_movement = ""
+    for flat_index, (phrase_index, item) in enumerate(flattened):
+        movement = str(item.get("movement", ""))
+        if movement != "DOUBLE_FOOT_PULSE":
+            previous_movement = movement
+            continue
+        context = phrase_contexts[phrase_index] if phrase_index < len(phrase_contexts) else {}
+        targets = context.get("targets", {}) if isinstance(context.get("targets", {}), dict) else {}
+        peak_count = int(targets.get("peak_accent_count", 0))
+        strong_count = int(targets.get("strong_accent_count", 0))
+        has_feature_evidence = bool(context.get("phrase_features"))
+        music_support = not has_feature_evidence or peak_count >= 1 or strong_count >= 3
+        prepared = previous_movement in DOUBLE_FOOT_SETUP_MOVEMENTS
+        payoff = str(item.get("dynamic_role", "")) == "PAYOFF"
+        if not (prepared and payoff and music_support):
+            start_beat = int(item.get("start_beat", 0))
+            replacement_id = "STEP_TOUCH_LEFT" if (start_beat // 2) % 2 == 0 else "STEP_TOUCH_RIGHT"
+            _retarget_sequence_item(item, replacement_id, "READABLE_STEP_FALLBACK")
+            previous_movement = replacement_id
+            replaced += 1
+            continue
+        item["cell_function"] = "REFERENCE_LONG_STEP_PAYOFF"
+        retained += 1
+        previous_movement = movement
+        if flat_index + 1 < len(flattened):
+            following = flattened[flat_index + 1][1]
+            if str(following.get("movement", "")) not in REFERENCE_RECOVERY_MOVEMENTS:
+                _retarget_sequence_item(following, "WEIGHT_SHIFT", "REFERENCE_LONG_STEP_RECOVERY")
+                recovery_rewrites += 1
+    return {"replaced": replaced, "retained": retained, "recovery_rewrites": recovery_rewrites}
 
 
 MICRO_RISE_CURVES = {
@@ -1011,7 +1329,6 @@ def _hard_violations(
             violations.append("insufficient_recovery")
         if previous_meta["family"] in {"squat", "duck"} and current_meta["family"] == "jump":
             violations.append("duck_to_jump_without_recovery")
-    taught_sync = False
     for item in sequence:
         movement_id = item["movement"]
         grammar = COMPOUND_GRAMMAR.get(movement_id)
@@ -1020,10 +1337,12 @@ def _hard_violations(
         grouped = Counter(offset for offset, _component in COMPOSITE_HITS.get(movement_id, []))
         if grouped and max(grouped.values()) > 2:
             violations.append("compound_too_many_simultaneous_components")
-        if grammar["pattern"] == "contralateral" and not taught_sync:
-            violations.append("cross_compound_without_simple_setup")
-        if grammar["pattern"] == "ipsilateral":
-            taught_sync = True
+        component_channels = []
+        for component in grammar.get("components", []):
+            parts = set(MOVEMENTS.get(component, {}).get("body_parts", []))
+            component_channels.append("hand" if "arms" in parts and "legs" not in parts else "foot" if "legs" in parts and "arms" not in parts else "mixed")
+        if len(component_channels) != 2 or len(set(component_channels)) != 1 or component_channels[0] not in {"hand", "foot"}:
+            violations.append("mixed_body_channel_simultaneous_compound")
     return sorted(set(violations))
 
 
@@ -1426,10 +1745,28 @@ def build_choreography(
         if current_role in {"verse", "chorus", "drop"} and current_role not in motif_memory:
             motif_memory[current_role] = copy.deepcopy(selected_candidate["sequence"])
         familiarity.update(item["movement"] for item in selected_candidate["sequence"])
+    selected_sequences = [copy.deepcopy(phrase) for phrase in selected_sequences]
+    hand_hold_config = grid.get("generation_settings", {}).get("reference_hand_holds", {})
+    if not isinstance(hand_hold_config, dict):
+        hand_hold_config = {}
+    reference_jump_repeat_phrase_indices = _apply_reference_jump_repeat_challenges(
+        selected_sequences, phrase_contexts, profile,
+    )
+    hand_hold_phrase_indices = _apply_reference_hand_hold_accents(
+        selected_sequences,
+        phrase_contexts,
+        enabled=bool(hand_hold_config.get("enabled", True)),
+        rate_phrases=max(2, int(hand_hold_config.get("rate_phrases", 4))),
+        profile=profile,
+    )
+    reference_hand_call_rewrites = _apply_reference_hand_call_response(selected_sequences, profile)
+    reference_hand_recovery_rewrites = _apply_reference_recovery_after_hand_holds(selected_sequences)
+    reference_long_steps = _shape_reference_long_step_accents(selected_sequences, phrase_contexts, profile)
+    reference_finale_callback_phrase_index = _apply_reference_finale_callback(selected_sequences, profile, len(beats))
     sequence = [item for phrase in selected_sequences for item in phrase if item["start_beat"] < len(beats)]
-    if sequence and profile != WARMUP_PROFILE and sequence[-1]["movement"] not in {"POSE", "FREEZE"}:
-        pose_meta = MOVEMENTS["POSE"]
-        sequence[-1] = {**sequence[-1], "movement": "POSE", "body_side": pose_meta["side"], "mirror_mode": False, "internal_hit_offsets": [0], "cell_function": "CALLBACK_FINAL_POSE"}
+    if sequence and profile != WARMUP_PROFILE and sequence[-1]["movement"] != "STEP_TOUCH_RIGHT":
+        final_step_meta = MOVEMENTS["STEP_TOUCH_RIGHT"]
+        sequence[-1] = {**sequence[-1], "movement": "STEP_TOUCH_RIGHT", "body_side": final_step_meta["side"], "mirror_mode": False, "internal_hit_offsets": [0, 2], "cell_function": "CALLBACK_FINAL_STEP"}
     movement_events, base_events, obstacles = [], [], []
     interval = float(grid["beat_interval"])
     for index, item in enumerate(sequence):
@@ -1505,6 +1842,9 @@ def build_choreography(
             "body_counterpoint_fit": next((candidate.get("metrics", {}).get("body_counterpoint_fit") for candidate in candidate_debug if candidate.get("candidate_id") == selected_candidate_ids[phrase_index]), None),
             "dynamic_axes": _sequence_dynamic_axes(selected_sequences[phrase_index]) if phrase_index < len(selected_sequences) else {},
             "micro_rise": micro_rise,
+            "reference_hand_hold_accent": phrase_index in hand_hold_phrase_indices,
+            "reference_jump_repeat_challenge": phrase_index in reference_jump_repeat_phrase_indices,
+            "reference_finale_callback": phrase_index == reference_finale_callback_phrase_index,
             "motif_memory": {
                 key: value
                 for key, value in next((candidate.get("metrics", {}) for candidate in candidate_debug if candidate.get("candidate_id") == selected_candidate_ids[phrase_index]), {}).items()
@@ -1535,24 +1875,35 @@ def build_choreography(
 
     renderer_notes = []
     for event in movement_events:
-        for hit in event["internal_hits"]:
+        for hit_index, hit in enumerate(event["internal_hits"]):
             component_id = str(hit.get("component", event["movement"]))
             component_meta = MOVEMENTS.get(component_id, MOVEMENTS[event["movement"]])
             component_side = str(component_meta.get("side", event["lane_side"]))
             lane = 1 if component_side == "left" else 3 if component_side == "right" else 2
+            cue_archetype = str(component_meta.get("cue_archetype", event["cue_archetype"]))
+            if cue_archetype in AMBIGUOUS_FOOT_CUES:
+                # These legacy labels used a walking-person pictogram and read
+                # as a separate mechanic. Export ordinary alternating shoe pads
+                # so the required action is unmistakable in every renderer.
+                if component_side == "center":
+                    lane = 1 if hit_index % 2 == 0 else 2
+                cue_archetype = "FOOT_PAD_LEFT" if lane < 2 else "FOOT_PAD_RIGHT"
             lanes = _double_note_lanes(event, hit, lane)
             simultaneous = sum(abs(float(other["time"]) - float(hit["time"])) < 1e-6 for other in event["internal_hits"]) > 1
-            renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": component_meta.get("cue_archetype", event["cue_archetype"]), "instruction_time": event["instruction_time"], **_side_fields(component_side)})
+            sustained = bool(component_meta.get("sustained", False))
+            visual_duration = event["duration"] if sustained or event["movement"] == "DOUBLE_FOOT_PULSE" else 0.0
+            cell_function = str(event.get("cell_function", ""))
+            renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side)})
     renderer_events = [_renderer_obstacle(value) for value in obstacles]
     return {
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
-        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.1",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4},
+        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.4",
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
-        "phrase_plan": phrase_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "LEAN_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "LEAN_LEFT", "RESET_CENTER"], "variation_target": .2}],
+        "phrase_plan": phrase_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
         "base_groove_events": base_events, "movement_events": movement_events, "mandatory_movement_events": movement_events,
         "micro_accents": micro_accents, "semantic_obstacle_events": obstacles,
         "candidate_debug": candidate_debug,
@@ -1615,6 +1966,31 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
     movements = beatmap.get("movement_events", [])
     obstacles = beatmap.get("semantic_obstacle_events", [])
     movement_ids = {value["id"]: value for value in movements}
+    simultaneous_groups: dict[str, list[dict[str, Any]]] = {}
+    for note in beatmap.get("notes", []):
+        if str(note.get("movement", "")).startswith("HAND_HOLD_") and (
+            not note.get("sustained") or float(note.get("duration", 0.0)) <= 0.0
+        ):
+            errors.append("hand_hold_renderer_duration_missing")
+        group = note.get("simultaneous_group")
+        if note.get("simultaneous") and group:
+            simultaneous_groups.setdefault(str(group), []).append(note)
+    simultaneous_pair_kinds = Counter()
+    for notes in simultaneous_groups.values():
+        channels = []
+        for note in notes:
+            movement = str(note.get("movement", ""))
+            parts = set(MOVEMENTS.get(movement, {}).get("body_parts", []))
+            channels.append("hand" if "arms" in parts and "legs" not in parts else "foot" if "legs" in parts and "arms" not in parts else "mixed")
+        if len(notes) != 2:
+            errors.append("simultaneous_pair_size_invalid")
+        if len(set(channels)) != 1 or not channels or channels[0] not in {"hand", "foot"}:
+            errors.append("mixed_hand_foot_simultaneous_group")
+        else:
+            simultaneous_pair_kinds[channels[0]] += 1
+        sides = {str(note.get("lane_side", note.get("body_side", "center"))) for note in notes}
+        if sides != {"left", "right"}:
+            errors.append("simultaneous_pair_requires_left_right")
     for obstacle in obstacles:
         parent = movement_ids.get(obstacle.get("parent_movement_event_id"))
         if obstacle.get("mandatory") and not parent:
@@ -1717,6 +2093,11 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
             errors.append(f"compound_projection_mismatch:{event.get('movement')}")
         if len(event.get("compound_grammar", {}).get("components", [])) != 2:
             errors.append(f"compound_component_count_invalid:{event.get('movement')}")
+    hand_hold_events = [event for event in movements if event.get("movement") == "DOUBLE_HAND_HOLD"]
+    for event in hand_hold_events:
+        hold_notes = [note for note in beatmap.get("notes", []) if note.get("movement_event_id") == event.get("id")]
+        if len(hold_notes) != 2 or {str(note.get("movement", "")) for note in hold_notes} != {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}:
+            errors.append("double_hand_hold_projection_mismatch")
     arc_rows = [phrase.get("arc_metrics", {}) for phrase in beatmap.get("phrase_plan", []) if phrase.get("arc_metrics")]
     arc_summary = {
         key: round(statistics.fmean(float(row[key]) for row in arc_rows if key in row), 6)
@@ -1776,6 +2157,8 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         "pickup_to_drop_phrase_count": pickup_phrase_count,
         "compound_pattern_distribution": dict(Counter(event["compound_grammar"]["pattern"] for event in compound_events)),
         "simultaneous_renderer_note_count": sum(bool(note.get("simultaneous")) for note in beatmap.get("notes", [])),
+        "simultaneous_pair_distribution": dict(simultaneous_pair_kinds),
+        "reference_hand_hold_event_count": len(hand_hold_events),
     }
     return {"schema": REPORT_SCHEMA, "hard_errors": sorted(set(errors)), "warnings": sorted(set(warnings)), "summary": summary}
 

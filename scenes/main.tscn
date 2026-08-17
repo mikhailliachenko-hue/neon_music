@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/godot/main.gd" id="1_main"]
 [ext_resource type="Shader" path="res://assets/models/track.gdshader" id="2_track"]
 [ext_resource type="PackedScene" path="res://scenes/receptor.tscn" id="3_receptor"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening.tscn" id="4_tunnel"]
 
 [sub_resource type="Environment" id="Environment_neon"]
 background_mode = 1
@@ -61,8 +62,8 @@ script = ExtResource("1_main")
 environment = SubResource("Environment_neon")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(0, 4.5, 7.25)
-rotation_degrees = Vector3(-16, 0, 0)
+position = Vector3(0, 0, 6.35)
+rotation_degrees = Vector3(-4, 0, 0)
 current = true
 fov = 72.0
 
@@ -94,5 +95,7 @@ position = Vector3(3, -1.7, 0)
 lane = 3
 
 [node name="TunnelFrames" type="Node3D" parent="."]
+
+[node name="NeonTunnelGenerator" parent="TunnelFrames" instance=ExtResource("4_tunnel")]
 
 [node name="HitEffects" type="Node3D" parent="."]

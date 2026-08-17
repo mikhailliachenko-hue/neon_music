@@ -23,6 +23,8 @@ from lane_assignment import (
     DEFAULT_HOLD_MIN_DURATION,
     DEFAULT_HOLD_MIN_GAP,
     DEFAULT_HOLD_RATE_BARS,
+    DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
+    DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -107,13 +109,18 @@ class AnalyzerApp(tk.Tk):
         except tk.TclError:
             pass
         self.title("Neon Footstep - Audio Analyzer")
-        self.geometry("980x760")
-        self.minsize(820, 620)
+        screen_height = max(640, self.winfo_screenheight())
+        window_height = max(640, min(720, screen_height - 90))
+        self.geometry(f"1040x{window_height}")
+        self.minsize(860, 620)
         self.configure(bg="#10131c")
         self._queue: queue.Queue[tuple[str, object]] = queue.Queue()
         self._visual_config = self._load_visual_config()
+        self._gpu_info = audio_analyzer.demucs_gpu_status()
         self._build_vars()
         self._build_ui()
+        self.bind("<F5>", lambda _event: self._start_analyze())
+        self.bind("<Control-Return>", lambda _event: self._start_analyze())
         self.after(100, self._poll_queue)
 
     def _load_visual_config(self) -> dict[str, object]:
@@ -152,11 +159,14 @@ class AnalyzerApp(tk.Tk):
         self.hold_min_duration_var = tk.DoubleVar(value=DEFAULT_HOLD_MIN_DURATION)
         self.hold_max_duration_var = tk.DoubleVar(value=DEFAULT_HOLD_MAX_DURATION)
         self.hold_min_gap_var = tk.DoubleVar(value=DEFAULT_HOLD_MIN_GAP)
+        self.reference_hand_holds_enabled_var = tk.BooleanVar(value=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
+        self.reference_hand_hold_rate_phrases_var = tk.IntVar(value=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
         self.phrase_length_beats_var = tk.IntVar(value=32)
         self.subphrase_length_beats_var = tk.IntVar(value=8)
         self.manual_downbeat_offset_seconds_var = tk.DoubleVar(value=0.0)
         self.allow_crooked_phrase_var = tk.BooleanVar(value=False)
         self.godot_var = tk.StringVar(value=DEFAULT_GODOT)
+        self.gpu_status_var = tk.StringVar(value=self._gpu_status_text(self._gpu_info))
         self.visual_vars = {
             key: tk.DoubleVar(value=float(self._visual_config.get(key, VISUAL_DEFAULTS[key])))
             for key in VISUAL_RANGES
@@ -175,6 +185,8 @@ class AnalyzerApp(tk.Tk):
         style.configure("SectionBody.TLabel", background="#131a27", foreground="#e9f5ff")
         style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"), foreground="#6ff7ff", background="#10131c")
         style.configure("Hint.TLabel", foreground="#aab8c8", background="#10131c")
+        style.configure("GPUReady.TLabel", foreground="#71ffb0", background="#10131c", font=("Segoe UI", 9, "bold"))
+        style.configure("CPUMode.TLabel", foreground="#ffd27a", background="#10131c", font=("Segoe UI", 9, "bold"))
         style.configure("TButton", font=("Segoe UI", 10), padding=(10, 6))
         style.configure("Primary.TButton", font=("Segoe UI", 11, "bold"), padding=(18, 9), foreground="#071014", background="#6ff7ff")
         style.map("Primary.TButton", background=[("active", "#a4fbff"), ("disabled", "#3d5960")])
@@ -188,8 +200,20 @@ class AnalyzerApp(tk.Tk):
         shell.pack(fill="both", expand=True)
         header = ttk.Frame(shell)
         header.pack(fill="x", pady=(0, 12))
-        ttk.Label(header, text="NEON FOOTSTEP", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(header, text="Music-aware choreography generator", style="Hint.TLabel").pack(anchor="w")
+        header_left = ttk.Frame(header)
+        header_left.pack(side="left", fill="x", expand=True)
+        ttk.Label(header_left, text="NEON FOOTSTEP", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(header_left, text="Music-aware choreography generator", style="Hint.TLabel").pack(anchor="w")
+        self.gpu_label = ttk.Label(
+            header,
+            textvariable=self.gpu_status_var,
+            style="GPUReady.TLabel" if self._gpu_info.get("available") else "CPUMode.TLabel",
+        )
+        self.gpu_label.pack(side="right", anchor="e", padx=(16, 0))
+
+        # Reserve the action bar before the expanding notebook. This keeps the
+        # start button visible on 768p screens and under Windows DPI scaling.
+        self._build_action_bar(shell)
 
         self.notebook = ttk.Notebook(shell)
         self.notebook.pack(fill="both", expand=True)
@@ -210,7 +234,7 @@ class AnalyzerApp(tk.Tk):
         basic.columnconfigure(0, weight=1); basic.columnconfigure(1, weight=1)
 
         self._card(obstacles, "Walls", self._build_wall_timing, 0, 0)
-        self._card(obstacles, "Hold notes", self._build_hold_notes, 0, 1)
+        self._card(obstacles, "Hand holds and legacy holds", self._build_hold_notes, 0, 1)
         obstacles.columnconfigure(0, weight=1); obstacles.columnconfigure(1, weight=1)
 
         self._card(visuals, "Wall appearance", self._build_wall_visuals, 0, 0)
@@ -220,8 +244,7 @@ class AnalyzerApp(tk.Tk):
 
         self.log = tk.Text(log_tab, bg="#0a0d14", fg="#c5f8ff", insertbackground="white", relief="flat", padx=10, pady=8, wrap="word")
         self.log.pack(fill="both", expand=True)
-        self._build_action_bar(shell)
-        self._write("Ready. Choose an audio file, tune the dance, then generate.\n")
+        self._write("Ready. Choose an audio file, tune the dance, then press START ANALYSIS.\n")
 
     def _card(self, parent, title: str, builder, row: int, column: int, columnspan: int = 1) -> None:
         card = ttk.LabelFrame(parent, text=title, style="Card.TLabelframe")
@@ -266,11 +289,15 @@ class AnalyzerApp(tk.Tk):
         parent.columnconfigure(1, weight=1)
 
     def _build_hold_notes(self, parent) -> None:
-        ttk.Checkbutton(parent, text="Enable hold notes", variable=self.holds_enabled_var).grid(row=0, column=1, sticky="w", pady=4)
-        self._spin(parent, 1, "Rate", self.hold_rate_bars_var, 2, 32, 1, "bars")
-        self._spin(parent, 2, "Min duration", self.hold_min_duration_var, 0.25, 4.0, 0.05, "sec")
-        self._spin(parent, 3, "Max duration", self.hold_max_duration_var, 0.25, 6.0, 0.05, "sec")
-        self._spin(parent, 4, "Minimum gap", self.hold_min_gap_var, 0.0, 6.0, 0.05, "sec")
+        ttk.Checkbutton(parent, text="Reference double-hand holds", variable=self.reference_hand_holds_enabled_var).grid(row=0, column=1, sticky="w", pady=4)
+        self._spin(parent, 1, "Hand-hold spacing", self.reference_hand_hold_rate_phrases_var, 2, 8, 1, "phrases")
+        ttk.Separator(parent, orient="horizontal").grid(row=2, column=0, columnspan=3, sticky="ew", pady=(8, 6))
+        ttk.Label(parent, text="Legacy floor holds (compatibility)", style="SectionBody.TLabel").grid(row=3, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        ttk.Checkbutton(parent, text="Enable legacy floor holds", variable=self.holds_enabled_var).grid(row=4, column=1, sticky="w", pady=4)
+        self._spin(parent, 5, "Legacy rate", self.hold_rate_bars_var, 2, 32, 1, "bars")
+        self._spin(parent, 6, "Min duration", self.hold_min_duration_var, 0.25, 4.0, 0.05, "sec")
+        self._spin(parent, 7, "Max duration", self.hold_max_duration_var, 0.25, 6.0, 0.05, "sec")
+        self._spin(parent, 8, "Minimum gap", self.hold_min_gap_var, 0.0, 6.0, 0.05, "sec")
         parent.columnconfigure(1, weight=1)
 
     def _build_phrase_grid(self, parent) -> None:
@@ -328,8 +355,8 @@ class AnalyzerApp(tk.Tk):
 
     def _build_action_bar(self, parent) -> None:
         bar = ttk.Frame(parent, padding=(0, 12, 0, 0))
-        bar.pack(fill="x")
-        self.run_button = ttk.Button(bar, text="Generate choreography", command=self._start_analyze, style="Primary.TButton")
+        bar.pack(side="bottom", fill="x")
+        self.run_button = ttk.Button(bar, text="▶  START ANALYSIS", command=self._start_analyze, style="Primary.TButton")
         self.run_button.pack(side="left")
         self.validate_button = ttk.Button(bar, text="Validate current track", command=self._start_validate)
         self.validate_button.pack(side="left", padx=(8, 0))
@@ -337,6 +364,21 @@ class AnalyzerApp(tk.Tk):
         self.progress.pack(side="right")
         self.status = tk.StringVar(value="Ready")
         ttk.Label(bar, textvariable=self.status, style="Hint.TLabel").pack(side="right", padx=(8, 12))
+
+    def _gpu_status_text(self, info: dict[str, object]) -> str:
+        if info.get("available"):
+            return "GPU READY  •  {name}  •  CUDA {cuda}".format(
+                name=info.get("name", "CUDA GPU"),
+                cuda=info.get("cuda_version", "?"),
+            )
+        return f"CPU MODE  •  {info.get('reason', 'CUDA unavailable')}"
+
+    def _refresh_gpu_status(self) -> dict[str, object]:
+        self._gpu_info = audio_analyzer.demucs_gpu_status()
+        self.gpu_status_var.set(self._gpu_status_text(self._gpu_info))
+        if hasattr(self, "gpu_label"):
+            self.gpu_label.configure(style="GPUReady.TLabel" if self._gpu_info.get("available") else "CPUMode.TLabel")
+        return self._gpu_info
 
     def _grid_row(self, parent, row: int, label: str):
         ttk.Label(parent, text=label, width=18, style="SectionBody.TLabel").grid(row=row, column=0, sticky="w", pady=4)
@@ -396,6 +438,8 @@ class AnalyzerApp(tk.Tk):
         if float(self.hold_min_duration_var.get()) > float(self.hold_max_duration_var.get()):
             messagebox.showerror("Hold duration", "Minimum hold duration cannot exceed maximum duration.")
             return
+        gpu_info = self._refresh_gpu_status()
+        analysis_device = "cuda" if gpu_info.get("available") else "cpu"
         options = {
             "difficulty": self.difficulty_var.get(), "ramp_duration": float(self.ramp_duration_var.get()),
             "ramp_strength": float(self.ramp_strength_var.get()), "anti_burst": bool(self.anti_burst_var.get()),
@@ -407,17 +451,24 @@ class AnalyzerApp(tk.Tk):
             "wall_rest_window": float(self.wall_rest_window_var.get()), "holds_enabled": bool(self.holds_enabled_var.get()),
             "hold_rate_bars": int(self.hold_rate_bars_var.get()), "hold_min_duration": float(self.hold_min_duration_var.get()),
             "hold_max_duration": float(self.hold_max_duration_var.get()), "hold_min_gap": float(self.hold_min_gap_var.get()),
+            "reference_hand_holds_enabled": bool(self.reference_hand_holds_enabled_var.get()),
+            "reference_hand_hold_rate_phrases": int(self.reference_hand_hold_rate_phrases_var.get()),
             "phrase_length_beats": int(self.phrase_length_beats_var.get()), "subphrase_length_beats": int(self.subphrase_length_beats_var.get()),
             "manual_downbeat_offset_seconds": float(self.manual_downbeat_offset_seconds_var.get()),
             "allow_crooked_phrase": bool(self.allow_crooked_phrase_var.get()), "lane_layout": self.lane_layout_var.get(),
             "track_path": self.track_var.get().strip(),
+            "demucs_device": analysis_device,
         }
-        self._set_busy(True, "Separating stems and analyzing musical structure...")
+        if analysis_device == "cuda":
+            analysis_status = f"GPU analysis on {gpu_info.get('name', 'CUDA')}..."
+        else:
+            analysis_status = "CPU analysis (GPU unavailable)..."
+        self._set_busy(True, analysis_status)
         threading.Thread(target=self._analyze_worker, args=(audio, options), daemon=True).start()
 
     def _analyze_worker(self, audio: Path, options: dict[str, object]):
         try:
-            with audio_analyzer.isolated_rhythm_stems(audio) as stems:
+            with audio_analyzer.isolated_rhythm_stems(audio, demucs_device=str(options["demucs_device"])) as stems:
                 beatmap, timing = audio_analyzer.analyze_with_metadata(
                     stems["mix"],
                     difficulty=options["difficulty"], ramp_duration=options["ramp_duration"], ramp_strength=options["ramp_strength"],
@@ -429,6 +480,8 @@ class AnalyzerApp(tk.Tk):
                     wall_rest_window=options["wall_rest_window"], holds_enabled=options["holds_enabled"],
                     hold_rate_bars=options["hold_rate_bars"], hold_min_duration=options["hold_min_duration"],
                     hold_max_duration=options["hold_max_duration"], hold_min_gap=options["hold_min_gap"],
+                    reference_hand_holds_enabled=options["reference_hand_holds_enabled"],
+                    reference_hand_hold_rate_phrases=options["reference_hand_hold_rate_phrases"],
                     phrase_length_beats=options["phrase_length_beats"], subphrase_length_beats=options["subphrase_length_beats"],
                     manual_downbeat_offset_seconds=options["manual_downbeat_offset_seconds"], allow_crooked_phrase=options["allow_crooked_phrase"],
                     bass_audio_path=stems["bass"],
@@ -460,10 +513,12 @@ class AnalyzerApp(tk.Tk):
             wall_summary = timing.get("wall_generation", {})
             hold_summary = timing.get("hold_generation", {})
             hold_count = int(timing.get("hold_count", 0))
-            self._queue.put(("ok", "Detected {notes} notes, {walls} wall events, and {holds} hold events. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n".format(
+            hand_hold_count = sum(str(event.get("movement", "")) == "DOUBLE_HAND_HOLD" for event in beatmap.get("movement_events", []))
+            self._queue.put(("ok", "Detected {notes} gameplay notes, {walls} wall events, {hand_holds} double-hand holds, and {holds} legacy floor holds. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n".format(
                 notes=len(audio_analyzer._beatmap_notes(beatmap)),
                 walls=len([event for event in audio_analyzer._beatmap_events(beatmap) if str(event.get("type", "")) in audio_analyzer.WALL_EVENT_TYPES]),
                 holds=hold_count,
+                hand_holds=hand_hold_count,
                 sections=len(timing.get("sections", [])),
                 neural=bool(timing.get("neural_meter", {}).get("used", False)),
                 peaks=timing.get("music_expression", {}).get("summary", {}).get("peak_accent_count", 0),
@@ -547,11 +602,19 @@ class AnalyzerApp(tk.Tk):
         for tab in self.notebook.tabs():
             self.notebook.select(tab)
             self.update_idletasks()
+        # Leave the smoke capture on the controls changed by this workflow.
+        self.notebook.select(self.notebook.tabs()[1])
+        self.update_idletasks()
         if not self.run_button.winfo_viewable() or not self.validate_button.winfo_viewable():
             raise RuntimeError("Sticky action bar is not visible.")
+        window_bottom = self.winfo_rooty() + self.winfo_height()
+        action_bottom = self.run_button.winfo_rooty() + self.run_button.winfo_height()
+        if action_bottom > window_bottom:
+            raise RuntimeError("Sticky action bar is outside the window bounds.")
         screenshot_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             from PIL import ImageGrab
+            self.attributes("-topmost", True)
             self.lift()
             self.focus_force()
             for _ in range(3):
@@ -560,8 +623,13 @@ class AnalyzerApp(tk.Tk):
             x0, y0 = self.winfo_rootx(), self.winfo_rooty()
             x1, y1 = x0 + self.winfo_width(), y0 + self.winfo_height()
             ImageGrab.grab(bbox=(x0, y0, x1, y1)).save(screenshot_path)
+            self.attributes("-topmost", False)
             shot = str(screenshot_path)
         except Exception as exc:
+            try:
+                self.attributes("-topmost", False)
+            except tk.TclError:
+                pass
             shot = f"screenshot skipped: {type(exc).__name__}: {exc}"
         return f"GUI smoke: OK (workflow tabs reachable, sticky actions visible; {shot})"
 
