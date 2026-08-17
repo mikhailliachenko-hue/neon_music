@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cyber_purple.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_frames.tres" id="3_world"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "SYNTH VIOLET"
+description = "Фиолетово-розовый градиент на частых A-рамах."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.72, 0.12, 1, 1, 1, 0.05, 0.74, 1, 0.012, 0.001, 0.025, 1)
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
+particle_settings = {"density": 0.1,"amount_scale": 0.1}
+lighting_settings = {"glow_intensity": 0.75,"glow_strength": 0.82,"bloom": 0.065}
+fog_settings = {"density": 0.00135}
+camera_settings = {"step_impact": 0.55,"step_duration": 0.21,"fov_pulse": 0.58}
+music_reaction_settings = {"beat_strength": 0.8,"beat_decay": 0.22,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 72.0,"wave_width": 10.5,"wave_lifetime": 2.0}
+preset_name = "SYNTH VIOLET"
+style_id = "AFrameWave"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 31676
+ring_density = 1.45
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.95
+camera_motion = 0.26
+speed_multiplier = 1.08
+atmosphere_density = 0.1
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "04_synth_violet"
+segment_sequence = PackedStringArray("Ring")

@@ -3,9 +3,11 @@ extends SceneTree
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
-	{"level": "LASER HIGHWAY", "world": "neon_highway", "asset_terms": ["Road", "Bridge", "Light", "Sign"]},
-	{"level": "NIGHT CITY EXPRESS", "world": "cyber_city_canyon", "asset_terms": ["Road", "Building", "Light", "Sign"]},
-	{"level": "MACHINE HEART", "world": "industrial_reactor", "asset_terms": ["Floor", "Structure", "Machine", "Pipe", "Hopper"]},
+	{"level": "GOLDEN STAR", "world": "rhythm_star_frames", "asset_terms": ["Rhythm Star", "Road"]},
+	{"level": "PULSE CIRCLE", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
+	{"level": "ELECTRIC PINK", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
+	{"level": "TOXIC PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
+	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
 ]
 
 

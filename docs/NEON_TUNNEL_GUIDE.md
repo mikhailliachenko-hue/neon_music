@@ -36,34 +36,36 @@ godot --path . -- --preview-level "--tunnel-preset=FINAL DROP" --tunnel-seed=777
 
 ## Dance Mode level library
 
-The 23 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
-SYNTHWAVE RUNNER, ENERGY CORE, TOXIC DIMENSION, ICE CYBER, GOLDEN FUTURE,
-DEEP SPACE, RAINBOW DANCE, ELECTRIC PINK, MATRIX FLOW, LAVA CORE, WHITE FUTURE,
-DARK VOID, QUANTUM TUNNEL, LASER HIGHWAY, CYBER CITY, MIRROR DIMENSION,
-BEAT REACTOR, NEON STORM, FINAL DROP, NIGHT CITY EXPRESS, MACHINE HEART and
-HYPERLANE 88. They use the same generator, fixed pool,
+The 13 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
+GOLDEN STAR, PULSE CIRCLE, SYNTH VIOLET, ICE HALO, REDLINE GATE,
+TOXIC PORTAL, ELECTRIC PINK, WHITE SIGNAL, SUNSET DRIVE, DEEP SPACE RING,
+MATRIX FRAME and FINAL SPECTRUM. They use the same generator, fixed pool,
 asset cache and shared segment scenes. Each resource owns identity, palette,
-segment grammar, asset weights, densities and particle/light/fog/camera/music
-reaction settings; selecting one reapplies those settings to the existing pool.
+frame silhouette, densities and particle/light/fog/camera/music reaction
+settings; selecting one reapplies those settings to the existing pool without
+restarting gameplay.
 
-The default tunnel configuration is `resources/tunnel/neon_tunnel_default.tres`.
+The user-facing configuration is
+`resources/tunnel/levels/cyber_awakening.tres`. The older
+`resources/tunnel/neon_tunnel_default.tres` remains only for legacy preview and
+asset-smoke compatibility.
 
 ## CYBER AWAKENING
 
 The default level follows the Liam Fitness tunnel references with a deliberately
 minimal composition. `RhythmFrames` repeats the imported Quaternius
-`Door_Frame_A` twice per 18 m streamed cell, uses `Door_Frame_SquareTall` as a
-rare deterministic accent, keeps a dark Kenney road, and adds only occasional
-side lights/particles. Walls and ceilings are disabled. Beat color alternates
-cyan/magenta and briefly increases frame emission/scale; WorldEnvironment and
-camera do not flash or shake with the beat.
+`Door_Frame_A`, keeps a dark Kenney road, and adds only sparse particles. Walls,
+ceilings and side decoration are disabled. Successful step, hand, jump and duck
+actions launch a cyan/magenta gradient wave through the frames; a preview beat
+is used only when no gameplay action is available. Geometry does not scale and
+WorldEnvironment/camera do not flash or shake with the beat.
 
 Music-free preview with reproducible controls:
 
 ```powershell
 godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --speed=14 --theme=CyberBlue --seed=4202026 --density=0.72
 godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --phase=Showcase
-godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --preset="MACHINE HEART" --capture=res://output/machine_heart.png
+godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --preset="GOLDEN STAR" --capture=res://output/golden_star.png
 ```
 
 Optional QA capture writes the rendered viewport after warm-up:
@@ -72,8 +74,8 @@ Optional QA capture writes the rendered viewport after warm-up:
 godot --path . res://scenes/tunnel/levels/cyber_awakening_preview.tscn -- --phase=EnergyGate --capture=res://output/diagnostics/cyber_awakening.png --capture-after=1.5
 ```
 
-The level resource is `resources/tunnel/levels/cyber_awakening.tres`; its directed
-preset is `resources/tunnel/presets/cyber_awakening.tres`.
+The level catalog is `resources/tunnel/levels/cyber_awakening.tres`; its initial
+preset is `resources/tunnel/dance_levels/01_cyber_awakening.tres`.
 
 The production camera is positioned at `y=0.0` above a track near `y=-1.82`, so
 the view reads as a dancer standing on the road rather than a ceiling camera.
@@ -84,8 +86,8 @@ and `step_camera_duration` are exposed on the level config.
 
 The earlier side-wall spectrum implementation is retained for experiments but
 `spectrum_enabled=false` in production. Beat response for RhythmFrames does not
-sample FFT data and allocates nothing: it consumes the existing timeline beat and
-updates only the already shared frame material plus cached transforms.
+sample FFT data and allocates no scene objects: it updates pre-created per-frame
+materials and cached transforms.
 
 Normal tunnel playback explicitly uses an opaque viewport plus the internal
 Backdrop nodes. Native window transparency remains isolated to `--obs-overlay`.
@@ -178,7 +180,7 @@ pack, weight, theme/position metadata and can toggle Forward+ Glow/Bloom.
 3. Add the Resource to the `presets` array in
    `resources/tunnel/levels/cyber_awakening.tres` using the Inspector.
 
-The selector reads this Resource array dynamically, so a 24th level needs no new
+The selector reads this Resource array dynamically, so a 14th level needs no new
 scene, copied script, GUI code or generator branch.
 
 ## Add a TunnelSegment variant
@@ -233,10 +235,10 @@ The tunnel still uses eight pooled segment scenes by default. Segment recycling
 never destroys modules; imported scenes and their tintable materials are cached
 per pool slot.
 
-Before audio starts, all configured world pools are loaded and exposed for
-one covered render warm-up frame. This lets Forward+ prepare material surfaces
-outside musical playback. The minimal RhythmFrames world uses 40 fixed pooled
-asset groups across eight segments. Recycled segments reuse the cached
-real-architecture decision instead of rescanning/sorting the full registry.
+World changes are prepared across the fixed segment pool instead of being built
+on one musical frame. This lets Forward+ prepare material surfaces outside the
+critical action path. Each minimal RhythmFrames preset keeps a fixed count of
+pooled asset groups across eight segments. Recycled segments reuse cached scenes,
+materials and layout decisions instead of rescanning the registry.
 `--tunnel-diagnostics` prints per-second
 sync cost and pipeline compilation counters for frame-pacing checks.

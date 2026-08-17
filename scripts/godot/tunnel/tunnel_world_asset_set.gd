@@ -16,6 +16,16 @@ class_name TunnelWorldAssetSet
 @export var prop_assets: Array[PackedScene] = []
 @export var particle_assets: Array[PackedScene] = []
 
+@export_group("Rhythm Frame Contract")
+@export var gameplay_clearance_verified := false
+@export_range(2, 4, 1) var frame_instances_per_segment := 3
+@export_range(3.5, 6.5, 0.05) var frame_inner_half_width := 4.25
+@export_range(-3.0, -1.0, 0.05) var frame_opening_bottom_y := -1.95
+@export_range(2.5, 6.5, 0.05) var frame_opening_top_y := 4.25
+@export_range(12.0, 24.0, 0.1) var frame_target_width := 16.2
+@export_range(8.0, 16.0, 0.1) var frame_target_height := 10.2
+@export_range(1.5, 5.0, 0.05) var frame_target_center_y := 2.55
+
 
 func scenes_for_slot(slot_name: String) -> Array[PackedScene]:
 	match slot_name:
@@ -53,4 +63,13 @@ func validation_errors() -> PackedStringArray:
 		for scene in scenes_for_slot(slot_name):
 			if scene == null:
 				errors.append("%s contains a null %s scene." % [asset_set_id, slot_name])
+	if gameplay_clearance_verified:
+		if frame_inner_half_width < 4.15:
+			errors.append("%s frame opening is too narrow for outer-lane hands." % asset_set_id)
+		if frame_opening_bottom_y > -1.90:
+			errors.append("%s frame threshold can intersect step platforms." % asset_set_id)
+		if frame_opening_top_y < 3.25:
+			errors.append("%s frame opening is too low for hand cues." % asset_set_id)
+		if frame_target_width < frame_inner_half_width * 2.0 + 1.0:
+			errors.append("%s frame target is too narrow for its declared opening." % asset_set_id)
 	return errors

@@ -1,12 +1,12 @@
 [gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/rhythm_frames.tres" id="2_assets"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/rhythm_circle_frames.tres" id="2_assets"]
 
 [resource]
 script = ExtResource("1_script")
-world_id = "rhythm_frames"
-display_name = "Rhythm Frames"
+world_id = "rhythm_circle_frames"
+display_name = "Rhythm Circle Frames"
 spatial_profile = "RhythmFrames"
 asset_set = ExtResource("2_assets")
 floor_probability = 1.0

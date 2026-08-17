@@ -14,6 +14,8 @@ const HAND_TARGET_SIZE := 1.35
 const HAND_ICON_SIZE := 1.16
 const HAND_CONTAINER_DEPTH := 0.62
 const HAND_FAR_SCALE_BOOST := 0.72
+const HAND_VISUAL_CENTER_Y := 2.65
+const HAND_MAX_SCALE := 1.24
 const MATERIAL_PUNCH_ICON := "res://assets/images/movement_icons/material/punch.svg"
 const MATERIAL_WALK_ICON := "res://assets/images/movement_icons/material/walk.svg"
 const MATERIAL_RUN_ICON := "res://assets/images/movement_icons/material/run.svg"
@@ -58,6 +60,13 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 	if _is_hand_target():
 		# Compensate perspective loss: distant targets keep a readable screen size.
 		cue_scale += distance_factor * HAND_FAR_SCALE_BOOST
+		cue_scale = minf(cue_scale, HAND_MAX_SCALE)
+		# Scaling the whole note used to lift the local 2.65m hand anchor and push
+		# outer-lane cubes into imported frames. Offset the root so the hand center
+		# stays at one stable world height at every approach distance.
+		position.y = GROUND_Y + GROUND_OFFSET + HAND_VISUAL_CENTER_Y * (1.0 - cue_scale)
+	else:
+		position.y = GROUND_Y + GROUND_OFFSET
 	scale = Vector3.ONE * cue_scale
 	_set_approach_energy(anticipation, distance_factor, heartbeat)
 	if position.z >= 0.0:

@@ -25,6 +25,7 @@ var _last_song_time := -1.0
 var _beat_pulse := 0.0
 var _frame_pulse := 0.0
 var _frame_beat_index := 0
+var _frame_wave_controller := TunnelFrameWaveController.new()
 var _generation_phrase := 0
 var _variation_epoch := 0
 var _current_theme: TunnelTheme
@@ -68,6 +69,7 @@ func _ready() -> void:
 	if _is_directed_level():
 		_level_phase_name = _current_preset.effective_segment_sequence()[0]
 	_apply_preset_runtime_settings(_current_preset)
+	_frame_wave_controller.configure(_current_preset)
 	if config.asset_registry != null:
 		config.asset_registry.scan_asset_roots()
 		for registry_error in config.asset_registry.validation_errors():
@@ -117,6 +119,8 @@ func trigger_step_camera_impact(strength: float, lane_bias: float) -> void:
 
 func trigger_action_camera_impact(action: String, strength: float, lane_bias: float) -> void:
 	if _enabled:
+		if _is_rhythm_frames_active():
+			_frame_wave_controller.trigger_action(action, maxf(0.5, strength))
 		camera_motion_controller.trigger_action_impact(action, strength, lane_bias)
 		if _diagnostics:
 			print("TUNNEL_ACTION_CAMERA action=%s strength=%.3f lane_bias=%.3f" % [action, strength, lane_bias])
@@ -228,8 +232,18 @@ func sync_to_song_time(song_time: float, music_state: Dictionary) -> void:
 	_beat_pulse = float(visual_state.get("pulse", 0.0))
 	_update_segment_ring()
 	_apply_segments_visual_state(visual_state)
+	var wave_origin_z := _camera.global_position.z if is_instance_valid(_camera) else global_position.z + config.front_center_z
 	for segment in _segments:
-		segment.apply_frame_reaction(_frame_pulse, _frame_beat_index)
+		segment.apply_frame_reaction(
+			_frame_wave_controller.ages(),
+			_frame_wave_controller.strengths(),
+			_frame_wave_controller.color_phases(),
+			_frame_wave_controller.wave_speed,
+			_frame_wave_controller.wave_width,
+			_frame_wave_controller.wave_lifetime,
+			wave_origin_z,
+			_frame_beat_index
+		)
 	ring_manager.apply_music(_segments, _beat_pulse, float(visual_state.get("drop_pulse", 0.0)), song_time)
 	floor_controller.apply_music(_segments, _beat_pulse, float(visual_state.get("drop_pulse", 0.0)), song_time)
 	atmosphere_controller.apply_visual_state(
@@ -278,6 +292,7 @@ func get_runtime_stats() -> Dictionary:
 		"seed": config.deterministic_seed if config != null else 0,
 		"spectrum_bands": spectrum_controller.band_count() if spectrum_controller != null else 0,
 		"spectrum_source": spectrum_controller.source_mode() if spectrum_controller != null else "off",
+		"frame_waves": _frame_wave_controller.active_count(),
 	}
 
 
@@ -468,17 +483,21 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 
 
 func _update_frame_reaction(delta: float, state: Dictionary) -> void:
-	var rhythm_frames_active := _current_preset != null \
-		and _current_preset.world_style != null \
-		and _current_preset.world_style.spatial_profile == "RhythmFrames"
-	if not rhythm_frames_active:
+	if not _is_rhythm_frames_active():
 		_frame_pulse = 0.0
+		_frame_wave_controller.clear()
 		return
-	var decay_seconds := maxf(0.12, config.beat_decay_seconds)
-	_frame_pulse = move_toward(_frame_pulse, 0.0, maxf(0.0, delta) / decay_seconds)
+	_frame_wave_controller.advance(delta)
 	if int(state.get("beat_index", -1)) >= 0 and bool(state.get("beat_changed", false)):
 		_frame_beat_index = int(state.get("beat_index", 0))
-		_frame_pulse = 1.0 if bool(state.get("downbeat_changed", false)) else 0.62
+		_frame_wave_controller.trigger_preview_beat(bool(state.get("downbeat_changed", false)))
+	_frame_pulse = _frame_wave_controller.peak_strength()
+
+
+func _is_rhythm_frames_active() -> bool:
+	return _current_preset != null \
+		and _current_preset.world_style != null \
+		and _current_preset.world_style.spatial_profile == "RhythmFrames"
 
 
 func _is_directed_level() -> bool:
@@ -554,6 +573,7 @@ func _activate_preset(preset: TunnelLevelPreset, reconfigure_segments: bool) -> 
 	var sequence := preset.effective_segment_sequence()
 	_level_phase_name = String(sequence[0]) if not sequence.is_empty() else preset.style_id
 	_apply_preset_runtime_settings(preset)
+	_frame_wave_controller.configure(preset)
 	neon_material_controller.set_preset(preset)
 	atmosphere_controller.set_preset(preset)
 	spectrum_controller.set_preset(preset)

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_Square.gltf" id="3_frame"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="4_particles"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "rhythm_square_frames"
+display_name = "Rhythm Square Frames"
+floor_assets = Array[PackedScene]([ExtResource("2_road")])
+ring_assets = Array[PackedScene]([ExtResource("3_frame")])
+particle_assets = Array[PackedScene]([ExtResource("4_particles")])
+gameplay_clearance_verified = true
+frame_instances_per_segment = 3
+frame_inner_half_width = 4.4
+frame_opening_bottom_y = -2.0
+frame_opening_top_y = 4.35

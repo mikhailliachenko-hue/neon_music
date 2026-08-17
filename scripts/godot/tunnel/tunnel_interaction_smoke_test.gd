@@ -35,14 +35,17 @@ func _run() -> void:
 			immediate_profile_changes += 1
 	if immediate_profile_changes != 0:
 		failures.append("level phase mutated visible pooled segments")
+	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
+	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:
+		failures.append("step action did not trigger a travelling frame wave")
 	generator.set("_travel_distance", generator.config.segment_length + 0.25)
 	generator.call("_update_segment_ring")
 	var recycled_profile_changes := 0
 	for index in range(pooled_segments.size()):
 		if (pooled_segments[index] as TunnelSegment).active_profile() != profiles_before[index]:
 			recycled_profile_changes += 1
-	if recycled_profile_changes != 1:
-		failures.append("deferred phase was not applied at exactly one recycle boundary")
+	if recycled_profile_changes != 0:
+		failures.append("single-profile level changed its rhythm-frame grammar")
 
 	var beat_camera := Camera3D.new()
 	var quiet_camera := Camera3D.new()

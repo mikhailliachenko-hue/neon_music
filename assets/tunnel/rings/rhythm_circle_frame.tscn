@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Rail_Round_Big.gltf" id="1_curve"]
+
+[node name="RhythmCircleFrame" type="Node3D"]
+
+[node name="Quarter0" type="Node3D" parent="."]
+[node name="Curve" parent="Quarter0" instance=ExtResource("1_curve")]
+rotation_degrees = Vector3(90, 0, 0)
+
+[node name="Quarter1" type="Node3D" parent="."]
+rotation_degrees = Vector3(0, 0, 90)
+[node name="Curve" parent="Quarter1" instance=ExtResource("1_curve")]
+rotation_degrees = Vector3(90, 0, 0)
+
+[node name="Quarter2" type="Node3D" parent="."]
+rotation_degrees = Vector3(0, 0, 180)
+[node name="Curve" parent="Quarter2" instance=ExtResource("1_curve")]
+rotation_degrees = Vector3(90, 0, 0)
+
+[node name="Quarter3" type="Node3D" parent="."]
+rotation_degrees = Vector3(0, 0, 270)
+[node name="Curve" parent="Quarter3" instance=ExtResource("1_curve")]
+rotation_degrees = Vector3(90, 0, 0)

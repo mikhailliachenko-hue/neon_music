@@ -2,12 +2,10 @@ extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const EXPECTED_NAMES := [
-	"CYBER AWAKENING", "SYNTHWAVE RUNNER", "ENERGY CORE", "TOXIC DIMENSION",
-	"ICE CYBER", "GOLDEN FUTURE", "DEEP SPACE", "RAINBOW DANCE",
-	"ELECTRIC PINK", "MATRIX FLOW", "LAVA CORE", "WHITE FUTURE",
-	"DARK VOID", "QUANTUM TUNNEL", "LASER HIGHWAY", "CYBER CITY",
-	"MIRROR DIMENSION", "BEAT REACTOR", "NEON STORM", "FINAL DROP",
-	"NIGHT CITY EXPRESS", "MACHINE HEART", "HYPERLANE 88",
+	"CYBER AWAKENING", "GOLDEN STAR", "PULSE CIRCLE", "SYNTH VIOLET",
+	"ICE HALO", "REDLINE GATE", "TOXIC PORTAL", "ELECTRIC PINK",
+	"WHITE SIGNAL", "SUNSET DRIVE", "DEEP SPACE RING", "MATRIX FRAME",
+	"FINAL SPECTRUM",
 ]
 
 
@@ -51,6 +49,8 @@ func _run() -> void:
 			failures.append("missing world style: %s" % preset.display_name())
 		else:
 			world_styles[preset.world_style.cache_key()] = true
+			if preset.world_style.spatial_profile != "RhythmFrames":
+				failures.append("non-minimal world style: %s" % preset.display_name())
 			for world_error in preset.world_style.validation_errors():
 				failures.append("%s: %s" % [preset.display_name(), world_error])
 		if preset.color_palette.size() < 3 or preset.effective_segment_sequence().is_empty():
@@ -69,9 +69,9 @@ func _run() -> void:
 			failures.append("runtime level mismatch: %s" % preset.display_name())
 		if int(stats.get("pool_size", 0)) != 8 or int(stats.get("active_segments", 0)) != 8:
 			failures.append("pool changed while selecting: %s" % preset.display_name())
-	if themes.size() < 18:
+	if themes.size() != EXPECTED_NAMES.size():
 		failures.append("themes are not visually diverse: %d unique" % themes.size())
-	if world_styles.size() < 4:
+	if world_styles.size() < 6:
 		failures.append("world architecture is not diverse: %d unique styles" % world_styles.size())
 	var final_cache := generator.config.asset_registry.cached_scene_count()
 	if final_cache != warm_cache:

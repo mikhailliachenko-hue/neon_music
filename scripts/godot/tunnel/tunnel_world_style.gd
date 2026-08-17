@@ -48,6 +48,8 @@ func validation_errors() -> PackedStringArray:
 		errors.append("TunnelWorldStyle has an empty world_id.")
 	if safe_lane_half_width < 4.0:
 		errors.append("%s safe lane is narrower than the gameplay road." % world_id)
+	if spatial_profile == "RhythmFrames" and (asset_set == null or not asset_set.gameplay_clearance_verified):
+		errors.append("%s has no verified rhythm-frame gameplay clearance." % world_id)
 	if asset_set != null:
 		errors.append_array(asset_set.validation_errors())
 	return errors

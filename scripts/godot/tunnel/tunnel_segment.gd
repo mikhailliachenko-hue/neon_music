@@ -160,11 +160,9 @@ func configure_layout(
 			_activate_external_slot("Pipes", clampf(pipe_probability * (preset.pipe_density if preset != null else 1.0) * profile_density, 0.0, 0.9), rng, theme_name)
 			_activate_external_slot("Particles", 0.24 * profile_density, rng, theme_name)
 		if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
-			# Side fixtures are punctuation, not walls. The same lightweight pooled
-			# particle scene supplies depth without filling the corridor with props.
-			if posmod(logical_index, 6) == 2:
-				_activate_external_slot("Panels", 0.72, rng, theme_name)
-			_activate_external_slot("Particles", 0.22, rng, theme_name)
+			# Sparse dust supplies depth; side fixtures are omitted so the repeated
+			# authored silhouette remains the only architectural focal point.
+			_activate_external_slot("Particles", 0.12, rng, theme_name)
 		if profile == "Showcase":
 			# The four Showcase layouts alternate big silhouettes. Keeping every
 			# frame active at once reads as a repetitive gate stack in perspective.
@@ -186,9 +184,7 @@ func configure_layout(
 
 func _profile_layout(proposed: String, index: int) -> String:
 	if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
-		# A single repeated silhouette is the visual anchor. A square authored GLB
-		# gate appears only at a predictable cadence, never as random clutter.
-		return "EnergyGate" if posmod(index, 8) == 7 else "Ring"
+		return "Ring"
 	var profile := active_profile()
 	if posmod(index, 5) == 0 and profile not in ["Entrance", "PortalRhythm", "Showcase"]:
 		return "Straight"
@@ -342,28 +338,18 @@ func apply_visual_state(
 		_last_external_pulse = pulse
 
 
-func apply_frame_reaction(frame_pulse: float, beat_index: int) -> void:
+func apply_frame_reaction(
+	wave_ages: PackedFloat32Array,
+	wave_strengths: PackedFloat32Array,
+	wave_color_phases: PackedInt32Array,
+	wave_speed: float,
+	wave_width: float,
+	wave_lifetime: float,
+	wave_origin_z: float,
+	beat_index: int
+) -> void:
 	if _active_world_style == null or _active_world_style.spatial_profile != "RhythmFrames":
 		return
-	var pulse := clampf(frame_pulse, 0.0, 1.6)
-	var alternate := posmod(beat_index, 2) == 1
-	var beat_color := _frame_accent if alternate else _frame_primary
-	var secondary := _frame_primary if alternate else _frame_accent
-	for stored_material in _external_materials_by_world.get(_active_world_key, []):
-		var material := stored_material as Material
-		if material == null or String(material.get_meta("tunnel_slot", "")) not in ["Rings", "Arches"]:
-			continue
-		if material is ShaderMaterial:
-			var themed := material as ShaderMaterial
-			themed.set_shader_parameter("theme_primary", beat_color)
-			themed.set_shader_parameter("theme_accent", secondary)
-			themed.set_shader_parameter("theme_emission", (0.48 + _frame_emission * 0.11) * (1.0 + pulse * 1.45))
-			themed.set_shader_parameter("theme_body_glow", 0.46 + pulse * 0.74)
-		elif material is StandardMaterial3D:
-			var standard := material as StandardMaterial3D
-			standard.emission = beat_color
-			standard.emission_energy_multiplier = (0.36 + _frame_emission * 0.06) * (1.0 + pulse * 1.45)
-	var scale_pulse := 1.0 + pulse * 0.028
 	for slot_name in ["Rings", "Arches"]:
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -374,8 +360,47 @@ func apply_frame_reaction(frame_pulse: float, beat_index: int) -> void:
 				continue
 			for module_node in group.get_children():
 				var module := module_node as Node3D
-				if module != null and module.has_meta("rhythm_frame_base_scale"):
-					module.scale = (module.get_meta("rhythm_frame_base_scale") as Vector3) * scale_pulse
+				if module == null or not module.has_meta("rhythm_frame_materials"):
+					continue
+				# The transform remains stable. The reference pulse is a light wave;
+				# scaling the imported threshold could intersect gameplay platforms.
+				if module.has_meta("rhythm_frame_base_scale"):
+					module.scale = module.get_meta("rhythm_frame_base_scale") as Vector3
+				var depth := maxf(0.0, wave_origin_z - module.global_position.z)
+				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105 + float(beat_index) * 0.16)
+				var base_color := _frame_primary.lerp(_frame_accent, smoothstep(0.08, 0.92, gradient_phase))
+				var wave_amount := 0.0
+				var wave_color := base_color
+				var wave_count := mini(wave_ages.size(), mini(wave_strengths.size(), wave_color_phases.size()))
+				for wave_index in range(wave_count):
+					var age := wave_ages[wave_index]
+					var strength := wave_strengths[wave_index]
+					if strength <= 0.0 or age < 0.0 or age > wave_lifetime:
+						continue
+					var front_depth := age * wave_speed
+					var distance_to_front := absf(depth - front_depth)
+					var spatial_mask := 1.0 - smoothstep(wave_width * 0.28, wave_width, distance_to_front)
+					var life_mask := 1.0 - smoothstep(wave_lifetime * 0.72, wave_lifetime, age)
+					var candidate := spatial_mask * life_mask * strength
+					if candidate > wave_amount:
+						wave_amount = candidate
+						var phase_color := _frame_accent if posmod(wave_color_phases[wave_index], 2) == 1 else _frame_primary
+						var signed_gradient := clampf(0.5 + (front_depth - depth) / maxf(1.0, wave_width) * 0.45, 0.0, 1.0)
+						wave_color = phase_color.lerp(Color(1.0, 0.97, 0.90, 1.0), signed_gradient * 0.78)
+				var final_color := base_color.lerp(wave_color, clampf(wave_amount, 0.0, 1.0))
+				var emission := (0.44 + _frame_emission * 0.105) * (1.0 + wave_amount * 1.85)
+				for stored_material in module.get_meta("rhythm_frame_materials") as Array:
+					var material := stored_material as Material
+					if material is ShaderMaterial:
+						var themed := material as ShaderMaterial
+						themed.set_shader_parameter("theme_primary", final_color)
+						themed.set_shader_parameter("theme_accent", final_color.lerp(Color.WHITE, 0.24 + wave_amount * 0.32))
+						themed.set_shader_parameter("theme_emission", emission)
+						themed.set_shader_parameter("theme_body_glow", 0.12 + wave_amount * 0.88)
+					elif material is StandardMaterial3D:
+						var standard := material as StandardMaterial3D
+						standard.emission = final_color
+						standard.emission_energy_multiplier = emission * 0.56
 
 
 func apply_spectrum_reaction(low: float, mid: float, high: float, beat_impulse: float) -> void:
@@ -552,7 +577,7 @@ func prepare_world_style(
 	}
 	for slot_name in pool_sizes:
 		if world_style != null and world_style.spatial_profile == "RhythmFrames" \
-			and slot_name not in ["Floor", "Rings", "Arches", "Panels", "Particles"]:
+			and slot_name not in ["Floor", "Rings", "Particles"]:
 			continue
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -590,7 +615,7 @@ func prepare_world_style(
 			slot.add_child(group)
 			var placement_count := 2 if slot_name in ["Walls", "Panels", "Pipes", "Props"] else 1
 			if world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]:
-				placement_count = 2
+				placement_count = clampi(world_style.asset_set.frame_instances_per_segment if world_style.asset_set != null else 3, 2, 4)
 			for placement_index in range(placement_count):
 				var instance := packed.instantiate() as Node3D
 				if instance == null:
@@ -598,9 +623,11 @@ func prepare_world_style(
 				instance.name = "Module%02d" % placement_index
 				group.add_child(instance)
 				_fit_external_instance(instance, slot_name, placement_index, world_style)
-				_prepare_external_materials(instance, world_key, slot_name)
+				var isolate_frame_material: bool = world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]
+				var prepared_materials := _prepare_external_materials(instance, world_key, slot_name, isolate_frame_material)
 				if world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]:
 					instance.set_meta("rhythm_frame_base_scale", instance.scale)
+					instance.set_meta("rhythm_frame_materials", prepared_materials)
 			group.visible = false
 			_external_cache["%s|%s|%02d" % [world_key, slot_name, variant_index]] = group
 	_warmed_world_styles[world_key] = true
@@ -631,6 +658,30 @@ func validate_active_safe_lane() -> PackedStringArray:
 					errors.append("%s left %s enters safe lane" % [_active_world_key, slot_name])
 				elif module_index == 1 and placed_bounds.position.x < safe_half_width:
 					errors.append("%s right %s enters safe lane" % [_active_world_key, slot_name])
+	if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
+		var asset_set := _active_world_style.asset_set
+		if asset_set == null or not asset_set.gameplay_clearance_verified:
+			errors.append("%s frame set has no verified gameplay opening" % _active_world_key)
+		else:
+			if asset_set.frame_inner_half_width < 4.15:
+				errors.append("%s frame opening is narrower than hand envelope" % _active_world_key)
+			if asset_set.frame_opening_bottom_y > -1.90:
+				errors.append("%s frame threshold overlaps step envelope" % _active_world_key)
+			if asset_set.frame_opening_top_y < 3.25:
+				errors.append("%s frame top overlaps hand envelope" % _active_world_key)
+		var floor_slot := $ExternalAssets.get_node_or_null("Floor") as Node3D
+		if floor_slot != null:
+			for floor_group_node in floor_slot.get_children():
+				var floor_group := floor_group_node as Node3D
+				if floor_group == null or not floor_group.visible or String(floor_group.get_meta("world_style", "")) != _active_world_key:
+					continue
+				for floor_module_node in floor_group.get_children():
+					var floor_module := floor_module_node as Node3D
+					if floor_module == null:
+						continue
+					var floor_bounds := floor_module.transform * _combined_bounds(floor_module)
+					if floor_bounds.end.y > -1.88:
+						errors.append("%s imported floor rises into step envelope" % _active_world_key)
 	return errors
 
 
@@ -740,8 +791,19 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 				target_size = Vector3(11.6, 0.16, 18.4)
 				target_center = Vector3(0.0, -2.02, 0.0)
 			"Rings", "Arches":
-				target_size = Vector3(11.4, 7.6, 1.25)
-				target_center = Vector3(0.0, 2.25, -4.5 + float(placement_index) * 9.0)
+				var asset_set := world_style.asset_set if world_style != null else null
+				target_size = Vector3(
+					asset_set.frame_target_width if asset_set != null else 16.2,
+					asset_set.frame_target_height if asset_set != null else 10.2,
+					1.25
+				)
+				var frame_count := clampi(world_style.asset_set.frame_instances_per_segment if world_style != null and world_style.asset_set != null else 3, 2, 4)
+				var frame_spacing := BASE_LENGTH / float(frame_count)
+				target_center = Vector3(
+					0.0,
+					asset_set.frame_target_center_y if asset_set != null else 2.55,
+					(float(placement_index) - (float(frame_count) - 1.0) * 0.5) * frame_spacing
+				)
 			"Panels":
 				target_size = Vector3(0.9, 3.4, 1.8)
 				target_center = Vector3(-6.35 if placement_index == 0 else 6.35, 0.6, 0.0)
@@ -786,8 +848,10 @@ func _combined_bounds(root: Node3D) -> AABB:
 	return combined
 
 
-func _prepare_external_materials(root: Node, world_key := "legacy", slot_name := "") -> void:
+func _prepare_external_materials(root: Node, world_key := "legacy", slot_name := "", isolate_instance := false) -> Array[Material]:
 	var world_materials: Array[Material] = []
+	var instance_materials: Array[Material] = []
+	var instance_cache: Dictionary = {}
 	for stored_material in _external_materials_by_world.get(world_key, []):
 		world_materials.append(stored_material as Material)
 	for child in root.find_children("*", "MeshInstance3D", true, false):
@@ -798,16 +862,22 @@ func _prepare_external_materials(root: Node, world_key := "legacy", slot_name :=
 		for surface in range(mesh_instance.mesh.get_surface_count()):
 			var source := mesh_instance.get_active_material(surface) as StandardMaterial3D
 			var cache_key := source.get_instance_id() if source != null else -1
-			var material := _external_source_material_cache.get(cache_key) as Material
+			var material := instance_cache.get(cache_key) as Material if isolate_instance else _external_source_material_cache.get(cache_key) as Material
 			if material == null:
 				material = _create_external_material(source)
-				_external_source_material_cache[cache_key] = material
+				if isolate_instance:
+					instance_cache[cache_key] = material
+				else:
+					_external_source_material_cache[cache_key] = material
 			if not slot_name.is_empty() and not material.has_meta("tunnel_slot"):
 				material.set_meta("tunnel_slot", slot_name)
 			mesh_instance.set_surface_override_material(surface, material)
 			if not world_materials.has(material):
 				world_materials.append(material)
+			if not instance_materials.has(material):
+				instance_materials.append(material)
 	_external_materials_by_world[world_key] = world_materials
+	return instance_materials
 
 
 func _create_external_material(source: StandardMaterial3D) -> Material:
@@ -872,6 +942,8 @@ func configure_ring_group(group_count: int, spacing: float, size_variation: floa
 
 
 func apply_ring_reaction(pulse: float, drop_pulse: float, wave: float) -> void:
+	if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
+		return
 	var children := $VisualRoot/LayoutElements/Rings.get_children()
 	for index in range(children.size()):
 		var ring := children[index] as Node3D
