@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="BoxMesh" id="Box_track"]
+size = Vector3(1.5, 0.08, 17.5)
+
+[node name="PlaceholderFloorTracks" type="Node3D"]
+
+[node name="LeftTrack" type="MeshInstance3D" parent="."]
+position = Vector3(-5.05, -1.68, 0)
+mesh = SubResource("Box_track")
+
+[node name="RightTrack" type="MeshInstance3D" parent="."]
+position = Vector3(5.05, -1.68, 0)
+mesh = SubResource("Box_track")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "ToxicGreen"
+emission_color = Color(0.14, 1, 0.12, 1)
+accent_color = Color(0.7, 1, 0.02, 1)
+background_color = Color(0.001, 0.02, 0.004, 1)
+fog_color = Color(0.015, 0.18, 0.04, 1)
+fog_density = 0.0058
+glow_intensity = 0.72
+emission_energy = 6.0
+floor_color = Color(0.006, 0.045, 0.012, 1)
+floor_emission = 0.8
+ambient_color = Color(0.02, 0.14, 0.035, 1)
+ambient_energy = 0.25
+ring_probability_scale = 0.95
+decoration_probability_scale = 1.25
+layout_weights = {"DecoratedTunnel": 1.2, "DoubleRing": 0.45, "EnergyGate": 0.65, "NarrowTunnel": 0.45, "NeonGrid": 0.85, "Ring": 0.8, "SidePanels": 1.15, "Straight": 0.7, "WideTunnel": 0.5}

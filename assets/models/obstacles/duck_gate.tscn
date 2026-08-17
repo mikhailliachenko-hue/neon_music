@@ -1,0 +1,64 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_platformer/fence-low-straight.glb" id="1_beam"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_down_chevron"]
+shading_mode = 0
+albedo_color = Color(0.92, 0.76, 1, 1)
+emission_enabled = true
+emission = Color(0.66, 0.34, 1, 1)
+emission_energy_multiplier = 9.0
+
+[sub_resource type="BoxMesh" id="Mesh_chevron_segment"]
+size = Vector3(0.11, 0.62, 0.11)
+
+[node name="DuckGate" type="Node3D"]
+
+[node name="OverheadBarrierBeam" parent="." instance=ExtResource("1_beam")]
+position = Vector3(0, 3.35, 0)
+scale = Vector3(6.8, 1.55, 1.35)
+
+[node name="DownChevrons" type="Node3D" parent="."]
+position = Vector3(0, 2.52, 0.72)
+
+[node name="LeftChevronA" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(-1.68, 0.10, 0)
+rotation_degrees = Vector3(0, 0, 42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0
+
+[node name="LeftChevronB" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(-1.32, 0.10, 0)
+rotation_degrees = Vector3(0, 0, -42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0
+
+[node name="CenterChevronA" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(-0.18, 0.10, 0)
+rotation_degrees = Vector3(0, 0, 42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0
+
+[node name="CenterChevronB" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(0.18, 0.10, 0)
+rotation_degrees = Vector3(0, 0, -42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0
+
+[node name="RightChevronA" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(1.32, 0.10, 0)
+rotation_degrees = Vector3(0, 0, 42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0
+
+[node name="RightChevronB" type="MeshInstance3D" parent="DownChevrons"]
+position = Vector3(1.68, 0.10, 0)
+rotation_degrees = Vector3(0, 0, -42)
+mesh = SubResource("Mesh_chevron_segment")
+material_override = SubResource("Mat_down_chevron")
+cast_shadow = 0

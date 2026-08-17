@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="TunnelAssetRegistry" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_asset_registry.gd" id="1_registry"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_asset_entry.gd" id="2_entry"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/walls/kenney_column_wall.tscn" id="3_wall"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/panels/kenney_indicator_panels.tscn" id="4_panel"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/decorations/kenney_safe_props.tscn" id="5_props"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/floors/placeholder_floor_tracks.tscn" id="6_floor"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/rings/placeholder_ring_cluster.tscn" id="7_ring"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/decorations/placeholder_pipe_supports.tscn" id="8_pipe"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/environment/placeholder_ceiling_support.tscn" id="9_ceiling"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="10_particles"]
+
+[sub_resource type="Resource" id="Asset_wall"]
+script = ExtResource("2_entry")
+asset_id = "kenney_column_wall"
+category = "Wall"
+scene = ExtResource("3_wall")
+weight = 1.0
+source_pack = "Kenney Prototype Kit"
+tags = PackedStringArray("clean", "support", "secondary")
+
+[sub_resource type="Resource" id="Asset_panel"]
+script = ExtResource("2_entry")
+asset_id = "kenney_indicator_panels"
+category = "Panel"
+scene = ExtResource("4_panel")
+weight = 1.0
+source_pack = "Kenney Prototype Kit"
+tags = PackedStringArray("panel", "ui-like", "secondary")
+
+[sub_resource type="Resource" id="Asset_props"]
+script = ExtResource("2_entry")
+asset_id = "kenney_safe_props"
+category = "Decoration"
+scene = ExtResource("5_props")
+weight = 0.7
+source_pack = "Kenney Prototype Kit"
+tags = PackedStringArray("small", "safe-lane", "secondary")
+
+[sub_resource type="Resource" id="Asset_floor"]
+script = ExtResource("2_entry")
+asset_id = "placeholder_floor_tracks"
+category = "Floor"
+scene = ExtResource("6_floor")
+weight = 0.55
+placeholder = true
+source_pack = "Quaternius Placeholder"
+tags = PackedStringArray("replace-with-glb", "floor")
+
+[sub_resource type="Resource" id="Asset_ring"]
+script = ExtResource("2_entry")
+asset_id = "placeholder_ring_cluster"
+category = "Ring"
+scene = ExtResource("7_ring")
+weight = 0.45
+placeholder = true
+source_pack = "Quaternius Placeholder"
+tags = PackedStringArray("replace-with-glb", "ring")
+
+[sub_resource type="Resource" id="Asset_pipe"]
+script = ExtResource("2_entry")
+asset_id = "placeholder_pipe_supports"
+category = "Pipe"
+scene = ExtResource("8_pipe")
+weight = 0.65
+placeholder = true
+source_pack = "Quaternius Placeholder"
+tags = PackedStringArray("replace-with-glb", "pipe")
+
+[sub_resource type="Resource" id="Asset_ceiling"]
+script = ExtResource("2_entry")
+asset_id = "placeholder_ceiling_support"
+category = "Ceiling"
+scene = ExtResource("9_ceiling")
+weight = 0.6
+placeholder = true
+source_pack = "Quaternius Placeholder"
+tags = PackedStringArray("replace-with-glb", "support")
+
+[sub_resource type="Resource" id="Asset_particles"]
+script = ExtResource("2_entry")
+asset_id = "cyber_energy_dust"
+asset_name = "Cyber Energy Dust"
+category = "ParticleElement"
+scene = ExtResource("10_particles")
+weight = 0.45
+source_pack = "Project Effects"
+tags = PackedStringArray("energy", "lightweight", "production")
+
+[resource]
+script = ExtResource("1_registry")
+entries = Array[TunnelAssetEntry]([SubResource("Asset_wall"), SubResource("Asset_panel"), SubResource("Asset_props"), SubResource("Asset_floor"), SubResource("Asset_ring"), SubResource("Asset_pipe"), SubResource("Asset_ceiling"), SubResource("Asset_particles")])

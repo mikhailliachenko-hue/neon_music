@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Optional neural joint beat/downbeat/meter tracking.  The analyzer falls back
+# to its signal path when this compiled dependency cannot be installed.
+madmom @ git+https://github.com/CPJKU/madmom@27f032e8947204902c675e5e341a3faf5dc86dae

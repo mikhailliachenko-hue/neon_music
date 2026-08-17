@@ -1,0 +1,11 @@
+Prototype Kit (1.0)
+
+Created/distributed by Kenney (www.kenney.nl)
+Creation date: 28-08-2024 09:59
+
+License: Creative Commons Zero (CC0)
+http://creativecommons.org/publicdomain/zero/1.0/
+
+You can use this content for personal, educational, and commercial purposes.
+Supporting Kenney by crediting "Kenney" or "www.kenney.nl" is appreciated,
+but attribution is not required.

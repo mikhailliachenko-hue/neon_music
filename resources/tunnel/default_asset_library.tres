@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TunnelAssetLibrary" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_asset_library.gd" id="1_library"]
+[ext_resource type="PackedScene" path="res://assets/models/tunnel/wrappers/kenney_column_pair.tscn" id="2_columns"]
+[ext_resource type="PackedScene" path="res://assets/models/tunnel/wrappers/kenney_indicator_pair.tscn" id="3_indicators"]
+[ext_resource type="PackedScene" path="res://assets/models/tunnel/wrappers/kenney_safe_props.tscn" id="4_props"]
+[ext_resource type="Resource" path="res://assets/tunnel/asset_registry.tres" id="5_registry"]
+
+[resource]
+script = ExtResource("1_library")
+wall_assets = Array[PackedScene]([ExtResource("2_columns")])
+panel_assets = Array[PackedScene]([ExtResource("3_indicators")])
+prop_assets = Array[PackedScene]([ExtResource("4_props")])
+registry = ExtResource("5_registry")

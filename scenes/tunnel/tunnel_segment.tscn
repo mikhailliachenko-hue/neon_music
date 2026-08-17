@@ -1,0 +1,325 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_segment.gd" id="1_segment"]
+
+[sub_resource type="BoxMesh" id="Box_floor"]
+size = Vector3(2, 0.18, 18)
+
+[sub_resource type="BoxMesh" id="Box_wall"]
+size = Vector3(0.18, 8.5, 18)
+
+[sub_resource type="BoxMesh" id="Box_rail"]
+size = Vector3(0.11, 0.11, 18)
+
+[sub_resource type="TorusMesh" id="Torus_ring"]
+inner_radius = 4.65
+outer_radius = 4.82
+rings = 32
+ring_segments = 12
+
+[sub_resource type="BoxMesh" id="Box_panel"]
+size = Vector3(0.18, 2.6, 2.2)
+
+[sub_resource type="BoxMesh" id="Box_grid"]
+size = Vector3(0.075, 0.055, 18)
+
+[sub_resource type="BoxMesh" id="Box_gate_top"]
+size = Vector3(11.4, 0.16, 0.32)
+
+[sub_resource type="BoxMesh" id="Box_gate_side"]
+size = Vector3(0.16, 8.1, 0.32)
+
+[sub_resource type="BoxMesh" id="Box_cube"]
+size = Vector3(0.85, 0.85, 0.85)
+
+[sub_resource type="SphereMesh" id="Sphere_prop"]
+radius = 0.46
+height = 0.92
+radial_segments = 16
+rings = 8
+
+[sub_resource type="CylinderMesh" id="Cylinder_pipe"]
+top_radius = 0.18
+bottom_radius = 0.18
+height = 3.2
+radial_segments = 12
+
+[sub_resource type="BoxMesh" id="Box_ceiling"]
+size = Vector3(12, 0.14, 18)
+
+[sub_resource type="BoxMesh" id="Box_floor_cross"]
+size = Vector3(1.8, 0.055, 0.12)
+
+[sub_resource type="BoxMesh" id="Box_floor_wave"]
+size = Vector3(1.75, 0.07, 0.28)
+
+[sub_resource type="BoxMesh" id="Box_panel_strip"]
+size = Vector3(0.055, 0.12, 1.75)
+
+[node name="TunnelSegment" type="Node3D"]
+script = ExtResource("1_segment")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Structure" type="Node3D" parent="VisualRoot"]
+
+[node name="FloorLeft" type="MeshInstance3D" parent="VisualRoot/Structure"]
+position = Vector3(-5, -1.9, 0)
+mesh = SubResource("Box_floor")
+
+[node name="FloorRight" type="MeshInstance3D" parent="VisualRoot/Structure"]
+position = Vector3(5, -1.9, 0)
+mesh = SubResource("Box_floor")
+
+[node name="Ceiling" type="MeshInstance3D" parent="VisualRoot/Structure"]
+position = Vector3(0, 6.6, 0)
+mesh = SubResource("Box_ceiling")
+
+[node name="LeftWall" type="MeshInstance3D" parent="VisualRoot/Structure"]
+position = Vector3(-6, 2.35, 0)
+mesh = SubResource("Box_wall")
+
+[node name="RightWall" type="MeshInstance3D" parent="VisualRoot/Structure"]
+position = Vector3(6, 2.35, 0)
+mesh = SubResource("Box_wall")
+
+[node name="NeonElements" type="Node3D" parent="VisualRoot"]
+
+[node name="LeftFloorRail" type="MeshInstance3D" parent="VisualRoot/NeonElements"]
+position = Vector3(-5.72, -1.72, 0)
+mesh = SubResource("Box_rail")
+
+[node name="RightFloorRail" type="MeshInstance3D" parent="VisualRoot/NeonElements"]
+position = Vector3(5.72, -1.72, 0)
+mesh = SubResource("Box_rail")
+
+[node name="LeftCeilingRail" type="MeshInstance3D" parent="VisualRoot/NeonElements"]
+position = Vector3(-5.72, 6.42, 0)
+mesh = SubResource("Box_rail")
+
+[node name="RightCeilingRail" type="MeshInstance3D" parent="VisualRoot/NeonElements"]
+position = Vector3(5.72, 6.42, 0)
+mesh = SubResource("Box_rail")
+
+[node name="LayoutElements" type="Node3D" parent="VisualRoot"]
+
+[node name="Rings" type="Node3D" parent="VisualRoot/LayoutElements"]
+
+[node name="RingA" type="MeshInstance3D" parent="VisualRoot/LayoutElements/Rings"]
+position = Vector3(0, 2.3, -4.5)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.18, 0.86, 1)
+mesh = SubResource("Torus_ring")
+
+[node name="RingB" type="MeshInstance3D" parent="VisualRoot/LayoutElements/Rings"]
+position = Vector3(0, 2.3, 4.5)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.18, 0.86, 1)
+mesh = SubResource("Torus_ring")
+
+[node name="RingC" type="MeshInstance3D" parent="VisualRoot/LayoutElements/Rings"]
+position = Vector3(0, 2.3, -1.5)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.12, 0.9, 1)
+mesh = SubResource("Torus_ring")
+
+[node name="RingD" type="MeshInstance3D" parent="VisualRoot/LayoutElements/Rings"]
+position = Vector3(0, 2.3, 1.5)
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(1.12, 0.9, 1)
+mesh = SubResource("Torus_ring")
+
+[node name="SidePanels" type="Node3D" parent="VisualRoot/LayoutElements"]
+
+[node name="Panels" type="Node3D" parent="VisualRoot/LayoutElements/SidePanels"]
+
+[node name="LeftPanelA" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Panels"]
+position = Vector3(-5.78, 1.4, -4.2)
+mesh = SubResource("Box_panel")
+
+[node name="LeftPanelB" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Panels"]
+position = Vector3(-5.78, 1.4, 4.2)
+mesh = SubResource("Box_panel")
+
+[node name="RightPanelA" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Panels"]
+position = Vector3(5.78, 1.4, -4.2)
+mesh = SubResource("Box_panel")
+
+[node name="RightPanelB" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Panels"]
+position = Vector3(5.78, 1.4, 4.2)
+mesh = SubResource("Box_panel")
+
+[node name="Strips" type="Node3D" parent="VisualRoot/LayoutElements/SidePanels"]
+
+[node name="LeftStripA" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Strips"]
+position = Vector3(-5.66, 1.4, -4.2)
+mesh = SubResource("Box_panel_strip")
+
+[node name="LeftStripB" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Strips"]
+position = Vector3(-5.66, 1.4, 4.2)
+mesh = SubResource("Box_panel_strip")
+
+[node name="RightStripA" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Strips"]
+position = Vector3(5.66, 1.4, -4.2)
+mesh = SubResource("Box_panel_strip")
+
+[node name="RightStripB" type="MeshInstance3D" parent="VisualRoot/LayoutElements/SidePanels/Strips"]
+position = Vector3(5.66, 1.4, 4.2)
+mesh = SubResource("Box_panel_strip")
+
+[node name="NeonGrid" type="Node3D" parent="VisualRoot/LayoutElements"]
+
+[node name="GridLeftOuter" type="MeshInstance3D" parent="VisualRoot/LayoutElements/NeonGrid"]
+position = Vector3(-4, -1.77, 0)
+mesh = SubResource("Box_grid")
+
+[node name="GridLeftInner" type="MeshInstance3D" parent="VisualRoot/LayoutElements/NeonGrid"]
+position = Vector3(-2, -1.77, 0)
+mesh = SubResource("Box_grid")
+
+[node name="GridCenter" type="MeshInstance3D" parent="VisualRoot/LayoutElements/NeonGrid"]
+position = Vector3(0, -1.77, 0)
+mesh = SubResource("Box_grid")
+
+[node name="GridRightInner" type="MeshInstance3D" parent="VisualRoot/LayoutElements/NeonGrid"]
+position = Vector3(2, -1.77, 0)
+mesh = SubResource("Box_grid")
+
+[node name="GridRightOuter" type="MeshInstance3D" parent="VisualRoot/LayoutElements/NeonGrid"]
+position = Vector3(4, -1.77, 0)
+mesh = SubResource("Box_grid")
+
+[node name="EnergyGate" type="Node3D" parent="VisualRoot/LayoutElements"]
+
+[node name="GateTop" type="MeshInstance3D" parent="VisualRoot/LayoutElements/EnergyGate"]
+position = Vector3(0, 6.05, 0)
+mesh = SubResource("Box_gate_top")
+
+[node name="GateLeft" type="MeshInstance3D" parent="VisualRoot/LayoutElements/EnergyGate"]
+position = Vector3(-5.65, 2.1, 0)
+mesh = SubResource("Box_gate_side")
+
+[node name="GateRight" type="MeshInstance3D" parent="VisualRoot/LayoutElements/EnergyGate"]
+position = Vector3(5.65, 2.1, 0)
+mesh = SubResource("Box_gate_side")
+
+[node name="Decorations" type="Node3D" parent="VisualRoot"]
+
+[node name="LeftCube" type="MeshInstance3D" parent="VisualRoot/Decorations"]
+position = Vector3(-5.25, -1.22, -4.8)
+rotation_degrees = Vector3(12, 28, 8)
+mesh = SubResource("Box_cube")
+
+[node name="RightSphere" type="MeshInstance3D" parent="VisualRoot/Decorations"]
+position = Vector3(5.25, -1.15, 4.8)
+mesh = SubResource("Sphere_prop")
+
+[node name="LeftPipe" type="MeshInstance3D" parent="VisualRoot/Decorations"]
+position = Vector3(-5.5, 1.15, 3.4)
+rotation_degrees = Vector3(0, 0, 12)
+mesh = SubResource("Cylinder_pipe")
+
+[node name="RightPipe" type="MeshInstance3D" parent="VisualRoot/Decorations"]
+position = Vector3(5.5, 1.15, -3.4)
+rotation_degrees = Vector3(0, 0, -12)
+mesh = SubResource("Cylinder_pipe")
+
+[node name="FloorEffects" type="Node3D" parent="VisualRoot"]
+
+[node name="NeonGrid" type="Node3D" parent="VisualRoot/FloorEffects"]
+
+[node name="LeftLong" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(-5.35, -1.76, 0)
+mesh = SubResource("Box_grid")
+
+[node name="RightLong" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(5.35, -1.76, 0)
+mesh = SubResource("Box_grid")
+
+[node name="LeftCrossA" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(-5, -1.75, -6)
+mesh = SubResource("Box_floor_cross")
+
+[node name="RightCrossA" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(5, -1.75, -6)
+mesh = SubResource("Box_floor_cross")
+
+[node name="LeftCrossB" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(-5, -1.75, 0)
+mesh = SubResource("Box_floor_cross")
+
+[node name="RightCrossB" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(5, -1.75, 0)
+mesh = SubResource("Box_floor_cross")
+
+[node name="LeftCrossC" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(-5, -1.75, 6)
+mesh = SubResource("Box_floor_cross")
+
+[node name="RightCrossC" type="MeshInstance3D" parent="VisualRoot/FloorEffects/NeonGrid"]
+position = Vector3(5, -1.75, 6)
+mesh = SubResource("Box_floor_cross")
+
+[node name="GlowingLines" type="Node3D" parent="VisualRoot/FloorEffects"]
+
+[node name="LeftOuter" type="MeshInstance3D" parent="VisualRoot/FloorEffects/GlowingLines"]
+position = Vector3(-5.55, -1.75, 0)
+mesh = SubResource("Box_grid")
+
+[node name="LeftInner" type="MeshInstance3D" parent="VisualRoot/FloorEffects/GlowingLines"]
+position = Vector3(-4.65, -1.75, 0)
+mesh = SubResource("Box_grid")
+
+[node name="RightInner" type="MeshInstance3D" parent="VisualRoot/FloorEffects/GlowingLines"]
+position = Vector3(4.65, -1.75, 0)
+mesh = SubResource("Box_grid")
+
+[node name="RightOuter" type="MeshInstance3D" parent="VisualRoot/FloorEffects/GlowingLines"]
+position = Vector3(5.55, -1.75, 0)
+mesh = SubResource("Box_grid")
+
+[node name="EnergyWaves" type="Node3D" parent="VisualRoot/FloorEffects"]
+
+[node name="LeftWaveA" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(-5, -1.74, -5.8)
+mesh = SubResource("Box_floor_wave")
+
+[node name="RightWaveA" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(5, -1.74, -5.8)
+mesh = SubResource("Box_floor_wave")
+
+[node name="LeftWaveB" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(-5, -1.74, 0)
+mesh = SubResource("Box_floor_wave")
+
+[node name="RightWaveB" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(5, -1.74, 0)
+mesh = SubResource("Box_floor_wave")
+
+[node name="LeftWaveC" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(-5, -1.74, 5.8)
+mesh = SubResource("Box_floor_wave")
+
+[node name="RightWaveC" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
+position = Vector3(5, -1.74, 5.8)
+mesh = SubResource("Box_floor_wave")
+
+[node name="ExternalAssets" type="Node3D" parent="."]
+
+[node name="Floor" type="Node3D" parent="ExternalAssets"]
+
+[node name="Ceiling" type="Node3D" parent="ExternalAssets"]
+
+[node name="Walls" type="Node3D" parent="ExternalAssets"]
+
+[node name="Rings" type="Node3D" parent="ExternalAssets"]
+
+[node name="Arches" type="Node3D" parent="ExternalAssets"]
+
+[node name="Panels" type="Node3D" parent="ExternalAssets"]
+
+[node name="Pipes" type="Node3D" parent="ExternalAssets"]
+
+[node name="Props" type="Node3D" parent="ExternalAssets"]
+
+[node name="Particles" type="Node3D" parent="ExternalAssets"]

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "EnergyRed"
+emission_color = Color(1, 0.055, 0.025, 1)
+accent_color = Color(1, 0.52, 0.04, 1)
+background_color = Color(0.025, 0.001, 0.001, 1)
+fog_color = Color(0.22, 0.018, 0.005, 1)
+fog_density = 0.0048
+glow_intensity = 0.78
+emission_energy = 6.8
+floor_color = Color(0.055, 0.008, 0.004, 1)
+floor_emission = 0.92
+ambient_color = Color(0.18, 0.025, 0.008, 1)
+ambient_energy = 0.28
+ring_probability_scale = 0.9
+decoration_probability_scale = 0.85
+layout_weights = {"DecoratedTunnel": 0.55, "DoubleRing": 0.55, "EnergyGate": 1.35, "NarrowTunnel": 0.8, "NeonGrid": 0.6, "Ring": 0.85, "SidePanels": 0.7, "Straight": 0.8, "WideTunnel": 0.35}

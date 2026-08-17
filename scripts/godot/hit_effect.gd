@@ -2,18 +2,59 @@ extends Node3D
 class_name HalftoneDiamond
 
 const VFX_SHADER := preload("res://assets/models/hit_vfx.gdshader")
+const IMPACT_CROWN_TEXTURE := preload("res://assets/images/vfx/kenney_particles/magic_03.png")
 const EFFECT_LIFETIME := 0.62
 
 var _color := Color.WHITE
+var _cue_archetype := ""
+var _movement := ""
+var _combo_index := 0
 
 
-func setup(color: Color) -> void:
+func setup(color: Color, cue_archetype: String = "", movement: String = "", combo_index: int = 0) -> void:
 	_color = Color(color.r, color.g, color.b, 1.0)
+	_cue_archetype = cue_archetype.to_upper()
+	_movement = movement.to_upper()
+	_combo_index = maxi(0, combo_index)
 	_build_flash()
-	_build_rings()
-	_build_trail()
-	_build_shards()
+	var family := _effect_family()
+	match family:
+		"hand":
+			_build_impact_crown()
+			_build_trail()
+			_build_shards()
+		"jump":
+			_build_jump_wave()
+			_build_rings()
+		"dodge":
+			_build_directional_slashes()
+			_build_trail()
+		"hold":
+			_build_rings()
+			_build_trail()
+		_:
+			_build_step_wave()
+	if _combo_index > 0:
+		_build_combo_echo()
 	get_tree().create_timer(EFFECT_LIFETIME).timeout.connect(Callable(self, "queue_free"))
+
+
+func _effect_family() -> String:
+	if _cue_archetype.begins_with("HAND_TARGET") or "PUNCH" in _movement or "BOX" in _movement:
+		return "hand"
+	if _cue_archetype.begins_with("FLOOR_PULSE") or "JUMP" in _movement or "HOP" in _movement:
+		return "jump"
+	if (
+		_cue_archetype.begins_with("SIDE_SWEEP")
+		or _cue_archetype == "OVERHEAD_BAR"
+		or _cue_archetype == "LOW_CLEARANCE_GATE"
+		or "DODGE" in _movement
+		or "SQUAT" in _movement
+	):
+		return "dodge"
+	if _cue_archetype == "HOLD_RING" or "HOLD" in _movement:
+		return "hold"
+	return "foot"
 
 
 func _build_flash() -> void:
@@ -26,6 +67,106 @@ func _build_flash() -> void:
 	_tween_shader_param(tween, material, "alpha", 0.78, 0.0, 0.2)
 	_tween_shader_param(tween, material, "radius", 0.36, 0.72, 0.2)
 	_tween_shader_param(tween, material, "dissolve", 0.0, 0.64, 0.2)
+
+
+func _build_step_wave() -> void:
+	for index in range(2):
+		var material := _fade_material(Color.WHITE.lerp(_color, 0.62), 0.64, 5.8)
+		var bar := _make_floor_box(
+			"StepWave%02d" % index,
+			Vector3(1.28 + float(index) * 0.32, 0.025, 0.10),
+			Vector3(0.0, 0.035, -0.12 - float(index) * 0.34),
+			material
+		)
+		bar.scale.x = 0.28
+		var tween := create_tween().set_parallel(true)
+		tween.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		tween.tween_property(bar, "scale:x", 1.0, 0.24 + float(index) * 0.05)
+		tween.tween_property(bar, "position:z", bar.position.z - 0.72, 0.30)
+		tween.tween_property(material, "albedo_color:a", 0.0, 0.31)
+		tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.31)
+
+
+func _build_jump_wave() -> void:
+	for index in range(3):
+		var strength := 1.0 - float(index) * 0.18
+		var material := _fade_material(Color.WHITE.lerp(_color, 0.48), 0.72 * strength, 8.2 * strength)
+		var wave := _make_floor_box(
+			"JumpWave%02d" % index,
+			Vector3(7.65, 0.035, 0.11),
+			Vector3(0.0, 0.045, -0.42 + float(index) * 0.42),
+			material
+		)
+		wave.scale.x = 0.10
+		var tween := create_tween().set_parallel(true)
+		tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		tween.tween_property(wave, "scale:x", 1.0, 0.30 + float(index) * 0.04)
+		tween.tween_property(material, "albedo_color:a", 0.0, 0.38).set_delay(float(index) * 0.025)
+		tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.38).set_delay(float(index) * 0.025)
+
+
+func _build_directional_slashes() -> void:
+	var direction := -1.0 if _cue_archetype.ends_with("LEFT") or "LEFT" in _movement else 1.0
+	for index in range(3):
+		var material := _fade_material(Color.WHITE.lerp(_color, 0.42), 0.68, 7.4)
+		var slash := _make_floor_box(
+			"DirectionalSlash%02d" % index,
+			Vector3(3.25, 0.028, 0.09),
+			Vector3(direction * (-0.22 + float(index) * 0.18), 0.05, -0.38 + float(index) * 0.30),
+			material
+		)
+		slash.rotation_degrees.y = direction * (24.0 + float(index) * 4.0)
+		slash.scale.x = 0.16
+		var tween := create_tween().set_parallel(true)
+		tween.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		tween.tween_property(slash, "scale:x", 1.0, 0.22)
+		tween.tween_property(slash, "position:x", slash.position.x + direction * 0.95, 0.30)
+		tween.tween_property(material, "albedo_color:a", 0.0, 0.34)
+		tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.34)
+
+
+func _build_combo_echo() -> void:
+	var combo_strength := clampf(float(_combo_index) / 7.0, 0.0, 1.0)
+	for index in range(4):
+		var angle := deg_to_rad(45.0 + float(index) * 90.0)
+		var direction := Vector3(cos(angle), 0.0, sin(angle))
+		var material := _fade_material(Color.WHITE.lerp(_color, 0.38), 0.50 + combo_strength * 0.24, 6.2 + combo_strength * 6.8)
+		var facet := _make_floor_box(
+			"ComboFacet_%02d_%02d" % [_combo_index, index],
+			Vector3(0.72 + combo_strength * 0.26, 0.035, 0.085),
+			direction * 0.28 + Vector3(0.0, 0.075, 0.0),
+			material
+		)
+		facet.rotation_degrees.y = -rad_to_deg(angle)
+		facet.scale.x = 0.34
+		var tween := create_tween().set_parallel(true)
+		tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.tween_property(facet, "position", direction * (0.78 + combo_strength * 0.36) + Vector3(0.0, 0.075, 0.0), 0.31)
+		tween.tween_property(facet, "scale:x", 1.0, 0.24)
+		tween.tween_property(material, "albedo_color:a", 0.0, 0.37).set_delay(0.04)
+		tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.37).set_delay(0.04)
+
+
+func _build_impact_crown() -> void:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_color = Color(1.0, 1.0, 1.0, 0.96)
+	material.albedo_texture = IMPACT_CROWN_TEXTURE
+	material.emission_enabled = true
+	material.emission = Color.WHITE.lerp(_color, 0.48)
+	material.emission_texture = IMPACT_CROWN_TEXTURE
+	material.emission_energy_multiplier = 11.5
+	var crown := _make_quad("ImpactCrown", Vector2(2.35, 2.35), material, 0.075)
+	crown.scale = Vector3.ONE * 0.34
+	var tween := create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(crown, "scale", Vector3.ONE * 1.12, 0.22)
+	tween.tween_property(crown, "rotation_degrees:y", 24.0, 0.22)
+	tween.tween_property(material, "albedo_color:a", 0.0, 0.28).set_delay(0.06)
+	tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.28).set_delay(0.06)
 
 
 func _build_rings() -> void:
@@ -60,8 +201,9 @@ func _build_trail() -> void:
 
 
 func _build_shards() -> void:
-	for index in range(18):
-		var angle := TAU * float(index) / 18.0 + (0.12 if index % 2 == 0 else -0.07)
+	var shard_count := 18 + mini(_combo_index, 4) * 2
+	for index in range(shard_count):
+		var angle := TAU * float(index) / float(shard_count) + (0.12 if index % 2 == 0 else -0.07)
 		var pivot := Node3D.new()
 		pivot.name = "ShardPivot%02d" % index
 		pivot.rotation.y = angle
@@ -86,6 +228,31 @@ func _build_shards() -> void:
 		tween.tween_property(shard, "scale", Vector3(0.38, 0.38, 0.38), duration)
 		_tween_shader_param(tween, material, "alpha", 0.64, 0.0, duration)
 		_tween_shader_param(tween, material, "dissolve", 0.0, 0.88, duration)
+
+
+func _fade_material(color: Color, alpha: float, emission: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.albedo_color = Color(color.r, color.g, color.b, alpha)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = emission
+	return material
+
+
+func _make_floor_box(name: String, size: Vector3, local_position: Vector3, material: Material) -> MeshInstance3D:
+	var box := MeshInstance3D.new()
+	box.name = name
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	box.mesh = mesh
+	box.position = local_position
+	box.material_override = material
+	box.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(box)
+	return box
 
 
 func _make_quad(name: String, size: Vector2, material: Material, y_offset: float) -> MeshInstance3D:

@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/deep_space.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_circle_frames.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/11_deep_space_ring.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "DEEP SPACE RING"
+description = "Редкие частицы, глубокий фон и сине-фиолетовые круги."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.08, 0.32, 1, 1, 0.38, 0.08, 0.95, 1, 0.001, 0.002, 0.018, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
+particle_settings = {"density": 0.16,"amount_scale": 0.16}
+lighting_settings = {"glow_intensity": 0.64,"glow_strength": 0.74,"bloom": 0.05}
+fog_settings = {"density": 0.0010}
+camera_settings = {"step_impact": 0.5,"step_duration": 0.24,"fov_pulse": 0.5}
+music_reaction_settings = {"beat_strength": 0.72,"beat_decay": 0.28,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 61.0,"wave_width": 14.0,"wave_lifetime": 2.45}
+preset_name = "DEEP SPACE RING"
+style_id = "CircleWave"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 87109
+ring_density = 1.32
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.86
+camera_motion = 0.22
+speed_multiplier = 0.98
+atmosphere_density = 0.16
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "11_deep_space_ring"
+segment_sequence = PackedStringArray("Ring")

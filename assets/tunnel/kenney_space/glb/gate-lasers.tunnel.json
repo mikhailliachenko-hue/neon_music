@@ -1,0 +1,8 @@
+{
+  "asset_name": "Kenney Laser Gate",
+  "category": "Arch",
+  "size": [4.0, 4.0, 1.0],
+  "weight": 0.0,
+  "theme_tags": ["CyberBlue", "SynthPurple", "EnergyRed", "ToxicGreen", "RainbowDance"],
+  "allowed_positions": ["Center"]
+}

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/rhythm_tall_frames.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "rhythm_tall_frames"
+display_name = "Rhythm Tall Frames"
+spatial_profile = "RhythmFrames"
+asset_set = ExtResource("2_assets")
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.0
+ring_probability = 1.0
+arch_probability = 0.0
+decoration_scale = 0.1
+layout_weight_scale = {"Straight": 0.0, "Ring": 3.0, "DoubleRing": 0.0, "SidePanels": 0.0, "NeonGrid": 0.0, "EnergyGate": 0.0, "WideTunnel": 0.0, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.0}
+safe_lane_half_width = 5.0
+minimum_overhead_y = 4.25
+side_clearance_margin = 0.5
+camera_fov_offset = 1.5
+fog_scale = 0.72
+background_depth = 1.55

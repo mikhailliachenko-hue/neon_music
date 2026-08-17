@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/tunnel/tunnel_segment.tscn" id="1_base"]
+
+[node name="SynthwaveSegment" instance=ExtResource("1_base")]
+segment_profile = "Synthwave"
+real_asset_only = true

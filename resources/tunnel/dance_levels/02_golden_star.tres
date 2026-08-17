@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/golden_future.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_star_frames.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/02_golden_star.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "GOLDEN STAR"
+description = "Золотые звёздные контуры с белым фронтом волны."
+difficulty = "Medium"
+color_palette = PackedColorArray(1, 0.66, 0.08, 1, 1, 0.94, 0.52, 1, 0.012, 0.006, 0.001, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
+particle_settings = {"density": 0.08,"amount_scale": 0.08}
+lighting_settings = {"glow_intensity": 0.68,"glow_strength": 0.78,"bloom": 0.06}
+fog_settings = {"density": 0.0012}
+camera_settings = {"step_impact": 0.54,"step_duration": 0.22,"fov_pulse": 0.55}
+music_reaction_settings = {"beat_strength": 0.76,"beat_decay": 0.25,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 68.0,"wave_width": 12.5,"wave_lifetime": 2.25}
+preset_name = "GOLDEN STAR"
+style_id = "StarWave"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 15838
+ring_density = 1.35
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.9
+camera_motion = 0.24
+speed_multiplier = 1.02
+atmosphere_density = 0.08
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "02_golden_star"
+segment_sequence = PackedStringArray("Ring")

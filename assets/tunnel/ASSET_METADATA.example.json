@@ -1,0 +1,9 @@
+{
+  "asset_name": "NeonPanel01",
+  "category": "Panel",
+  "size": [2.0, 1.0, 0.2],
+  "weight": 5.0,
+  "enabled": true,
+  "theme_tags": ["CyberBlue", "SynthPurple"],
+  "allowed_positions": ["Left", "Right"]
+}

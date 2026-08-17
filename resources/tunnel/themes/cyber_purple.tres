@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "CyberPurple"
+emission_color = Color(0.72, 0.12, 1, 1)
+accent_color = Color(1, 0.05, 0.74, 1)
+background_color = Color(0.012, 0.002, 0.028, 1)
+fog_color = Color(0.12, 0.015, 0.2, 1)
+fog_density = 0.0052
+glow_intensity = 0.76
+emission_energy = 6.2
+floor_color = Color(0.035, 0.008, 0.06, 1)
+floor_emission = 0.8
+ambient_color = Color(0.10, 0.018, 0.16, 1)
+ambient_energy = 0.27
+ring_probability_scale = 1.25
+decoration_probability_scale = 1.0
+layout_weights = {"DecoratedTunnel": 0.9, "DoubleRing": 0.9, "EnergyGate": 0.55, "NarrowTunnel": 0.45, "NeonGrid": 0.75, "Ring": 1.2, "SidePanels": 1.0, "Straight": 0.75, "WideTunnel": 0.4}

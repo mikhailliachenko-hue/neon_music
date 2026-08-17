@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_city_roads_selected/construction-cone.glb" id="1_cone"]
+[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_city_roads_selected/construction-barrier.glb" id="2_barrier"]
+
+[node name="KenneySafeProps" type="Node3D"]
+
+[node name="LeftCone" parent="." instance=ExtResource("1_cone")]
+position = Vector3(-5.25, -1.7, 2.8)
+scale = Vector3(1.6, 1.6, 1.6)
+
+[node name="RightCone" parent="." instance=ExtResource("1_cone")]
+position = Vector3(5.25, -1.7, -2.8)
+scale = Vector3(1.6, 1.6, 1.6)
+
+[node name="LeftBarrier" parent="." instance=ExtResource("2_barrier")]
+position = Vector3(-5.35, -1.55, -3.5)
+rotation_degrees = Vector3(0, 90, 0)
+scale = Vector3(1.5, 1.5, 1.5)
+
+[node name="RightBarrier" parent="." instance=ExtResource("2_barrier")]
+position = Vector3(5.35, -1.55, 3.5)
+rotation_degrees = Vector3(0, -90, 0)
+scale = Vector3(1.5, 1.5, 1.5)

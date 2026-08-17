@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "MatrixSignal"
+emission_color = Color(0.04, 1, 0.28, 1)
+accent_color = Color(0.78, 1, 0.82, 1)
+background_color = Color(0.001, 0.014, 0.004, 1)
+fog_color = Color(0.006, 0.11, 0.025, 1)
+fog_density = 0.0014
+glow_intensity = 0.64
+emission_energy = 5.85
+floor_color = Color(0.002, 0.045, 0.009, 1)
+floor_emission = 0.6
+ambient_color = Color(0.006, 0.10, 0.025, 1)
+ambient_energy = 0.22
+ring_probability_scale = 1.35
+decoration_probability_scale = 0.1
+layout_weights = {"Ring": 3.0}

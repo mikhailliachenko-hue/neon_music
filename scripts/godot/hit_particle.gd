@@ -2,6 +2,7 @@
 class_name HitParticle
 
 const LIFETIME_PADDING := 0.18
+const STAR_TEXTURE := preload("res://assets/images/vfx/kenney_particles/star_06.png")
 
 
 func setup(color: Color) -> void:
@@ -31,9 +32,11 @@ func setup(color: Color) -> void:
 		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 		material.albedo_color = Color(color.r, color.g, color.b, 0.82)
+		material.albedo_texture = STAR_TEXTURE
 		material.emission_enabled = true
 		material.emission = color
-		material.emission_energy_multiplier = 9.5
+		material.emission_texture = STAR_TEXTURE
+		material.emission_energy_multiplier = 12.0
 		draw_mesh.material = material
 		draw_pass_1 = draw_mesh
 	restart()

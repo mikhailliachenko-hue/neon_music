@@ -1,0 +1,8 @@
+{
+  "asset_name": "Quaternius A Portal Frame",
+  "category": "Arch",
+  "size": [11.4, 7.7, 2.0],
+  "weight": 11.0,
+  "theme_tags": ["CyberBlue", "SynthPurple", "EnergyRed", "ToxicGreen", "FutureWhite", "RainbowDance"],
+  "allowed_positions": ["Center"]
+}

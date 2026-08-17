@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/golden_future.tres" id="2_theme"]
+[resource]
+script = ExtResource("1_preset")
+preset_name = "Golden Future"
+style_id = "FutureCleanTunnel"
+theme = ExtResource("2_theme")
+seed_offset = 1009
+ring_density = 1.0
+decoration_density = 0.78
+panel_density = 1.05
+pipe_density = 0.62
+fog_amount = 0.9
+glow_strength = 1.05
+camera_motion = 0.34
+speed_multiplier = 1.0
+atmosphere_density = 0.9
+floor_pattern = "EnergyWaves"
+layout_weight_scale = {"EnergyGate": 1.35, "Ring": 1.15, "SidePanels": 1.2}

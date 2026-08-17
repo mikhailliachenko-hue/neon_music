@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "GoldenFuture"
+emission_color = Color(1, 0.66, 0.08, 1)
+accent_color = Color(1, 0.94, 0.52, 1)
+background_color = Color(0.018, 0.008, 0.001, 1)
+fog_color = Color(0.18, 0.09, 0.012, 1)
+fog_density = 0.0041
+glow_intensity = 0.76
+emission_energy = 6.2
+floor_color = Color(0.05, 0.025, 0.004, 1)
+floor_emission = 0.82
+ambient_color = Color(0.16, 0.08, 0.015, 1)
+ambient_energy = 0.26
+ring_probability_scale = 1.05
+decoration_probability_scale = 0.85
+layout_weights = {"DecoratedTunnel": 0.75, "DoubleRing": 0.75, "EnergyGate": 1.1, "NarrowTunnel": 0.25, "NeonGrid": 0.65, "Ring": 1.05, "SidePanels": 1.0, "Straight": 0.8, "WideTunnel": 0.7}

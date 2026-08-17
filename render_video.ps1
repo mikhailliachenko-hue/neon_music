@@ -2,6 +2,7 @@ param(
     [string]$Godot = "godot",
     [string]$Audio = "",
     [int]$FixedFps = 60,
+    [string]$Resolution = "2560x1440",
     [string]$Output = "output\renders\output.avi"
 )
 
@@ -10,7 +11,7 @@ $project = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $project
 
 if ([string]::IsNullOrWhiteSpace($Audio)) {
-    $Audio = Join-Path $project "assets\audio\Iron & Ash.mp3"
+    $Audio = Join-Path $project "assets\audio\audio.wav"
 } elseif (-not [System.IO.Path]::IsPathRooted($Audio)) {
     $Audio = Join-Path (Get-Location) $Audio
 }
@@ -36,4 +37,4 @@ $Python = $pythonCandidates | Where-Object { $_ -eq "python" -or (Test-Path -Lit
 
 & $Python (Join-Path $project "scripts\python\audio_analyzer.py") --audio "$Audio"
 & $Godot --path $project --editor --quit-after 2
-& $Godot --path $project --write-movie $Output --fixed-fps $FixedFps -- "--audio=$Audio" "--render-clock=frame" "--clock-fps=$FixedFps"
+& $Godot --path $project --resolution $Resolution --write-movie $Output --fixed-fps $FixedFps -- "--audio=$Audio" "--render-clock=frame" "--clock-fps=$FixedFps"

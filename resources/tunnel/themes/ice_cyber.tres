@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "IceCyber"
+emission_color = Color(0.55, 0.96, 1, 1)
+accent_color = Color(0.12, 0.48, 1, 1)
+background_color = Color(0.003, 0.012, 0.022, 1)
+fog_color = Color(0.08, 0.2, 0.24, 1)
+fog_density = 0.0037
+glow_intensity = 0.66
+emission_energy = 5.7
+floor_color = Color(0.015, 0.05, 0.07, 1)
+floor_emission = 0.72
+ambient_color = Color(0.08, 0.18, 0.22, 1)
+ambient_energy = 0.24
+ring_probability_scale = 0.95
+decoration_probability_scale = 0.7
+layout_weights = {"DecoratedTunnel": 0.45, "DoubleRing": 0.55, "EnergyGate": 0.65, "NarrowTunnel": 0.25, "NeonGrid": 0.9, "Ring": 0.95, "SidePanels": 1.25, "Straight": 1.0, "WideTunnel": 0.75}

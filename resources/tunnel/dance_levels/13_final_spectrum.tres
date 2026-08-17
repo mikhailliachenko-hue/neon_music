@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/rainbow_dance.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_star_frames.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/13_final_spectrum.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "FINAL SPECTRUM"
+description = "Финальная cyan-pink звёздная волна с самым быстрым фронтом."
+difficulty = "Expert"
+color_palette = PackedColorArray(0.08, 0.9, 1, 1, 1, 0.08, 0.72, 1, 0.008, 0.002, 0.018, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
+particle_settings = {"density": 0.12,"amount_scale": 0.12}
+lighting_settings = {"glow_intensity": 0.8,"glow_strength": 0.9,"bloom": 0.075}
+fog_settings = {"density": 0.00145}
+camera_settings = {"step_impact": 0.6,"step_duration": 0.19,"fov_pulse": 0.68}
+music_reaction_settings = {"beat_strength": 0.92,"beat_decay": 0.19,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 88.0,"wave_width": 9.0,"wave_lifetime": 1.75}
+preset_name = "FINAL SPECTRUM"
+style_id = "StarWave"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 102947
+ring_density = 1.55
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 1.08
+camera_motion = 0.3
+speed_multiplier = 1.15
+atmosphere_density = 0.12
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "13_final_spectrum"
+segment_sequence = PackedStringArray("Ring")

@@ -3,7 +3,6 @@ extends Node3D
 const HIT_EFFECT_SCENE := preload("res://scenes/hit_effect.tscn")
 const RECEPTOR_SCENE := preload("res://scenes/receptor.tscn")
 const TRACK_SHADER := preload("res://assets/models/track.gdshader")
-const BACKGROUND_BACKEND_SCRIPT := preload("res://scripts/godot/background_mp4_backend.gd")
 const CYAN := Color(0.0, 0.95, 1.0)
 const MAGENTA := Color(1.0, 0.0, 0.82)
 
@@ -11,6 +10,8 @@ var _effects_root: Node3D
 var _receptors: Array[NoteReceptor] = []
 var _track_material: ShaderMaterial
 var _background_material: StandardMaterial3D
+var _background_video_player: VideoStreamPlayer
+var _background_video_layer: CanvasLayer
 var _elapsed := 0.0
 var _next_pair_at := 0.12
 var _lane_fill_time := 0.0
@@ -36,6 +37,7 @@ func _process(delta: float) -> void:
 		_spawn_preview_pair()
 		_next_pair_at += 0.92
 	_update_track_fill()
+	_update_background_video_texture()
 	if _movie_quit_frames > 0:
 		_movie_frames += 1
 		if _movie_frames >= _movie_quit_frames:
@@ -90,13 +92,45 @@ func _build_background_video_plane() -> void:
 		_load_background_still("res://output/previews/v3_preview_background_poster.jpg")
 		return
 
-	var backend := Node.new()
-	backend.name = "ReferenceMp4Backend"
-	backend.set_script(BACKGROUND_BACKEND_SCRIPT)
-	add_child(backend)
-	backend.texture_changed.connect(_on_background_texture_changed)
-	backend.configure("res://assets/images/background/reference_fullhd.mp4", 24.0)
-	backend.start()
+	var video_path := _find_preview_background_video_path()
+	if video_path.is_empty():
+		return
+	if video_path.get_extension().to_lower() == "mp4" and ClassDB.class_exists("FFmpegVideoStream"):
+		_background_video_player = VideoStreamPlayer.new()
+		_background_video_player.name = "ReferenceVideoPlayer"
+		_background_video_player.visible = true
+		_background_video_player.position = Vector2(-4096.0, -4096.0)
+		_background_video_player.size = Vector2(1.0, 1.0)
+		_background_video_player.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_background_video_player.loop = true
+		_background_video_player.volume_db = -80.0
+		var stream := load(video_path)
+		if stream == null or not (stream is VideoStream):
+			return
+		_background_video_player.stream = stream
+		_attach_background_video_player(_background_video_player)
+		_background_video_player.play()
+		return
+	if video_path.get_extension().to_lower() == "ogv":
+		_background_video_player = VideoStreamPlayer.new()
+		_background_video_player.name = "ReferenceVideoPlayer"
+		_background_video_player.visible = true
+		_background_video_player.position = Vector2(-4096.0, -4096.0)
+		_background_video_player.size = Vector2(1.0, 1.0)
+		_background_video_player.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_background_video_player.loop = true
+		_background_video_player.volume_db = -80.0
+		_background_video_player.stream = load(video_path)
+		_attach_background_video_player(_background_video_player)
+		_background_video_player.play()
+
+
+func _attach_background_video_player(player: VideoStreamPlayer) -> void:
+	_background_video_layer = CanvasLayer.new()
+	_background_video_layer.name = "ReferenceVideoDecoderLayer"
+	_background_video_layer.layer = -128
+	add_child(_background_video_layer)
+	_background_video_layer.add_child(player)
 
 
 func _build_track() -> void:
@@ -149,6 +183,33 @@ func _update_track_fill() -> void:
 	if _lane_fill_time > 0.0:
 		amount = clampf(_lane_fill_time / 0.3, 0.0, 1.0)
 	_track_material.set_shader_parameter("lane_fill_mask", Vector4(amount, 0.0, 0.0, amount))
+
+
+func _update_background_video_texture() -> void:
+	if _background_video_player == null or _background_material == null:
+		return
+	var texture := _background_video_player.get_video_texture()
+	if texture != null:
+		_background_material.albedo_texture = texture
+
+
+func _find_preview_background_video_path() -> String:
+	for file_name in ["background.mp4", "reference_fullhd.mp4", "0727.mp4", "background.ogv"]:
+		var path := "res://assets/images/background".path_join(file_name)
+		if FileAccess.file_exists(path):
+			return path
+	var dir := DirAccess.open("res://assets/images/background")
+	if dir == null:
+		return ""
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.get_extension().to_lower() in ["mp4", "ogv"]:
+			dir.list_dir_end()
+			return "res://assets/images/background".path_join(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	return ""
 
 
 func _on_background_texture_changed(texture: Texture2D) -> void:

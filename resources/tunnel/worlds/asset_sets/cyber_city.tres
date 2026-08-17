@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-a.glb" id="2_ba"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-d.glb" id="3_bd"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-g.glb" id="4_bg"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-j.glb" id="5_bj"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-skyscraper-a.glb" id="6_sa"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-skyscraper-b.glb" id="7_sb"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-skyscraper-c.glb" id="8_sc"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-skyscraper-d.glb" id="9_sd"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/building-skyscraper-e.glb" id="10_se"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/low-detail-building-a.glb" id="11_la"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/low-detail-building-d.glb" id="12_ld"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/low-detail-building-h.glb" id="13_lh"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/low-detail-building-wide-a.glb" id="14_lwa"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_commercial/low-detail-building-wide-b.glb" id="15_lwb"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="16_road"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-bridge.glb" id="17_bridge"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-side.glb" id="18_side"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/light-curved.glb" id="19_light"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/light-curved-double.glb" id="20_light_double"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/light-square-double.glb" id="21_light_square"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/sign-highway.glb" id="22_sign"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/sign-highway-wide.glb" id="23_sign_wide"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "kenney_cyber_city"
+display_name = "Kenney Cyber City"
+floor_assets = Array[PackedScene]([ExtResource("16_road"), ExtResource("17_bridge"), ExtResource("18_side")])
+wall_assets = Array[PackedScene]([ExtResource("2_ba"), ExtResource("3_bd"), ExtResource("4_bg"), ExtResource("5_bj"), ExtResource("6_sa"), ExtResource("7_sb"), ExtResource("8_sc"), ExtResource("9_sd"), ExtResource("10_se"), ExtResource("11_la"), ExtResource("12_ld"), ExtResource("13_lh"), ExtResource("14_lwa"), ExtResource("15_lwb")])
+arch_assets = Array[PackedScene]([ExtResource("22_sign"), ExtResource("23_sign_wide")])
+panel_assets = Array[PackedScene]([ExtResource("19_light"), ExtResource("20_light_double"), ExtResource("21_light_square")])
+prop_assets = Array[PackedScene]([ExtResource("19_light"), ExtResource("20_light_double"), ExtResource("21_light_square")])
