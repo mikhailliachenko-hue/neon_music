@@ -16,6 +16,8 @@ const HAND_CONTAINER_DEPTH := 0.62
 const HAND_FAR_SCALE_BOOST := 0.72
 const HAND_VISUAL_CENTER_Y := 2.65
 const HAND_MAX_SCALE := 1.24
+const HAND_HEIGHT_OFFSET_LIMIT := 0.42
+const HAND_LATERAL_OFFSET_LIMIT := 0.18
 const HAND_HOLD_MIN_LENGTH := 5.5
 const HAND_HOLD_MAX_LENGTH := 12.0
 const HAND_HOLD_LENGTH_PER_SECOND := 6.0
@@ -23,11 +25,14 @@ const MATERIAL_PUNCH_ICON := "res://assets/images/movement_icons/material/punch.
 const MOVEMENT_ICON_SHADER := preload("res://assets/models/movement_icon.gdshader")
 const JUMP_OBSTACLE_PATH := "res://assets/models/obstacles/jump_obstacle.tscn"
 const DUCK_GATE_PATH := "res://assets/models/obstacles/duck_gate.tscn"
+const FOOT_RAIL_TRAJECTORY := preload("res://scripts/godot/foot_rail_trajectory.gd")
 const DOUBLE_FOOT_RAIL_BASE_LENGTH := 10.0
 const DOUBLE_FOOT_RAIL_MAX_LENGTH := 18.0
 const DOUBLE_FOOT_RAIL_LENGTH_PER_SECOND := 9.0
 const DOUBLE_FOOT_RAIL_MIN_LENGTH := 10.0
 const DOUBLE_FOOT_RAIL_TARGET_Z := 0.30
+const DOUBLE_FOOT_RAIL_CURVE_SEGMENTS := 10
+const HAND_HOLD_BODY_SCALE := 1.08
 
 var hit_time := 0.0
 var lane := 0
@@ -36,14 +41,25 @@ var cue_archetype := "FOOT_PAD_LEFT"
 var duration_seconds := 0.0
 var _hand_hold_length := 0.0
 var _double_foot_rail_length := DOUBLE_FOOT_RAIL_BASE_LENGTH
+var _rail_trajectory_kind := "straight"
+var _rail_start_lane := 0
+var _rail_end_lane := 0
+var _rail_start_offset_x := 0.0
+var _rail_bend := 0.0
+var _smooth_rail_length := -1.0
+var _hand_target_zone := "center"
+var _hand_height_offset := 0.0
+var _hand_lateral_offset := 0.0
+var _hand_pattern := "legacy_center"
 var _shattered := false
 
 
-func setup(note_lane: int, note_hit_time: float, spawn_position_z: float, note_cue_archetype: String = "FOOT_PAD_LEFT", note_duration_seconds: float = 0.0) -> void:
-	lane = note_lane
+func setup(note_lane: int, note_hit_time: float, spawn_position_z: float, note_cue_archetype: String = "FOOT_PAD_LEFT", note_duration_seconds: float = 0.0, note_rail_trajectory: Variant = {}, note_hand_metadata: Variant = {}) -> void:
 	hit_time = note_hit_time
 	cue_archetype = note_cue_archetype
 	duration_seconds = maxf(0.0, note_duration_seconds)
+	_configure_rail_trajectory(note_lane, note_rail_trajectory)
+	_configure_hand_target_metadata(note_hand_metadata)
 	_hand_hold_length = clampf(duration_seconds * HAND_HOLD_LENGTH_PER_SECOND, HAND_HOLD_MIN_LENGTH, HAND_HOLD_MAX_LENGTH) if _is_hand_hold_cue() else 0.0
 	if _is_double_foot_cue() and duration_seconds > 0.0:
 		_double_foot_rail_length = clampf(duration_seconds * DOUBLE_FOOT_RAIL_LENGTH_PER_SECOND, DOUBLE_FOOT_RAIL_BASE_LENGTH, DOUBLE_FOOT_RAIL_MAX_LENGTH)
@@ -54,6 +70,8 @@ func setup(note_lane: int, note_hit_time: float, spawn_position_z: float, note_c
 	else:
 		emission_color = CYAN if lane < 2 else MAGENTA
 	position.x = 0.0 if _is_center_wide_cue() else LANE_CENTERS[lane]
+	if _is_hand_target():
+		position.x += _hand_lateral_offset
 	position.y = GROUND_Y + GROUND_OFFSET
 	position.z = spawn_position_z
 
@@ -76,7 +94,10 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 		# Scaling the whole note used to lift the local 2.65m hand anchor and push
 		# outer-lane cubes into imported frames. Offset the root so the hand center
 		# stays at one stable world height at every approach distance.
-		position.y = GROUND_Y + GROUND_OFFSET + HAND_VISUAL_CENTER_Y * (1.0 - cue_scale)
+		# Compensate around the authored target center, including its optional
+		# height hint. The target therefore stays at the same world Y while the
+		# entire note scales up for distant readability.
+		position.y = GROUND_Y + GROUND_OFFSET + _hand_visual_center_y() * (1.0 - cue_scale)
 	else:
 		position.y = GROUND_Y + GROUND_OFFSET
 	scale = Vector3.ONE * cue_scale
@@ -203,6 +224,10 @@ func _configure_visuals() -> void:
 	footprint_material.emission_enabled = false
 	if not footprint_path.begins_with("res://assets/images/movement_icons/"):
 		$Footprint.material_override = footprint_material
+	var rail_start_footprint := get_node_or_null("RailStartFootprint") as MeshInstance3D
+	if rail_start_footprint != null:
+		rail_start_footprint.material_override = $Footprint.material_override
+	_sync_smooth_rail_materials()
 	if cue_archetype.begins_with("FOOT_PAD") or _is_double_foot_cue():
 		_build_foot_glow_ring()
 
@@ -217,6 +242,42 @@ func _is_center_wide_cue() -> bool:
 
 func _is_double_foot_cue() -> bool:
 	return cue_archetype.begins_with("DOUBLE_FOOT_PAD")
+
+
+func _configure_rail_trajectory(note_lane: int, raw_trajectory: Variant) -> void:
+	var trajectory: Dictionary = FOOT_RAIL_TRAJECTORY.resolve(cue_archetype, note_lane, raw_trajectory, LANE_CENTERS)
+	_rail_trajectory_kind = String(trajectory.kind)
+	_rail_start_lane = int(trajectory.start_lane)
+	_rail_end_lane = int(trajectory.end_lane)
+	_rail_bend = float(trajectory.bend)
+	lane = _rail_end_lane
+	_rail_start_offset_x = float(trajectory.start_offset_x)
+
+
+func _configure_hand_target_metadata(raw_metadata: Variant) -> void:
+	_hand_target_zone = "center"
+	_hand_height_offset = 0.0
+	_hand_lateral_offset = 0.0
+	_hand_pattern = "legacy_center"
+	if not raw_metadata is Dictionary:
+		return
+	var metadata := raw_metadata as Dictionary
+	var raw_zone := String(metadata.get("hand_target_zone", "center")).to_lower()
+	if raw_zone in ["low", "center", "high"]:
+		_hand_target_zone = raw_zone
+	var zone_height: float = float({"low": -0.38, "center": 0.0, "high": 0.38}[_hand_target_zone])
+	if metadata.has("hand_height_offset"):
+		_hand_height_offset = clampf(float(metadata.get("hand_height_offset", 0.0)), -HAND_HEIGHT_OFFSET_LIMIT, HAND_HEIGHT_OFFSET_LIMIT)
+	else:
+		_hand_height_offset = zone_height
+	_hand_lateral_offset = clampf(float(metadata.get("hand_lateral_offset", 0.0)), -HAND_LATERAL_OFFSET_LIMIT, HAND_LATERAL_OFFSET_LIMIT)
+	_hand_pattern = String(metadata.get("hand_pattern", "legacy_center")).substr(0, 48)
+	set_meta("hand_target_zone", _hand_target_zone)
+	set_meta("hand_pattern", _hand_pattern)
+
+
+func _hand_visual_center_y() -> float:
+	return HAND_VISUAL_CENTER_Y + _hand_height_offset
 
 
 func _is_step_platform_cue() -> bool:
@@ -235,6 +296,10 @@ func _configure_double_foot_rail(panel: MeshInstance3D, footprint: MeshInstance3
 	for side_name in ["Left", "Right"]:
 		var side := border.get_node(side_name) as MeshInstance3D
 		side.mesh = side.mesh.duplicate()
+	var start_footprint := footprint.duplicate() as MeshInstance3D
+	start_footprint.name = "RailStartFootprint"
+	start_footprint.mesh = footprint.mesh.duplicate()
+	add_child(start_footprint)
 	footprint.position.z = DOUBLE_FOOT_RAIL_TARGET_Z
 	# Keep the authored rail visible at its full length from spawn. Growing it
 	# only near the player looked like geometry popping into existence.
@@ -247,6 +312,10 @@ func _set_double_foot_reveal(amount: float) -> void:
 	# The target is the far end; its luminous guide tail points toward +Z where
 	# the player/camera is. This makes the action readable several seconds early.
 	var rail_center_z := DOUBLE_FOOT_RAIL_TARGET_Z + rail_length * 0.5
+	var start_footprint := get_node_or_null("RailStartFootprint") as MeshInstance3D
+	if start_footprint != null:
+		start_footprint.position = Vector3(_rail_start_offset_x, $Footprint.position.y, DOUBLE_FOOT_RAIL_TARGET_Z + rail_length)
+	$Footprint.position.x = 0.0
 	var panel := $GlassPanel as MeshInstance3D
 	var panel_mesh := panel.mesh as QuadMesh
 	if panel_mesh != null:
@@ -263,6 +332,51 @@ func _set_double_foot_reveal(amount: float) -> void:
 		if side_mesh != null:
 			side_mesh.size.z = rail_length
 		side.position.z = rail_center_z
+	var uses_trajectory := absf(_rail_start_offset_x) > 0.001 or absf(_rail_bend) > 0.001
+	panel.visible = not uses_trajectory
+	border.visible = not uses_trajectory
+	if uses_trajectory:
+		_build_smooth_foot_rail(rail_length)
+	else:
+		var smooth_rail := get_node_or_null("SmoothFootRail") as MeshInstance3D
+		if smooth_rail != null:
+			smooth_rail.visible = false
+
+
+func _build_smooth_foot_rail(rail_length: float) -> void:
+	var rail := get_node_or_null("SmoothFootRail") as MeshInstance3D
+	if rail != null and is_equal_approx(_smooth_rail_length, rail_length):
+		rail.visible = true
+		return
+	if rail == null:
+		rail = MeshInstance3D.new()
+		rail.name = "SmoothFootRail"
+		rail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(rail)
+	rail.mesh = FOOT_RAIL_TRAJECTORY.build_mesh(
+		rail_length,
+		_rail_start_offset_x,
+		_rail_bend,
+		LANE_WIDTH,
+		CUE_WIDTH_RATIO,
+		DOUBLE_FOOT_RAIL_TARGET_Z,
+		DOUBLE_FOOT_RAIL_CURVE_SEGMENTS
+	)
+	rail.visible = true
+	_smooth_rail_length = rail_length
+	_sync_smooth_rail_materials()
+
+
+func _sync_smooth_rail_materials() -> void:
+	var rail := get_node_or_null("SmoothFootRail") as MeshInstance3D
+	if rail == null or not rail.mesh is ArrayMesh:
+		return
+	var mesh := rail.mesh as ArrayMesh
+	if mesh.get_surface_count() >= 1:
+		mesh.surface_set_material(0, $GlassPanel.material_override)
+	if mesh.get_surface_count() >= 2:
+		var edge_source := $Border.get_node("Left") as MeshInstance3D
+		mesh.surface_set_material(1, edge_source.material_override)
 
 
 func _animate_architectural_cue(anticipation: float, heartbeat: float) -> void:
@@ -273,7 +387,7 @@ func _animate_architectural_cue(anticipation: float, heartbeat: float) -> void:
 		if rail != null:
 			rail.scale.y = 1.50 + anticipation * 0.08 + heartbeat * 0.03
 	elif cue_archetype == "LOW_CLEARANCE_GATE" or cue_archetype == "OVERHEAD_BAR":
-		var beam := get_node_or_null("KenneyDuckGate/ReadyMadeDuckBeam") as Node3D
+		var beam := get_node_or_null("KenneyDuckGate/OverheadBarrierBeam") as Node3D
 		if beam != null:
 			beam.scale.y = 1.55 + anticipation * 0.06 + heartbeat * 0.025
 
@@ -303,7 +417,7 @@ func _build_icon_glyph(_panel: MeshInstance3D) -> void:
 	var glyph := MeshInstance3D.new()
 	glyph.name = "IconGlyph"
 	# Camera/player is on +Z, so the decal sits just above the cube's front face.
-	glyph.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, HAND_CONTAINER_DEPTH * 0.5 + 0.018)
+	glyph.position = Vector3(0.0, _hand_visual_center_y(), HAND_CONTAINER_DEPTH * 0.5 + 0.018)
 	var mesh := QuadMesh.new()
 	mesh.size = Vector2.ONE * HAND_ICON_SIZE
 	glyph.mesh = mesh
@@ -315,7 +429,7 @@ func _build_icon_glyph(_panel: MeshInstance3D) -> void:
 
 	var halo := MeshInstance3D.new()
 	halo.name = "IconHalo"
-	halo.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, HAND_CONTAINER_DEPTH * 0.5 + 0.012)
+	halo.position = Vector3(0.0, _hand_visual_center_y(), HAND_CONTAINER_DEPTH * 0.5 + 0.012)
 	var halo_mesh := QuadMesh.new()
 	halo_mesh.size = Vector2.ONE * (HAND_ICON_SIZE * 1.12)
 	halo.mesh = halo_mesh
@@ -352,7 +466,7 @@ func _build_vertical_action_glyph(icon_path: String, local_position: Vector3, gl
 func _build_hand_container_model() -> void:
 	var container := Node3D.new()
 	container.name = "HandContainerModel"
-	container.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, 0.0)
+	container.position = Vector3(0.0, _hand_visual_center_y(), 0.0)
 
 	var body := MeshInstance3D.new()
 	body.name = "PunchTargetCube"
@@ -376,29 +490,31 @@ func _build_hand_container_model() -> void:
 func _build_hand_hold_prism() -> void:
 	var hold := Node3D.new()
 	hold.name = "HandHoldPrism"
-	hold.position = Vector3(0.0, HAND_VISUAL_CENTER_Y, HAND_CONTAINER_DEPTH * 0.5)
+	# Keep the sustained volume behind the readable punch cap. Starting both on
+	# the same plane made the long body visually swallow the front icon.
+	hold.position = Vector3(0.0, _hand_visual_center_y(), HAND_CONTAINER_DEPTH * 0.5 + 0.10)
 	var length := maxf(HAND_HOLD_MIN_LENGTH, _hand_hold_length)
 	var body := MeshInstance3D.new()
 	body.name = "HoldBody"
 	body.position.z = length * 0.5
 	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(HAND_TARGET_SIZE * 0.30, HAND_TARGET_SIZE * 0.30, length)
+	body_mesh.size = Vector3(HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, length)
 	body.mesh = body_mesh
 	var body_material := StandardMaterial3D.new()
 	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	# The long hit is a translucent guide ribbon with a bright target cap. A
 	# fully emissive solid prism dominated the frame and read as an obstacle.
 	body_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	body_material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.10)
+	body_material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.075)
 	body_material.emission_enabled = true
 	body_material.emission = emission_color
-	body_material.emission_energy_multiplier = 0.20
+	body_material.emission_energy_multiplier = 0.14
 	body_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	body.material_override = body_material
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(body)
-	var rail_material := _emissive_material(emission_color, 2.4)
-	var half := HAND_TARGET_SIZE * 0.15
+	var rail_material := _emissive_material(emission_color, 2.8)
+	var half := HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE * 0.5
 	var rail_z := length * 0.5
 	for rail_data in [
 		["TopLeftRail", Vector3(-half, half, rail_z)],
@@ -515,7 +631,7 @@ func trigger_shatter() -> void:
 	_shattered = true
 	var shatter_origin := Vector3(0.0, 0.20, 0.0)
 	if _is_hand_target():
-		shatter_origin = Vector3(0.0, HAND_VISUAL_CENTER_Y, 0.0)
+		shatter_origin = Vector3(0.0, _hand_visual_center_y(), 0.0)
 		var container := get_node_or_null("HandContainerModel") as Node3D
 		if container != null:
 			container.visible = false
@@ -599,6 +715,9 @@ func _set_approach_energy(amount: float, distance_factor: float, heartbeat: floa
 	var footprint := $Footprint as MeshInstance3D
 	if footprint.visible:
 		footprint.scale = Vector3.ONE * lerpf(1.0, 1.08, amount)
+	var rail_start_footprint := get_node_or_null("RailStartFootprint") as MeshInstance3D
+	if rail_start_footprint != null and rail_start_footprint.visible:
+		rail_start_footprint.scale = Vector3.ONE * lerpf(1.0, 1.08, amount)
 	var foot_ring := get_node_or_null("FootGlowRing") as MeshInstance3D
 	if foot_ring != null:
 		foot_ring.scale = Vector3.ONE * lerpf(0.90, 1.18, amount)

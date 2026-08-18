@@ -2559,7 +2559,10 @@ func _camera_double_foot_bob(song_time: float) -> Vector3:
 			var phase := clampf((local_time + 0.045) / 0.265, 0.0, 1.0)
 			var envelope := sin(phase * PI)
 			envelope *= envelope
-			var bob := Vector3(-0.72, -0.105, 0.055) * envelope
+			# A paired long-foot rail is mirrored around the track center. The old
+			# fixed -0.72 m pull contradicted both straight and center/outer paths.
+			# Keep the satisfying vertical stomp without steering the player left.
+			var bob := Vector3(0.0, -0.105, 0.055) * envelope
 			if bob.length_squared() > best_bob.length_squared():
 				best_bob = bob
 	return best_bob
@@ -3059,7 +3062,14 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 	var choreography_lanes = beat.get("lanes", [lane])
 	var semantic_movement := String(beat.get("semantic_movement", beat.get("movement", "")))
 	var visual_cue := _visual_cue_for_note(cue_name, choreography_lanes, lane, semantic_movement)
-	note.setup(lane, float(beat.time), spawn_z, visual_cue, float(beat.get("duration", 0.0)))
+	var rail_trajectory: Variant = beat.get("rail_trajectory", beat.get("trajectory", {}))
+	var hand_target_metadata := {
+		"hand_target_zone": beat.get("hand_target_zone", "center"),
+		"hand_height_offset": beat.get("hand_height_offset", 0.0),
+		"hand_lateral_offset": beat.get("hand_lateral_offset", 0.0),
+		"hand_pattern": beat.get("hand_pattern", "legacy_center"),
+	}
+	note.setup(lane, float(beat.time), spawn_z, visual_cue, float(beat.get("duration", 0.0)), rail_trajectory, hand_target_metadata)
 	if tuning_values.has("note_y"):
 		note.position.y = float(tuning_values["note_y"])
 	note.set_meta("note_index", int(beat.get("source_note_index", note_index)))

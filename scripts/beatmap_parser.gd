@@ -7,6 +7,10 @@ const RIGHT_FOOT_LANES := [2, 3]
 const LEFT_FOOT_COLOR := Color(0.0, 0.95, 1.0)
 const RIGHT_FOOT_COLOR := Color(1.0, 0.0, 0.82)
 const DEFAULT_NOTE_TYPE := "step"
+const CENTERED_ARCHITECTURAL_CUES := ["LOW_CLEARANCE_GATE", "OVERHEAD_BAR"]
+const HAND_TARGET_ZONES := ["low", "center", "high"]
+const HAND_HEIGHT_OFFSET_LIMIT := 0.42
+const HAND_LATERAL_OFFSET_LIMIT := 0.18
 
 
 static func lane_to_foot(lane: int) -> String:
@@ -83,6 +87,11 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 	if note_type.is_empty() or note_type == "note":
 		note_type = "jump" if lanes.size() > 1 else DEFAULT_NOTE_TYPE
 
+	var hand_target_zone := String(raw_note.get("hand_target_zone", "center")).to_lower()
+	if hand_target_zone not in HAND_TARGET_ZONES:
+		hand_target_zone = "center"
+	var zone_height_default: float = float({"low": -0.38, "center": 0.0, "high": 0.38}[hand_target_zone])
+	var hand_height_default := zone_height_default if raw_note.has("hand_target_zone") else 0.0
 	return {
 		"time": time,
 		"lanes": lanes,
@@ -104,6 +113,14 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 		"count8_index": int(raw_note.get("count8_index", -1)),
 		"is_mirrored": bool(raw_note.get("is_mirrored", false)),
 		"judgment_plane": String(raw_note.get("judgment_plane", "receptor_hit_z")),
+		# Optional renderer-only metadata. Older tracks omit it and remain straight.
+		"rail_trajectory": raw_note.get("rail_trajectory", raw_note.get("trajectory", {})),
+		# Renderer hints are deliberately bounded at the JSON boundary. Legacy
+		# tracks omit them and therefore retain the established centered target.
+		"hand_target_zone": hand_target_zone,
+		"hand_height_offset": clampf(float(raw_note.get("hand_height_offset", hand_height_default)), -HAND_HEIGHT_OFFSET_LIMIT, HAND_HEIGHT_OFFSET_LIMIT),
+		"hand_lateral_offset": clampf(float(raw_note.get("hand_lateral_offset", 0.0)), -HAND_LATERAL_OFFSET_LIMIT, HAND_LATERAL_OFFSET_LIMIT),
+		"hand_pattern": String(raw_note.get("hand_pattern", "legacy_center")).substr(0, 48),
 		"feet": _feet_for_lanes(lanes),
 	}
 
@@ -112,7 +129,13 @@ static func expanded_notes(notes: Array) -> Array:
 	var expanded := []
 	for note_index in range(notes.size()):
 		var note := notes[note_index] as Dictionary
-		for lane in note.get("lanes", []):
+		var render_lanes: Array = note.get("lanes", [])
+		# A duck/squat gate is one centered architectural instruction, not one
+		# object per semantic lane. Expanding it twice produced perfectly
+		# overlapping meshes, duplicate hit feedback and duplicate camera impact.
+		if String(note.get("cue_archetype", "")).to_upper() in CENTERED_ARCHITECTURAL_CUES and not render_lanes.is_empty():
+			render_lanes = [render_lanes[0]]
+		for lane in render_lanes:
 			expanded.append({
 				"time": float(note.get("time", 0.0)),
 				"lane": int(lane),
@@ -135,6 +158,11 @@ static func expanded_notes(notes: Array) -> Array:
 				"count8_index": int(note.get("count8_index", -1)),
 				"is_mirrored": bool(note.get("is_mirrored", false)),
 				"judgment_plane": String(note.get("judgment_plane", "receptor_hit_z")),
+				"rail_trajectory": note.get("rail_trajectory", {}),
+				"hand_target_zone": String(note.get("hand_target_zone", "center")),
+				"hand_height_offset": float(note.get("hand_height_offset", 0.0)),
+				"hand_lateral_offset": float(note.get("hand_lateral_offset", 0.0)),
+				"hand_pattern": String(note.get("hand_pattern", "legacy_center")),
 				"foot": lane_to_foot(int(lane)),
 				"source_note_index": note_index,
 			})

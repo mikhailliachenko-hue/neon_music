@@ -13,6 +13,7 @@ from choreography_v4 import (  # noqa: E402
     _metrics, _body_counterpoint_fit,
 )
 from generate_choreography_v4 import synchronize_grid_projection  # noqa: E402
+from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
 
 legacy_grid_path = ROOT / "output/beat_grid.json"
 legacy_map_path = ROOT / "output/beatmap.json"
@@ -98,6 +99,72 @@ def test_all_rejected_candidate_fallback():
 def test_scoring_metrics_are_data_dependent():
     _, beatmap = products()
     assert any(len({candidate["metrics"][key] for candidate in beatmap["candidate_debug"]}) > 1 for key in beatmap["candidate_debug"][0]["metrics"])
+
+
+def _hand_test_sequence() -> list[dict]:
+    sequence = []
+    for block in range(4):
+        start = block * 8
+        sequence.extend([
+            {
+                "movement": "PUNCH_LEFT",
+                "start_beat": start,
+                "duration_beats": 4,
+                "body_side": "left",
+                "mirror_mode": False,
+                "internal_hit_offsets": [0],
+                "cell_function": ("TEACH", "REPEAT", "MIRROR", "PAYOFF")[block],
+                "dynamic_role": ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[block],
+            },
+            {
+                "movement": "PUNCH_RIGHT",
+                "start_beat": start + 4,
+                "duration_beats": 4,
+                "body_side": "right",
+                "mirror_mode": True,
+                "internal_hit_offsets": [0],
+                "cell_function": ("TEACH", "REPEAT", "MIRROR", "PAYOFF")[block],
+                "dynamic_role": ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[block],
+            },
+        ])
+    return sequence
+
+
+def test_music_density_ornament_pass_is_bounded_and_deterministic():
+    high_context = {
+        "section_role": "drop",
+        "targets": {"density": 0.82, "intensity": 0.78, "syncopation": 0.62},
+        "beat_features": {
+            index: {"accent": 0.4 + (index % 4) * 0.1, "energy": 0.75, "complexity": 0.7}
+            for index in range(32)
+        },
+    }
+    low_context = {
+        "section_role": "intro",
+        "targets": {"density": 0.25, "intensity": 0.25, "syncopation": 0.05},
+        "beat_features": high_context["beat_features"],
+    }
+    high_a = [_hand_test_sequence()]
+    high_b = copy.deepcopy(high_a)
+    low = [_hand_test_sequence()]
+    summary_a = apply_rhythm_ornaments(high_a, [high_context], MOVEMENTS, profile="normal")
+    summary_b = apply_rhythm_ornaments(high_b, [high_context], MOVEMENTS, profile="normal")
+    summary_low = apply_rhythm_ornaments(low, [low_context], MOVEMENTS, profile="normal")
+    assert high_a == high_b and summary_a == summary_b
+    assert summary_a["added_hits"] > summary_low["added_hits"] == 0
+    for block in range(4):
+        positions = sorted({
+            item["start_beat"] + offset
+            for item in high_a[0]
+            if block * 8 <= item["start_beat"] < (block + 1) * 8
+            for offset in item["internal_hit_offsets"]
+        })
+        assert 2 < len(positions) <= 4
+        assert any(position % 2 for position in positions)
+        assert not any(
+            right - middle == 1 and middle - left == 1
+            for left, middle, right in zip(positions, positions[1:], positions[2:])
+        )
 
 
 def test_syncopated_track_profile_rewards_phase_appropriate_families():
@@ -225,6 +292,7 @@ def test_music_driven_summary_metrics():
     assert means["body_balance"] > .5
     assert means["visual_readability"] > .5
     assert means["fatigue_safety"] > .5
+    assert 0 <= means["density_fit"] <= 1
     assert report["summary"]["phrase_section_role_distribution"]
     assert report["summary"]["body_part_distribution"]
     assert report["summary"]["average_difficulty_tier"] > 0
@@ -365,6 +433,29 @@ def test_reference_hand_holds_can_be_disabled_without_changing_contract():
     assert not any(note["movement"].startswith("HAND_HOLD_") for note in beatmap["notes"])
 
 
+def test_hand_renderer_notes_export_safe_mirrored_position_hints():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    hand_notes = [
+        note for note in beatmap["notes"]
+        if note.get("hand_target_zone") is not None
+    ]
+    assert hand_notes
+    assert {note["hand_target_zone"] for note in hand_notes} <= {"low", "center", "high"}
+    assert {note["hand_pattern"] for note in hand_notes} >= {"bilateral_accent"}
+    assert all(-0.38 <= float(note["hand_height_offset"]) <= 0.38 for note in hand_notes)
+    assert all(-0.18 <= float(note["hand_lateral_offset"]) <= 0.18 for note in hand_notes)
+    bilateral_groups = {}
+    for note in hand_notes:
+        if note["hand_pattern"] == "bilateral_accent":
+            bilateral_groups.setdefault(note["simultaneous_group"], []).append(note)
+    for paired in bilateral_groups.values():
+        if len(paired) != 2:
+            continue
+        offsets = sorted(float(note["hand_lateral_offset"]) for note in paired)
+        assert offsets[0] == -offsets[1]
+
+
 def test_long_double_foot_rails_require_readable_lower_body_setup():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
@@ -394,6 +485,33 @@ def test_long_double_foot_rails_require_readable_lower_body_setup():
         notes = [note for note in beatmap["notes"] if note["movement_event_id"] == event["id"]]
         assert len(notes) == 2
         assert all(not note["sustained"] and note["duration"] == event["duration"] for note in notes)
+
+
+def test_long_double_foot_rails_export_optional_trajectory_contract():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    rails = [
+        note for note in beatmap["notes"]
+        if note.get("semantic_movement") == "DOUBLE_FOOT_PULSE"
+    ]
+    assert rails
+    kinds = set()
+    for note in rails:
+        trajectory = note.get("rail_trajectory")
+        assert isinstance(trajectory, dict)
+        assert set(trajectory) == {"kind", "start_lane", "end_lane", "bend"}
+        assert trajectory["kind"] in {"straight", "outward", "inward"}
+        assert 0 <= int(trajectory["start_lane"]) <= 3
+        assert 0 <= int(trajectory["end_lane"]) <= 3
+        assert note["lane"] == trajectory["end_lane"]
+        assert note["lanes"] == [trajectory["end_lane"]]
+        if note["lane_side"] == "left":
+            assert trajectory["start_lane"] in {0, 1} and trajectory["end_lane"] in {0, 1}
+        else:
+            assert trajectory["start_lane"] in {2, 3} and trajectory["end_lane"] in {2, 3}
+        kinds.add(trajectory["kind"])
+    if len(rails) >= 6:
+        assert len(kinds) >= 2
 
 
 def test_hand_phrases_teach_call_response_before_bilateral_payoff():

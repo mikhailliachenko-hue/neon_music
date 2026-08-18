@@ -23,6 +23,12 @@ from phrase_readability import (
     phrase_readability_metrics,
     phrase_readability_violations,
 )
+from choreography_ornaments import (
+    apply_rhythm_ornaments,
+    density_fit_for_sequence,
+    hand_target_metadata,
+    rail_trajectory_for_note,
+)
 
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
 BEATMAP_SCHEMA = "neon_music.beatmap.v4"
@@ -944,6 +950,7 @@ def _metrics(
     event_fit = _event_fit(sequence, context, feature_map)
     body_counterpoint_fit = _body_counterpoint_fit(sequence, context)
     pickup_payoff_fit = _pickup_payoff_fit(sequence, context)
+    density_fit = density_fit_for_sequence(sequence, context, MOVEMENTS)
     grammar = _sequence_dance_grammar(sequence, section_role)
     repeated_load = sum(a == b for a, b in zip(families, families[1:]))
     fatigue_safety = max(0.0, 1.0 - .12 * sum(value == "high" for value in impacts) - .04 * sum(value == "medium" for value in impacts) - .01 * repeated_load)
@@ -994,6 +1001,7 @@ def _metrics(
         "rhythmic_phase_fit": round(rhythmic_phase_fit, 6),
         "body_counterpoint_fit": round(body_counterpoint_fit, 6),
         "pickup_payoff_fit": round(pickup_payoff_fit, 6),
+        "density_fit": round(density_fit, 6),
     }
 
 
@@ -1283,19 +1291,19 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
         weights = {
             "music_alignment": .18, "event_fit": .22, "energy_fit": .15,
             "section_fit": .12, "difficulty_fit": .10, "body_balance": .08,
-            "fatigue_safety": .07, "visual_readability": .08,
+            "fatigue_safety": .07, "visual_readability": .08, "density_fit": .10,
         }
     elif role in {"breakdown", "outro"}:
         weights = {
             "event_fit": .18, "fatigue_safety": .18, "visual_readability": .16,
             "music_alignment": .14, "section_fit": .12, "energy_fit": .08,
-            "difficulty_fit": .08, "body_balance": .06,
+            "difficulty_fit": .08, "body_balance": .06, "density_fit": .05,
         }
     elif role == "build":
         weights = {
             "music_alignment": .18, "energy_fit": .18, "event_fit": .16,
             "section_fit": .14, "difficulty_fit": .12, "body_balance": .08,
-            "fatigue_safety": .06, "visual_readability": .08,
+            "fatigue_safety": .06, "visual_readability": .08, "density_fit": .10,
         }
     else:
         weights = {
@@ -1303,6 +1311,7 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
             "section_fit": .12, "teachability": .10, "visual_readability": .10,
             "phrase_coherence": .10, "motif_repetition": .06,
             "fatigue_safety": .08, "difficulty_fit": .04, "body_balance": .04,
+            "density_fit": .08,
         }
     total = sum(weights.values())
     base = sum(float(metrics.get(key, 0.0)) * weight for key, weight in weights.items()) / max(total, 1e-9)
@@ -1747,6 +1756,12 @@ def build_choreography(
     reference_hand_recovery_rewrites = 0
     reference_long_steps = _shape_reference_long_step_accents(selected_sequences, phrase_contexts, profile)
     reference_finale_callback_phrase_index = _apply_reference_finale_callback(selected_sequences, profile, len(beats))
+    rhythm_ornaments = apply_rhythm_ornaments(
+        selected_sequences,
+        phrase_contexts,
+        MOVEMENTS,
+        profile=profile,
+    )
     post_process_familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
     for phrase_index, phrase in enumerate(selected_sequences):
         selected_id = selected_candidate_ids[phrase_index]
@@ -1803,7 +1818,20 @@ def build_choreography(
             "hit_time": round(hit_time, 6), "feedback_end_time": round(hit_time + .15, 6),
             "recovery_end_time": round(hit_time + duration_seconds + meta["recovery_beats"] * interval, 6),
             "despawn_time": round(hit_time + duration_seconds + .25, 6), "duration": round(duration_seconds, 6),
-            "duration_beats": item["duration_beats"], "internal_hits": [{"beat_offset": offset, "time": round(float(beats[beat_index + offset]["time"]), 6), "component": component} for offset, component in COMPOSITE_HITS.get(item["movement"], [(offset, item["movement"]) for offset in item["internal_hit_offsets"]]) if beat_index + offset < len(beats)],
+            "duration_beats": item["duration_beats"], "internal_hits": [{"beat_offset": offset, "time": round(float(beats[beat_index + offset]["time"]), 6), "component": component} for offset, component in (
+                [
+                    (
+                        offset,
+                        item.get("internal_hit_components", {}).get(
+                            str(offset),
+                            item.get("internal_hit_components", {}).get(offset, item["movement"]),
+                        ),
+                    )
+                    for offset in item["internal_hit_offsets"]
+                ]
+                if item.get("internal_hit_components")
+                else COMPOSITE_HITS.get(item["movement"], [(offset, item["movement"]) for offset in item["internal_hit_offsets"]])
+            ) if beat_index + offset < len(beats)],
             "family": meta["family"], "cue_archetype": meta["cue_archetype"], "cell_function": item["cell_function"],
             "dynamic_role": item.get("dynamic_role", ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[min(3, (beat_index % 32) // 8)]),
             "count8_in_phrase": min(3, (beat_index % 32) // 8),
@@ -1909,14 +1937,27 @@ def build_choreography(
             sustained = bool(component_meta.get("sustained", False))
             visual_duration = event["duration"] if sustained or event["movement"] == "DOUBLE_FOOT_PULSE" else 0.0
             cell_function = str(event.get("cell_function", ""))
-            renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side)})
+            optional_renderer_metadata: dict[str, Any] = {}
+            if "arms" in set(component_meta.get("body_parts", [])):
+                optional_renderer_metadata.update(hand_target_metadata(
+                    event,
+                    hit_index,
+                    component_side,
+                    simultaneous=simultaneous,
+                ))
+            if event["movement"] == "DOUBLE_FOOT_PULSE":
+                rail_trajectory = rail_trajectory_for_note(event, component_side, profile)
+                lane = int(rail_trajectory["end_lane"])
+                lanes = [lane]
+                optional_renderer_metadata["rail_trajectory"] = rail_trajectory
+            renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side), **optional_renderer_metadata})
     renderer_events = [_renderer_obstacle(value) for value in obstacles]
     return {
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
         "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.5",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}},
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
         "phrase_plan": phrase_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
@@ -2098,6 +2139,7 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
             "music_alignment", "event_fit", "energy_fit", "section_fit",
             "difficulty_fit", "body_balance", "visual_readability", "fatigue_safety",
             "rhythmic_phase_fit", "body_counterpoint_fit", "pickup_payoff_fit",
+            "density_fit",
             "phrase_coherence", "unique_movement_count", "primary_family_count",
             "family_switch_count", "block_family_focus", "motif_repetition",
         )
