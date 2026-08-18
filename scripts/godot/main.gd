@@ -5,6 +5,7 @@ const BEATMAP_PARSER := preload("res://scripts/beatmap_parser.gd")
 const MUSIC_TIMELINE_ADAPTER := preload("res://scripts/godot/timeline/music_timeline_adapter.gd")
 const HIT_EFFECT_SCENE := preload("res://scenes/hit_effect.tscn")
 const HIT_PARTICLE_SCENE := preload("res://scenes/hit_particle.tscn")
+const AUDIO_SAFE_GAMEPLAY_WARMUP := preload("res://scripts/godot/audio_safe_gameplay_warmup.gd")
 const CYAN := Color(0.0, 0.95, 1.0)
 const MAGENTA := Color(1.0, 0.0, 0.82)
 const HIT_Z := 0.0
@@ -234,8 +235,9 @@ func _ready() -> void:
 		_build_tuning_gui()
 	if not _load_inputs():
 		return
-	await _warmup_tunnel_before_playback()
 	_seek_runtime_indices_for_song_time(render_clock_start_at)
+	_prime_first_note_pipeline(render_clock_start_at)
+	await _warmup_tunnel_before_playback()
 	if debug_timeline_enabled:
 		_build_debug_timeline_overlay()
 	if not _is_headless_runtime():
@@ -271,6 +273,7 @@ func _warmup_tunnel_before_playback() -> void:
 	add_child(cover_layer)
 	await get_tree().process_frame
 	await tunnel_generator.warmup_render_pipelines()
+	await AUDIO_SAFE_GAMEPLAY_WARMUP.run(self, HIT_EFFECT_SCENE, HIT_PARTICLE_SCENE)
 	# Wait for both GPU specialization and the FPS moving average to settle. A
 	# slightly longer explicit loading beat is preferable to exposing a one-second
 	# hitch as soon as the player sees the corridor.
@@ -311,6 +314,18 @@ func _seek_runtime_indices_for_song_time(song_time: float) -> void:
 		if hold_end >= note_cutoff:
 			break
 		next_hold_event_index += 1
+
+
+func _prime_first_note_pipeline(song_time: float) -> void:
+	if _is_headless_runtime() or next_note_index >= beatmap.size():
+		return
+	# Build one real opening note under the warmup cover. All ordinary footsteps
+	# share this cached material family, so the runtime lookahead stays incremental.
+	var beat := beatmap[next_note_index] as Dictionary
+	if float(beat.get("time", beat.get("hit_time", 0.0))) - song_time <= time_to_hit:
+		_spawn_note(beat, next_note_index, song_time)
+		next_note_index += 1
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_headless_runtime():

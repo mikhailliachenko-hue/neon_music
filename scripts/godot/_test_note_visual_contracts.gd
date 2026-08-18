@@ -195,7 +195,7 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 	var volume_rim := note.get_node_or_null("StepPlatform3D/FrontTopRim") as MeshInstance3D
 	var imported_platform := note.get_node_or_null("StepPlatform3D/ImportedModel") as Node3D
 	var contact_bed := note.get_node_or_null("StepPlatform3D/ContactBed") as MeshInstance3D
-	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as MeshInstance3D
+	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as Node3D
 	if base_rim == null or volume_rim == null or imported_platform == null or contact_bed == null or footprint_frame == null:
 		failures.append("ordinary step is missing its authored readability frame")
 		return
@@ -203,9 +203,10 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 		var material := rim.material_override as StandardMaterial3D
 		if material == null or material.no_depth_test:
 			failures.append("volumetric step shell still renders as a floating no-depth overlay")
-	var frame_material := footprint_frame.material_override as ShaderMaterial
-	if frame_material == null or frame_material.shader != preload("res://assets/models/footprint_frame.gdshader"):
-		failures.append("ordinary footprint has no dedicated always-visible frame shader")
+	var frame_top := footprint_frame.get_node_or_null("Top") as MeshInstance3D
+	var frame_material := frame_top.material_override as StandardMaterial3D if frame_top != null else null
+	if frame_material == null or not frame_material.no_depth_test:
+		failures.append("ordinary footprint has no cached always-visible volumetric frame")
 	note.sync_to_song_time(-2.0, 10.0)
 	if not is_equal_approx(note.scale.y, 1.0):
 		failures.append("step approach animation lifts or vertically scales the grounded cue")
