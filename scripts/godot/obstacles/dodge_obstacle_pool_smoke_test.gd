@@ -28,6 +28,10 @@ func _run() -> void:
 
 	_assert_equal(int(pool.call("total_count")), 4, "pool must prewarm exactly four obstacles")
 	var initial_child_count := pool.get_child_count()
+	var first_pooled := pool.get_child(0) as Node3D
+	_assert_true(first_pooled != null, "prewarmed wall must exist")
+	_assert_true(first_pooled.get_node_or_null("VisualRoot/SolidBody") is MeshInstance3D, "wall must use one cohesive body")
+	_assert_true(first_pooled.get_node_or_null("VisualRoot/ModelModules") == null, "stepped modular fence silhouette must stay removed")
 	var acquired: Array[Node3D] = []
 	var initial_ids: Array[int] = []
 	for index in range(4):

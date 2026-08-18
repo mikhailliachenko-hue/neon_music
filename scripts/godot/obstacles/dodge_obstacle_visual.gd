@@ -7,7 +7,7 @@ const BASE_SIZE := Vector3(4.0, 4.25, 24.0)
 const INNER_FACE_X := 1.96
 
 @onready var visual_root: Node3D = $VisualRoot
-@onready var model_modules: Node3D = $VisualRoot/ModelModules
+@onready var solid_body: MeshInstance3D = $VisualRoot/SolidBody
 @onready var front_face: MeshInstance3D = $VisualRoot/FrontFace
 @onready var back_face: MeshInstance3D = $VisualRoot/BackFace
 @onready var inner_face: MeshInstance3D = $VisualRoot/InnerLaneFace
@@ -33,21 +33,14 @@ func _ready() -> void:
 func _initialize_cached_materials() -> void:
 	_body_material = ShaderMaterial.new()
 	_body_material.shader = BODY_SHADER
+	solid_body.material_override = _body_material
+	solid_body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	_face_material = ShaderMaterial.new()
 	_face_material.shader = FACE_SHADER
 	front_face.material_override = _face_material
 	back_face.material_override = _face_material
 	inner_face.material_override = _face_material
-
-	for raw_child in model_modules.find_children("*", "MeshInstance3D", true, false):
-		var mesh_instance := raw_child as MeshInstance3D
-		if mesh_instance == null or mesh_instance.mesh == null:
-			continue
-		mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		for surface_index in range(mesh_instance.mesh.get_surface_count()):
-			mesh_instance.set_surface_override_material(surface_index, _body_material)
-
 
 func activate(
 	new_event_type: String,
