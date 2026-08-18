@@ -24,6 +24,8 @@ var _info_elapsed := 0.0
 var _capture_path := ""
 var _capture_after := 1.5
 var _capture_started := false
+var _manual_action_at := -1.0
+var _manual_action_fired := false
 
 
 func _enter_tree() -> void:
@@ -94,8 +96,11 @@ func _process(delta: float) -> void:
 		"energy_role": "drop_peak" if phase == 3 else "stable_groove",
 		"section_changed": count32_changed,
 	}
-	if beat_changed:
+	if beat_changed and _manual_action_at < 0.0:
 		generator.trigger_preview_frame_wave(bool(state["downbeat_changed"]))
+	if not _manual_action_fired and _manual_action_at >= 0.0 and _preview_time >= _manual_action_at:
+		_manual_action_fired = true
+		generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
 	generator.sync_to_song_time(_preview_time, state)
 	_last_beat = beat
 	_last_count8 = count8
@@ -136,6 +141,8 @@ func _parse_preview_args() -> void:
 			_capture_path = arg.trim_prefix("--capture=")
 		elif arg.begins_with("--capture-after="):
 			_capture_after = maxf(0.25, float(arg.trim_prefix("--capture-after=")))
+		elif arg.begins_with("--action-at="):
+			_manual_action_at = maxf(0.0, float(arg.trim_prefix("--action-at=")))
 
 
 func _capture_start_time() -> float:

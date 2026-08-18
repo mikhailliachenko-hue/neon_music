@@ -26,6 +26,7 @@ var _panel_material: ShaderMaterial
 var _dot_material: ShaderMaterial
 var _guide_material: ShaderMaterial
 var _grid_variant := 0
+var _pattern_phase := 0.0
 
 
 func _ready() -> void:
@@ -37,6 +38,7 @@ func _ready() -> void:
 	_panel_material.shader = PANEL_SHADER
 	_panel_material.set_shader_parameter("rest_visibility", 0.012)
 	_panel_material.set_shader_parameter("action_gain", 0.86)
+	_panel_material.set_shader_parameter("pattern_mode", 0.0)
 	_configure_side_bank(left_bank, panel_mesh, -6.15, false)
 	_configure_side_bank(right_bank, panel_mesh, 6.15, true)
 	_configure_ceiling_bank(ceiling_bank, panel_mesh)
@@ -47,6 +49,7 @@ func _ready() -> void:
 		_dot_material.shader = PANEL_SHADER
 		_dot_material.set_shader_parameter("rest_visibility", 0.010)
 		_dot_material.set_shader_parameter("action_gain", 0.90)
+		_dot_material.set_shader_parameter("pattern_mode", 1.0)
 		_configure_dot_side_bank(dot_left_bank, dot_mesh, -6.15, false)
 		_configure_dot_side_bank(dot_right_bank, dot_mesh, 6.15, true)
 		_configure_dot_ceiling_bank(dot_ceiling_bank, dot_mesh)
@@ -95,8 +98,23 @@ func set_light_grid_variant(variant: int) -> void:
 	dot_ceiling_bank.visible = not show_capsules
 
 
+func configure_light_grid_section(variant: int, logical_index: int) -> void:
+	set_light_grid_variant(variant)
+	# A stable per-segment phase makes one long authored waveform across the
+	# streamed corridor. There is intentionally no TIME/audio input here.
+	_pattern_phase = float(posmod(logical_index, 32)) * 0.73
+	if _panel_material != null:
+		_panel_material.set_shader_parameter("pattern_phase", _pattern_phase)
+	if _dot_material != null:
+		_dot_material.set_shader_parameter("pattern_phase", _pattern_phase + 0.58)
+
+
 func light_grid_variant() -> int:
 	return _grid_variant
+
+
+func light_grid_pattern_phase() -> float:
+	return _pattern_phase
 
 
 func _extract_panel_mesh() -> Mesh:
@@ -162,7 +180,10 @@ func _configure_side_bank(
 				basis = basis.rotated(Vector3.FORWARD, PI)
 			var center := Vector3(x_position, y_position, z_position)
 			multi_mesh.set_instance_transform(instance_index, Transform3D(basis, center - basis * mesh_center))
-			multi_mesh.set_instance_custom_data(instance_index, Color(row_phase, 0.38 + row_phase * 0.48, 0.0, 1.0))
+			multi_mesh.set_instance_custom_data(
+				instance_index,
+				Color(row_phase, 0.38 + row_phase * 0.48, depth_phase, 1.0)
+			)
 			instance_index += 1
 	_assign_multi_mesh(target, multi_mesh)
 
@@ -190,7 +211,10 @@ func _configure_dot_side_bank(
 				basis = basis.rotated(Vector3.FORWARD, PI)
 			var center := Vector3(x_position, y_position, z_position)
 			multi_mesh.set_instance_transform(instance_index, Transform3D(basis, center - basis * mesh_center))
-			multi_mesh.set_instance_custom_data(instance_index, Color(row_phase, 0.42 + row_phase * 0.42, 0.0, 1.0))
+			multi_mesh.set_instance_custom_data(
+				instance_index,
+				Color(row_phase, 0.42 + row_phase * 0.42, depth_phase, 1.0)
+			)
 			instance_index += 1
 	_assign_multi_mesh_with_material(target, multi_mesh, _dot_material)
 
@@ -213,7 +237,7 @@ func _configure_ceiling_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> v
 				multi_mesh.set_instance_transform(instance_index, Transform3D(basis, center - basis * mesh_center))
 				multi_mesh.set_instance_custom_data(
 					instance_index,
-					Color(column_phase, 0.52 + (1.0 - column_phase) * 0.30, 0.0, 1.0)
+					Color(column_phase, 0.52 + (1.0 - column_phase) * 0.30, depth_phase, 1.0)
 				)
 				instance_index += 1
 	_assign_multi_mesh(target, multi_mesh)
@@ -237,7 +261,7 @@ func _configure_dot_ceiling_bank(target: MultiMeshInstance3D, dot_mesh: Mesh) ->
 				multi_mesh.set_instance_transform(instance_index, Transform3D(basis, center - basis * mesh_center))
 				multi_mesh.set_instance_custom_data(
 					instance_index,
-					Color(column_phase, 0.48 + (1.0 - column_phase) * 0.34, 0.0, 1.0)
+					Color(column_phase, 0.48 + (1.0 - column_phase) * 0.34, depth_phase, 1.0)
 				)
 				instance_index += 1
 	_assign_multi_mesh_with_material(target, multi_mesh, _dot_material)
@@ -265,6 +289,7 @@ func _configure_guide_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> voi
 	_guide_material.set_shader_parameter("theme_emission", 0.74)
 	_guide_material.set_shader_parameter("rest_visibility", 0.105)
 	_guide_material.set_shader_parameter("action_gain", 0.18)
+	_guide_material.set_shader_parameter("pattern_enabled", 0.0)
 	target.multimesh = multi_mesh
 	target.material_override = _guide_material
 	target.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

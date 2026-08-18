@@ -96,3 +96,9 @@ func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: Pac
 	module.call("set_light_grid_variant", 1)
 	if capsule_bank == null or dot_bank == null or capsule_bank.visible or not dot_bank.visible:
 		failures.append("LIGHT GRID RUNNER dot matrix did not activate cleanly")
+	if not module.has_method("configure_light_grid_section"):
+		failures.append("LIGHT GRID RUNNER has no authored waveform section configuration")
+	else:
+		module.call("configure_light_grid_section", 1, 9)
+		if absf(float(module.call("light_grid_pattern_phase")) - 6.57) > 0.001:
+			failures.append("LIGHT GRID RUNNER waveform phase is not deterministic")

@@ -221,8 +221,8 @@ func _configure_reference_light_grid_variant() -> void:
 				continue
 			for module_node in group.get_children():
 				var module := module_node as Node3D
-				if module != null and module.has_method("set_light_grid_variant"):
-					module.call("set_light_grid_variant", variant)
+				if module != null and module.has_method("configure_light_grid_section"):
+					module.call("configure_light_grid_section", variant, logical_index)
 
 
 func _profile_layout(proposed: String, index: int) -> String:
