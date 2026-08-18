@@ -285,6 +285,8 @@ func apply_visual_state(
 		primary = Color(0.74, 0.10, 1.0, 1.0)
 		accent = Color(1.0, 0.64, 0.08, 1.0)
 		floor_color = Color(0.014, 0.005, 0.022, 1.0)
+	elif _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
+		floor_color = Color(0.028, 0.003, 0.004, 1.0)
 	var pulse := clampf(reaction, 0.0, 2.2)
 	var profile_energy := _profile_emission_scale()
 	_spectrum_primary = primary
@@ -363,11 +365,19 @@ func apply_visual_state(
 			var authored_mix := 0.46
 			var body_glow := 0.0
 			if slot_name == "Floor":
-				material_surface = Color(0.008, 0.012, 0.018, 1.0)
-				material_primary = material_surface.lerp(primary, 0.08)
-				material_accent = primary
-				material_emission *= 0.28
-				authored_mix = 0.08
+				if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
+					material_surface = Color(0.028, 0.003, 0.004, 1.0) if _light_grid_mode == 1 \
+						else Color(0.014, 0.005, 0.022, 1.0)
+					material_primary = material_surface.lerp(primary, 0.10)
+					material_accent = material_surface.lerp(primary, 0.18)
+					material_emission *= 0.14
+					authored_mix = 0.16
+				else:
+					material_surface = Color(0.008, 0.012, 0.018, 1.0)
+					material_primary = material_surface.lerp(primary, 0.08)
+					material_accent = primary
+					material_emission *= 0.28
+					authored_mix = 0.08
 			elif _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames" \
 				and slot_name in ["Rings", "Arches"]:
 				material_surface = Color(0.012, 0.016, 0.024, 1.0)
@@ -1051,6 +1061,8 @@ func apply_ring_reaction(pulse: float, drop_pulse: float, wave: float) -> void:
 
 
 func recommended_floor_pattern(default_pattern: String) -> String:
+	if default_pattern == "None":
+		return default_pattern
 	match active_profile():
 		"Entrance": return "GlowingLines"
 		"Ring": return "NeonGrid"
@@ -1060,7 +1072,7 @@ func recommended_floor_pattern(default_pattern: String) -> String:
 
 
 func configure_floor_pattern(pattern_name: String) -> void:
-	_floor_pattern = pattern_name if _floor_effect_materials.has(pattern_name) else "GlowingLines"
+	_floor_pattern = pattern_name if pattern_name == "None" or _floor_effect_materials.has(pattern_name) else "GlowingLines"
 	for child in $VisualRoot/FloorEffects.get_children():
 		if child is Node3D:
 			(child as Node3D).visible = child.name == _floor_pattern

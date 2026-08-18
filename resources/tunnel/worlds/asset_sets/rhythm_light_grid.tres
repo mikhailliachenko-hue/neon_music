@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
-[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_factory/floor-large.glb" id="2_road"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/modules/rhythm_light_grid_frame.tscn" id="3_grid"]
 
 [resource]

@@ -109,8 +109,10 @@ Runtime renderer scripts.
   GLB sets. The user-facing library uses six minimal rhythm-frame silhouettes
   (open A-frame, square, tall square, open gate, circle and star) plus the
   separate LIGHT GRID RUNNER and VIOLET GRID RUNNER panel tunnels. They share
-  one pooled module but keep the Quaternius capsule and dot banks in distinct
-  presets, so both architectures never overlap inside one corridor.
+  one pooled module but keep the large, dense Quaternius light-housing banks in
+  distinct presets, so both architectures never overlap inside one corridor.
+  These two presets use a clean modular GLB floor with no procedural guide rails
+  or floor-line effects.
 - `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
   GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and
   lazy PackedScene cache. `tunnel/neon_material_library.gd` owns six shared neon

@@ -4,13 +4,14 @@ class_name RhythmLightGridFrame
 const PANEL_SCENE := preload("res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf")
 const DOT_SCENE := preload("res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Small.gltf")
 const PANEL_SHADER := preload("res://assets/tunnel/shaders/rhythm_light_grid.gdshader")
-const DEPTH_SLICES := 5
+const SIDE_DEPTH_SLICES := 11
+const CANOPY_DEPTH_SLICES := 5
 
 static var _cached_panel_mesh: Mesh
 static var _cached_dot_mesh: Mesh
 
-@export_range(5, 9, 1) var side_rows := 7
-@export_range(5, 7, 1) var dot_side_rows := 6
+@export_range(5, 9, 1) var side_rows := 5
+@export_range(5, 7, 1) var dot_side_rows := 5
 @export_range(4, 8, 1) var ceiling_columns_per_side := 6
 @export var dot_primary := Color(1.0, 0.64, 0.08, 1.0)
 @export var dot_accent := Color(0.74, 0.10, 1.0, 1.0)
@@ -131,7 +132,9 @@ func light_grid_pattern_phase() -> float:
 func _extract_panel_mesh() -> Mesh:
 	if _cached_panel_mesh != null:
 		return _cached_panel_mesh
-	_cached_panel_mesh = _extract_emissive_mesh(PANEL_SCENE)
+	# The side corridor now uses the complete ready-made housing. The authored
+	# shell provides the same readable volume as the ceiling tiles.
+	_cached_panel_mesh = _extract_full_mesh(PANEL_SCENE)
 	return _cached_panel_mesh
 
 
@@ -154,24 +157,6 @@ func _extract_full_mesh(source_scene: PackedScene) -> Mesh:
 	return result
 
 
-func _extract_emissive_mesh(source_scene: PackedScene) -> Mesh:
-	var source := source_scene.instantiate()
-	if source == null:
-		return null
-	var mesh_instance := _find_mesh_instance(source)
-	var result: Mesh = mesh_instance.mesh if mesh_instance != null else null
-	# Quaternius authors this light as a dark mounting shell plus a separate
-	# emissive insert. MultiMesh only needs the ready-made insert; keeping the
-	# shell would turn every reference-style capsule into a bulky wall bracket.
-	if result is ArrayMesh and result.get_surface_count() > 1:
-		var light_insert := result.duplicate() as ArrayMesh
-		while light_insert.get_surface_count() > 1:
-			light_insert.surface_remove(0)
-		result = light_insert
-	source.free()
-	return result
-
-
 func _find_mesh_instance(node: Node) -> MeshInstance3D:
 	if node is MeshInstance3D:
 		return node as MeshInstance3D
@@ -188,17 +173,18 @@ func _configure_side_bank(
 	x_position: float,
 	mirror: bool
 ) -> void:
-	var multi_mesh := _new_multi_mesh(panel_mesh, side_rows * DEPTH_SLICES)
+	var multi_mesh := _new_multi_mesh(panel_mesh, side_rows * SIDE_DEPTH_SLICES)
 	var mesh_center := panel_mesh.get_aabb().get_center()
 	var instance_index := 0
-	for depth_index in range(DEPTH_SLICES):
-		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
-		var z_position := lerpf(-6.0, 6.0, depth_phase)
+	for depth_index in range(SIDE_DEPTH_SLICES):
+		var depth_phase := float(depth_index) / float(maxi(1, SIDE_DEPTH_SLICES - 1))
+		var z_position := lerpf(-7.2, 7.2, depth_phase)
 		for row_index in range(side_rows):
 			var row_phase := float(row_index) / float(maxi(1, side_rows - 1))
-			var y_position := lerpf(-1.12, 4.28, row_phase)
+			var y_position := lerpf(-1.10, 4.10, row_phase)
 			var basis := Basis.IDENTITY.rotated(Vector3.UP, PI * 0.5)
-			basis = basis.scaled(Vector3(1.24, 1.72, 0.76))
+			# About 1.3m square in the wall plane with a real 0.5m housing.
+			basis = basis.scaled(Vector3(1.0, 7.0, 1.15))
 			if mirror:
 				basis = basis.rotated(Vector3.FORWARD, PI)
 			var center := Vector3(x_position, y_position, z_position)
@@ -217,19 +203,18 @@ func _configure_dot_side_bank(
 	x_position: float,
 	mirror: bool
 ) -> void:
-	var multi_mesh := _new_multi_mesh(dot_mesh, dot_side_rows * DEPTH_SLICES)
+	var multi_mesh := _new_multi_mesh(dot_mesh, dot_side_rows * SIDE_DEPTH_SLICES)
 	var mesh_center := dot_mesh.get_aabb().get_center()
 	var instance_index := 0
-	for depth_index in range(DEPTH_SLICES):
-		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
+	for depth_index in range(SIDE_DEPTH_SLICES):
+		var depth_phase := float(depth_index) / float(maxi(1, SIDE_DEPTH_SLICES - 1))
 		var z_position := lerpf(-7.2, 7.2, depth_phase)
 		for row_index in range(dot_side_rows):
 			var row_phase := float(row_index) / float(maxi(1, dot_side_rows - 1))
-			var y_position := lerpf(-0.92, 4.08, row_phase)
+			var y_position := lerpf(-1.10, 4.10, row_phase)
 			var basis := Basis.IDENTITY.rotated(Vector3.UP, PI * 0.5)
-			# The full GLTF is scaled into a roughly 0.9m square tile. The authored
-			# shell retains about 0.4m of depth, so perspective and shading stay clear.
-			basis = basis.scaled(Vector3(1.05, 5.0, 0.90))
+			# Match the large ceiling blocks: a 1.3m square with narrow gaps.
+			basis = basis.scaled(Vector3(1.55, 7.0, 1.15))
 			if mirror:
 				basis = basis.rotated(Vector3.FORWARD, PI)
 			var center := Vector3(x_position, y_position, z_position)
@@ -243,12 +228,12 @@ func _configure_dot_side_bank(
 
 
 func _configure_ceiling_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> void:
-	var total_columns := ceiling_columns_per_side * 2 * DEPTH_SLICES
+	var total_columns := ceiling_columns_per_side * 2 * CANOPY_DEPTH_SLICES
 	var multi_mesh := _new_multi_mesh(panel_mesh, total_columns)
 	var mesh_center := panel_mesh.get_aabb().get_center()
 	var instance_index := 0
-	for depth_index in range(DEPTH_SLICES):
-		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
+	for depth_index in range(CANOPY_DEPTH_SLICES):
+		var depth_phase := float(depth_index) / float(maxi(1, CANOPY_DEPTH_SLICES - 1))
 		var z_position := lerpf(-6.0, 6.0, depth_phase)
 		for side_value in [-1.0, 1.0]:
 			var side: float = float(side_value)
@@ -267,12 +252,12 @@ func _configure_ceiling_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> v
 
 
 func _configure_dot_ceiling_bank(target: MultiMeshInstance3D, dot_mesh: Mesh) -> void:
-	var total_columns := ceiling_columns_per_side * 2 * DEPTH_SLICES
+	var total_columns := ceiling_columns_per_side * 2 * CANOPY_DEPTH_SLICES
 	var multi_mesh := _new_multi_mesh(dot_mesh, total_columns)
 	var mesh_center := dot_mesh.get_aabb().get_center()
 	var instance_index := 0
-	for depth_index in range(DEPTH_SLICES):
-		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
+	for depth_index in range(CANOPY_DEPTH_SLICES):
+		var depth_phase := float(depth_index) / float(maxi(1, CANOPY_DEPTH_SLICES - 1))
 		var z_position := lerpf(-7.2, 7.2, depth_phase)
 		for side_value in [-1.0, 1.0]:
 			var side: float = float(side_value)
@@ -291,11 +276,11 @@ func _configure_dot_ceiling_bank(target: MultiMeshInstance3D, dot_mesh: Mesh) ->
 
 
 func _configure_guide_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> void:
-	var multi_mesh := _new_multi_mesh(panel_mesh, 2 * DEPTH_SLICES)
+	var multi_mesh := _new_multi_mesh(panel_mesh, 2 * CANOPY_DEPTH_SLICES)
 	var mesh_center := panel_mesh.get_aabb().get_center()
 	var instance_index := 0
-	for depth_index in range(DEPTH_SLICES):
-		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
+	for depth_index in range(CANOPY_DEPTH_SLICES):
+		var depth_phase := float(depth_index) / float(maxi(1, CANOPY_DEPTH_SLICES - 1))
 		var z_position := lerpf(-6.0, 6.0, depth_phase)
 		for side in [-1.0, 1.0]:
 			var direction := float(side)

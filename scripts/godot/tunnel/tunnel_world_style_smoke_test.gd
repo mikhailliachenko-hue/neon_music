@@ -96,6 +96,22 @@ func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: Pac
 	module.call("set_light_grid_variant", 0)
 	var capsule_bank := module.get_node_or_null("LeftBank") as MultiMeshInstance3D
 	var dot_bank := module.get_node_or_null("DotLeftBank") as MultiMeshInstance3D
+	_validate_large_dense_side_bank(capsule_bank, "capsule", failures)
+	_validate_large_dense_side_bank(dot_bank, "dot", failures)
+	for segment in generator._segments:
+		var left_rail := segment.get_node_or_null("VisualRoot/NeonElements/LeftFloorRail") as MeshInstance3D
+		var right_rail := segment.get_node_or_null("VisualRoot/NeonElements/RightFloorRail") as MeshInstance3D
+		if (left_rail != null and left_rail.visible) or (right_rail != null and right_rail.visible):
+			failures.append("%s still shows the legacy floor guide lines" % generator.current_level_preset().display_name())
+			break
+		var floor_effects := segment.get_node_or_null("VisualRoot/FloorEffects") as Node3D
+		if floor_effects != null:
+			for effect in floor_effects.get_children():
+				if effect is Node3D and (effect as Node3D).visible:
+					failures.append("%s still shows the %s floor-line pattern" % [
+						generator.current_level_preset().display_name(), effect.name,
+					])
+					break
 	if capsule_bank == null or dot_bank == null or not capsule_bank.visible or dot_bank.visible:
 		failures.append("LIGHT GRID RUNNER capsule matrix did not activate cleanly")
 	module.call("set_light_grid_variant", 1)
@@ -107,3 +123,15 @@ func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: Pac
 		module.call("configure_light_grid_section", 1, 9)
 		if absf(float(module.call("light_grid_pattern_phase")) - 6.57) > 0.001:
 			failures.append("LIGHT GRID RUNNER waveform phase is not deterministic")
+
+
+func _validate_large_dense_side_bank(
+	bank: MultiMeshInstance3D,
+	bank_name: String,
+	failures: PackedStringArray
+) -> void:
+	if bank == null or bank.multimesh == null or bank.multimesh.mesh == null:
+		failures.append("LIGHT GRID RUNNER %s side bank is missing" % bank_name)
+		return
+	if bank.multimesh.instance_count != 55:
+		failures.append("LIGHT GRID RUNNER %s side bank lost its dense 5x11 grid" % bank_name)

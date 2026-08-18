@@ -46,10 +46,12 @@ settings; selecting one reapplies those settings to the existing pool without
 restarting gameplay.
 
 The two grid presets are intentionally separate from the thirteen authored arch
-levels. `LIGHT GRID RUNNER` owns the red/yellow/green Quaternius capsule bank;
-`VIOLET GRID RUNNER` owns the volumetric violet/gold dot bank. Both batch their
-repeats with `MultiMeshInstance3D`, keep the gameplay aperture empty, leave the
-audio spectrum disabled and react only to the distant action wave.
+levels. `LIGHT GRID RUNNER` owns the red/yellow/green Quaternius light housings;
+`VIOLET GRID RUNNER` owns the volumetric violet/gold dot housings. Both use large
+dense 5x11 side banks batched with `MultiMeshInstance3D`, keep the gameplay
+aperture empty, leave the audio spectrum disabled and react only to the distant
+action wave. Their clean GLB floor uses a restrained burgundy or violet tint;
+procedural guide rails and floor-line patterns stay disabled.
 
 `lighting_settings.frame_rest_glow` and
 `lighting_settings.frame_rest_emission_scale` calibrate the steady readability

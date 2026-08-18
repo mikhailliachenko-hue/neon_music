@@ -36,7 +36,7 @@ class_name TunnelLevelPreset
 @export_range(0.0, 2.0, 0.01) var camera_motion := 0.35
 @export_range(0.25, 2.0, 0.01) var speed_multiplier := 1.0
 @export_range(0.0, 2.0, 0.01) var atmosphere_density := 1.0
-@export_enum("NeonGrid", "GlowingLines", "EnergyWaves") var floor_pattern := "GlowingLines"
+@export_enum("None", "NeonGrid", "GlowingLines", "EnergyWaves") var floor_pattern := "GlowingLines"
 @export var layout_weight_scale: Dictionary = {}
 
 @export_group("Directed Level")
