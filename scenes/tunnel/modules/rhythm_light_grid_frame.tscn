@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/rhythm_light_grid_frame.gd" id="1_script"]
+
+[node name="RhythmLightGridFrame" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="LeftBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="RightBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="CeilingBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="GuideBank" type="MultiMeshInstance3D" parent="."]

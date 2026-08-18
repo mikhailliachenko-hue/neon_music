@@ -36,14 +36,21 @@ godot --path . -- --preview-level "--tunnel-preset=FINAL DROP" --tunnel-seed=777
 
 ## Dance Mode level library
 
-The 13 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
+The 14 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
 GOLDEN STAR, PULSE CIRCLE, SYNTH VIOLET, ICE HALO, REDLINE GATE,
 TOXIC PORTAL, ELECTRIC PINK, WHITE SIGNAL, SUNSET DRIVE, DEEP SPACE RING,
-MATRIX FRAME and FINAL SPECTRUM. They use the same generator, fixed pool,
+MATRIX FRAME, FINAL SPECTRUM and LIGHT GRID RUNNER. They use the same generator, fixed pool,
 asset cache and shared segment scenes. Each resource owns identity, palette,
 frame silhouette, densities and particle/light/fog/camera/music reaction
 settings; selecting one reapplies those settings to the existing pool without
 restarting gameplay.
+
+`LIGHT GRID RUNNER` is intentionally separate from the thirteen authored arch
+levels. It uses the ready-made Quaternius `Prop_Light_Wide.gltf` emissive insert
+for red/yellow/green side and ceiling banks, batches those repeats with
+`MultiMeshInstance3D`, keeps the gameplay aperture empty, and leaves the audio
+spectrum disabled. Only the existing distant action wave can softly travel
+through the panel modules.
 
 `lighting_settings.frame_rest_glow` and
 `lighting_settings.frame_rest_emission_scale` calibrate the steady readability

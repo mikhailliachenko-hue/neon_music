@@ -8,6 +8,7 @@ const WORLD_CASES := [
 	{"level": "ELECTRIC PINK", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
 	{"level": "TOXIC PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
+	{"level": "LIGHT GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
 ]
 
 

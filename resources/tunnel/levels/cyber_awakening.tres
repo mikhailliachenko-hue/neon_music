@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=23 format=3]
+[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_config.gd" id="1_config"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/entrance_segment.tscn" id="2_entrance"]
@@ -22,6 +22,7 @@
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/11_deep_space_ring.tres" id="20_level_11"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/12_matrix_frame.tres" id="21_level_12"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/13_final_spectrum.tres" id="22_level_13"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/14_light_grid_runner.tres" id="23_level_14"]
 
 [resource]
 script = ExtResource("1_config")
@@ -64,4 +65,4 @@ step_camera_duration = 0.24
 initial_theme = "CyberBlue"
 themes = Array[TunnelTheme]([ExtResource("9_theme")])
 initial_preset = "CYBER AWAKENING"
-presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13")])
+presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14")])

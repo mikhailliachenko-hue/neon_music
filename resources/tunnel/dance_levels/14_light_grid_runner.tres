@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/light_grid_runner.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_light_grid.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_navy_starfield.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "LIGHT GRID RUNNER"
+description = "Тёмный световой коридор с красно-жёлто-зелёными панелями в стиле референса STAY ON BEAT #6."
+difficulty = "Medium"
+color_palette = PackedColorArray(1, 0.08, 0.025, 1, 0.12, 1, 0.28, 1, 0.0015, 0.0015, 0.003, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.04, "amount_scale": 0.04}
+lighting_settings = {"glow_intensity": 0.58, "glow_strength": 0.64, "bloom": 0.038, "frame_rest_glow": 0.16, "frame_rest_emission_scale": 0.84}
+fog_settings = {"density": 0.00105}
+camera_settings = {"step_impact": 0.48, "step_duration": 0.18, "fov_pulse": 0.34}
+music_reaction_settings = {"beat_strength": 0.22, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 68.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.30}
+preset_name = "LIGHT GRID RUNNER"
+style_id = "ReferenceLightGrid"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 114067
+ring_density = 1.0
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.4
+glow_strength = 0.74
+camera_motion = 0.22
+speed_multiplier = 1.0
+atmosphere_density = 0.05
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "14_light_grid_runner"
+segment_sequence = PackedStringArray("Ring")

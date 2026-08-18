@@ -87,6 +87,12 @@ func configure_layout(
 ) -> void:
 	_active_world_style = preset.world_style if preset != null else null
 	_active_world_key = _world_cache_key(_active_world_style)
+	var show_floor_rails := _active_world_style.show_floor_rails if _active_world_style != null else true
+	var show_ceiling_rails := _active_world_style.show_ceiling_rails if _active_world_style != null else true
+	$VisualRoot/NeonElements/LeftFloorRail.visible = show_floor_rails
+	$VisualRoot/NeonElements/RightFloorRail.visible = show_floor_rails
+	$VisualRoot/NeonElements/LeftCeilingRail.visible = show_ceiling_rails
+	$VisualRoot/NeonElements/RightCeilingRail.visible = show_ceiling_rails
 	# A stable low light keeps the authored silhouette readable between actions.
 	# It is preset-controlled because a thin blue ring needs more support than a
 	# broad white or red gate. Action waves are still the only dynamic response.
@@ -376,7 +382,7 @@ func apply_frame_reaction(
 				continue
 			for module_node in group.get_children():
 				var module := module_node as Node3D
-				if module == null or not module.has_meta("rhythm_frame_materials"):
+				if module == null:
 					continue
 				# The transform remains stable. The reference pulse is a light wave;
 				# scaling the imported threshold could intersect gameplay platforms.
@@ -418,6 +424,23 @@ func apply_frame_reaction(
 				var emission := (0.50 + _frame_emission * 0.12) * _frame_rest_emission_scale \
 					* (1.0 + wave_amount * wave_emission_strength)
 				var body_glow := _frame_rest_glow + visual_amount * 0.24
+				if module.has_method("apply_panel_reaction"):
+					# The light-grid module keeps its authored per-instance gradient. The
+					# action wave only nudges that palette in the far field; it is not an
+					# audio spectrum and never scales geometry into the gameplay lane.
+					var panel_primary := _frame_primary.lerp(wave_color, visual_amount * 0.30)
+					var panel_accent := _frame_accent.lerp(wave_color, visual_amount * 0.24)
+					module.call(
+						"apply_panel_reaction",
+						panel_primary,
+						panel_accent,
+						wave_amount,
+						emission,
+						body_glow
+					)
+					continue
+				if not module.has_meta("rhythm_frame_materials"):
+					continue
 				for stored_material in module.get_meta("rhythm_frame_materials") as Array:
 					var material := stored_material as Material
 					if material is ShaderMaterial:
@@ -644,7 +667,7 @@ func prepare_world_style(
 			slot.add_child(group)
 			var placement_count := 2 if slot_name in ["Walls", "Panels", "Pipes", "Props"] else 1
 			if world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]:
-				placement_count = clampi(world_style.asset_set.frame_instances_per_segment if world_style.asset_set != null else 3, 2, 4)
+				placement_count = clampi(world_style.asset_set.frame_instances_per_segment if world_style.asset_set != null else 3, 1, 4)
 			for placement_index in range(placement_count):
 				var instance := packed.instantiate() as Node3D
 				if instance == null:
@@ -821,12 +844,12 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 				target_center = Vector3(0.0, -2.02, 0.0)
 			"Rings", "Arches":
 				var asset_set := world_style.asset_set if world_style != null else null
+				var frame_count := clampi(world_style.asset_set.frame_instances_per_segment if world_style != null and world_style.asset_set != null else 3, 1, 4)
 				target_size = Vector3(
 					asset_set.frame_target_width if asset_set != null else 16.2,
 					asset_set.frame_target_height if asset_set != null else 10.2,
-					1.25
+					18.4 if frame_count == 1 else 1.25
 				)
-				var frame_count := clampi(world_style.asset_set.frame_instances_per_segment if world_style != null and world_style.asset_set != null else 3, 2, 4)
 				var frame_spacing := BASE_LENGTH / float(frame_count)
 				target_center = Vector3(
 					0.0,
@@ -864,6 +887,10 @@ func _enforce_safe_lane(instance: Node3D, source_bounds: AABB, slot_name: String
 
 
 func _combined_bounds(root: Node3D) -> AABB:
+	if root.has_method("tunnel_local_bounds"):
+		var declared_bounds: Variant = root.call("tunnel_local_bounds")
+		if typeof(declared_bounds) == TYPE_AABB:
+			return declared_bounds as AABB
 	var combined := AABB()
 	var has_bounds := false
 	for child in root.find_children("*", "MeshInstance3D", true, false):

@@ -98,7 +98,7 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 13 reference-focused Dance Mode levels. The existing Track tuning GUI
+  data-driven library of 14 reference-focused Dance Mode levels. The existing Track tuning GUI
   selects/reseeds/previews these Resources at runtime; all of them share the
   generator, segment scenes, resource cache and fixed eight-segment pool. Each
   preset also calibrates steady GLB-frame readability independently from bloom
@@ -106,8 +106,10 @@ Runtime renderer scripts.
   consistent exposure without one global brightness multiplier.
 - `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
   `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
-  GLB sets. The user-facing library now uses six minimal rhythm-frame silhouettes:
-  open A-frame, square, tall square, open gate, circle and star.
+  GLB sets. The user-facing library uses six minimal rhythm-frame silhouettes
+  (open A-frame, square, tall square, open gate, circle and star) plus the
+  separate LIGHT GRID RUNNER panel tunnel. The latter instances the emissive
+  insert from Quaternius `Prop_Light_Wide.gltf` through pooled MultiMeshes.
 - `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
   GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and
   lazy PackedScene cache. `tunnel/neon_material_library.gd` owns six shared neon
