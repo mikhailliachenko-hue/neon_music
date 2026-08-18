@@ -73,19 +73,29 @@ func apply_panel_reaction(
 ) -> void:
 	if _panel_material == null:
 		return
-	_panel_material.set_shader_parameter("theme_primary", primary)
-	_panel_material.set_shader_parameter("theme_accent", accent)
-	_panel_material.set_shader_parameter("wave_amount", clampf(wave_amount, 0.0, 1.0))
-	_panel_material.set_shader_parameter("theme_emission", clampf(emission, 0.0, 3.0))
-	_panel_material.set_shader_parameter("body_glow", clampf(body_glow, 0.0, 1.0))
-	if _dot_material != null:
+	var safe_wave := clampf(wave_amount, 0.0, 1.0)
+	var safe_emission := clampf(emission, 0.0, 3.0)
+	var safe_body_glow := clampf(body_glow, 0.0, 1.0)
+	# Only the visible bank receives per-frame uniforms. Updating the hidden bank
+	# doubled RenderingServer traffic exactly while the action wave was active.
+	if _grid_variant == 0:
+		_panel_material.set_shader_parameter("theme_primary", primary)
+		_panel_material.set_shader_parameter("theme_accent", accent)
+		_panel_material.set_shader_parameter("wave_amount", safe_wave)
+		_panel_material.set_shader_parameter("theme_emission", safe_emission)
+		_panel_material.set_shader_parameter("body_glow", safe_body_glow)
+	elif _dot_material != null:
 		_dot_material.set_shader_parameter("theme_primary", dot_primary)
 		_dot_material.set_shader_parameter("theme_accent", dot_accent)
-		_dot_material.set_shader_parameter("wave_amount", clampf(wave_amount, 0.0, 1.0))
-		_dot_material.set_shader_parameter("theme_emission", clampf(emission, 0.0, 3.0))
-		_dot_material.set_shader_parameter("body_glow", clampf(body_glow, 0.0, 1.0))
+		_dot_material.set_shader_parameter("wave_amount", safe_wave)
+		_dot_material.set_shader_parameter("theme_emission", safe_emission)
+		_dot_material.set_shader_parameter("body_glow", safe_body_glow)
 	if _guide_material != null:
-		_guide_material.set_shader_parameter("wave_amount", clampf(wave_amount * 0.35, 0.0, 1.0))
+		var guide_primary := primary if _grid_variant == 0 else dot_accent
+		var guide_accent := accent if _grid_variant == 0 else dot_primary
+		_guide_material.set_shader_parameter("theme_primary", guide_primary)
+		_guide_material.set_shader_parameter("theme_accent", guide_accent)
+		_guide_material.set_shader_parameter("wave_amount", safe_wave * 0.24)
 
 
 func set_light_grid_variant(variant: int) -> void:
@@ -297,11 +307,11 @@ func _configure_guide_bank(target: MultiMeshInstance3D, panel_mesh: Mesh) -> voi
 			instance_index += 1
 	_guide_material = ShaderMaterial.new()
 	_guide_material.shader = PANEL_SHADER
-	_guide_material.set_shader_parameter("theme_primary", Color(0.82, 0.9, 1.0))
-	_guide_material.set_shader_parameter("theme_accent", Color.WHITE)
-	_guide_material.set_shader_parameter("theme_emission", 0.74)
-	_guide_material.set_shader_parameter("rest_visibility", 0.105)
-	_guide_material.set_shader_parameter("action_gain", 0.18)
+	_guide_material.set_shader_parameter("theme_primary", Color(1.0, 0.30, 0.04))
+	_guide_material.set_shader_parameter("theme_accent", Color(0.14, 1.0, 0.28))
+	_guide_material.set_shader_parameter("theme_emission", 0.62)
+	_guide_material.set_shader_parameter("rest_visibility", 0.055)
+	_guide_material.set_shader_parameter("action_gain", 0.24)
 	_guide_material.set_shader_parameter("pattern_enabled", 0.0)
 	target.multimesh = multi_mesh
 	target.material_override = _guide_material

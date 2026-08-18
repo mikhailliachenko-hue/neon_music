@@ -5,6 +5,7 @@
 [node name="RhythmStarFrame" type="Node3D"]
 
 [node name="Edge00" type="Node3D" parent="."]
+visible = false
 position = Vector3(1.0433, -3.936, 0)
 rotation_degrees = Vector3(0, 0, 135.562)
 [node name="Plane" type="Node3D" parent="Edge00"]
@@ -14,6 +15,7 @@ position = Vector3(0, 0, 1.49)
 scale = Vector3(1, 1, 0.7592)
 
 [node name="Edge01" type="Node3D" parent="."]
+visible = false
 position = Vector3(3.421, -2.2085, 0)
 rotation_degrees = Vector3(0, 0, 116.438)
 [node name="Plane" type="Node3D" parent="Edge01"]
@@ -77,6 +79,7 @@ position = Vector3(0, 0, 1.49)
 scale = Vector3(1, 1, 0.7592)
 
 [node name="Edge08" type="Node3D" parent="."]
+visible = false
 position = Vector3(-3.421, -2.2085, 0)
 rotation_degrees = Vector3(0, 0, 63.562)
 [node name="Plane" type="Node3D" parent="Edge08"]
@@ -86,6 +89,7 @@ position = Vector3(0, 0, 1.49)
 scale = Vector3(1, 1, 0.7592)
 
 [node name="Edge09" type="Node3D" parent="."]
+visible = false
 position = Vector3(-1.0433, -3.936, 0)
 rotation_degrees = Vector3(0, 0, 44.438)
 [node name="Plane" type="Node3D" parent="Edge09"]

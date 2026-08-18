@@ -273,6 +273,13 @@ func apply_visual_state(
 	floor_emission: float,
 	reaction: float
 ) -> void:
+	if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid" \
+		and posmod(floori(float(logical_index) / 8.0), 2) == 1:
+		# The dot section owns a violet/gold palette. Applying it to the road and
+		# rails as well removes the previous red/white/purple visual split.
+		primary = Color(0.74, 0.10, 1.0, 1.0)
+		accent = Color(1.0, 0.64, 0.08, 1.0)
+		floor_color = Color(0.014, 0.005, 0.022, 1.0)
 	var pulse := clampf(reaction, 0.0, 2.2)
 	var profile_energy := _profile_emission_scale()
 	_spectrum_primary = primary
@@ -441,11 +448,12 @@ func apply_frame_reaction(
 						# No white-hot head: the wave stays inside the authored two-color
 						# palette and uses only a restrained amount of color travel.
 						wave_color = phase_color.lerp(companion_color, signed_gradient * 0.34)
-				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.58
+				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.70
 				var final_color := base_color.lerp(wave_color, visual_amount)
+				var action_emission_gain := 0.24 + wave_emission_strength * 1.15
 				var emission := (0.50 + _frame_emission * 0.12) * _frame_rest_emission_scale \
-					* (1.0 + wave_amount * wave_emission_strength)
-				var body_glow := _frame_rest_glow + visual_amount * 0.24
+					* (1.0 + wave_amount * action_emission_gain)
+				var body_glow := _frame_rest_glow + visual_amount * 0.30
 				if module.has_method("apply_panel_reaction"):
 					# The light-grid module keeps its authored per-instance gradient. The
 					# action wave only nudges that palette in the far field; it is not an

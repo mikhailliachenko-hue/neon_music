@@ -30,12 +30,17 @@ func _run() -> void:
 			failures.append("%s threshold is above the safe step line" % preset.display_name())
 		if asset_set.frame_opening_top_y < GAMEPLAY_HAND_TOP:
 			failures.append("%s is lower than the hand envelope" % preset.display_name())
+		if preset.world_style.world_id == "rhythm_star_frames" \
+			and asset_set.frame_instances_per_segment != 1:
+			failures.append("%s must keep one star crown per segment" % preset.display_name())
 		generator.select_level_by_index(index, 730000 + index)
 		song_time += 16.0
 		generator.sync_to_song_time(song_time, {})
 		for segment in generator._segments:
 			for lane_error in segment.validate_active_safe_lane():
 				failures.append("%s: %s" % [preset.display_name(), lane_error])
+			if preset.world_style.world_id == "rhythm_star_frames":
+				_validate_open_star_bottom(segment, failures)
 
 	for lane in [0, 3]:
 		var note := NOTE_SCENE.instantiate() as RhythmNote
@@ -76,6 +81,17 @@ func _run() -> void:
 		push_error("TUNNEL_CLEARANCE_SMOKE: %s" % failure)
 	generator.queue_free()
 	quit(0 if failures.is_empty() else 1)
+
+
+func _validate_open_star_bottom(segment: TunnelSegment, failures: PackedStringArray) -> void:
+	for candidate in segment.find_children("RhythmStarFrame", "Node3D", true, false):
+		var star := candidate as Node3D
+		if star == null or not star.is_visible_in_tree():
+			continue
+		for unsafe_edge_name in ["Edge00", "Edge01", "Edge08", "Edge09"]:
+			var unsafe_edge := star.get_node_or_null(unsafe_edge_name) as Node3D
+			if unsafe_edge != null and unsafe_edge.visible:
+				failures.append("star bottom edge %s enters the gameplay corridor" % unsafe_edge_name)
 
 
 func _combined_global_bounds(root_node: Node3D) -> AABB:
