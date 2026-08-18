@@ -18,10 +18,12 @@ size = Vector2(1.5, 2.64)
 script = ExtResource("1_note")
 
 [node name="GlassPanel" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.025, 0)
 rotation_degrees = Vector3(-90, 0, 0)
 mesh = SubResource("QuadMesh_panel")
 
 [node name="Border" type="Node3D" parent="."]
+position = Vector3(0, -0.06, 0)
 
 [node name="Top" type="MeshInstance3D" parent="Border"]
 position = Vector3(0, 0.035, -1.46)
@@ -40,6 +42,6 @@ position = Vector3(0.88, 0.035, 0)
 mesh = SubResource("BoxMesh_border_vertical")
 
 [node name="Footprint" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.075, 0)
+position = Vector3(0, -0.02, 0)
 rotation_degrees = Vector3(-90, 0, 0)
 mesh = SubResource("QuadMesh_footprint")

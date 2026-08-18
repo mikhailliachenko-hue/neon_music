@@ -54,6 +54,7 @@ DEFAULT_RAMP_DURATION = 24.0
 DEFAULT_RAMP_STRENGTH = 0.55
 DEFAULT_MAX_SAME_LANE_RUN = 2
 DEFAULT_MAX_SAME_SIDE_RUN = 4
+DEFAULT_MAX_SIMULTANEOUS_FEET = 2
 
 
 def _frame_values(values: np.ndarray, frames: np.ndarray) -> list[float]:
@@ -189,6 +190,7 @@ def build_generation_settings(
     anti_burst: bool = True,
     max_same_lane_run: int = DEFAULT_MAX_SAME_LANE_RUN,
     max_same_side_run: int = DEFAULT_MAX_SAME_SIDE_RUN,
+    max_simultaneous_feet: int = DEFAULT_MAX_SIMULTANEOUS_FEET,
     walls_enabled: bool = DEFAULT_WALL_ENABLED,
     wall_duration_beats: int = DEFAULT_WALL_DURATION_BEATS,
     wall_min_gap_bars: int = DEFAULT_WALL_MIN_GAP_BARS,
@@ -238,6 +240,7 @@ def build_generation_settings(
             "enabled": bool(anti_burst),
             "max_same_lane_run": max(1, int(max_same_lane_run)),
             "max_same_side_run": max(1, int(max_same_side_run)),
+            "max_simultaneous_feet": max(1, min(2, int(max_simultaneous_feet))),
         },
         "walls": {
             "enabled": bool(walls_enabled),

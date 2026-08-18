@@ -23,9 +23,10 @@ static func create_step(color: Color) -> Node3D:
 	var cue := STEP_TARGET.instantiate() as Node3D
 	cue.name = "StepPlatform3D"
 	_apply_imported_material(cue.get_node("ImportedModel"), _body_material(color, "step"))
+	(cue.get_node("ContactBed") as MeshInstance3D).material_override = _contact_material(color)
 	for node_name in ["StepHalo", "FrontTopRim", "BackTopRim"]:
 		var accent := cue.get_node(node_name) as MeshInstance3D
-		accent.material_override = _accent_material(color, "step_accent", true)
+		accent.material_override = _accent_material(color, "step_accent")
 	return cue
 
 
@@ -74,6 +75,22 @@ static func _dark_material(color: Color, role: String) -> StandardMaterial3D:
 	material.emission_enabled = true
 	material.emission = color
 	material.emission_energy_multiplier = 0.16
+	_materials[key] = material
+	return material
+
+
+static func _contact_material(color: Color) -> StandardMaterial3D:
+	var key := "step_contact_%s" % _color_key(color)
+	if _materials.has(key):
+		return _materials[key] as StandardMaterial3D
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(0.004, 0.007, 0.016, 0.82)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 0.12
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_materials[key] = material
 	return material
 

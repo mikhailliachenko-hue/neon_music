@@ -24,6 +24,7 @@ from lane_assignment import (
     DEFAULT_DIFFICULTY,
     DEFAULT_MAX_SAME_LANE_RUN,
     DEFAULT_MAX_SAME_SIDE_RUN,
+    DEFAULT_MAX_SIMULTANEOUS_FEET,
     DEFAULT_HOLD_ENABLED,
     DEFAULT_HOLD_MAX_DURATION,
     DEFAULT_HOLD_MIN_DURATION,
@@ -1350,6 +1351,7 @@ def analyze_with_metadata(
     anti_burst: bool = True,
     max_same_lane_run: int = DEFAULT_MAX_SAME_LANE_RUN,
     max_same_side_run: int = DEFAULT_MAX_SAME_SIDE_RUN,
+    max_simultaneous_feet: int = DEFAULT_MAX_SIMULTANEOUS_FEET,
     walls_enabled: bool = DEFAULT_WALL_ENABLED,
     wall_duration_beats: int = DEFAULT_WALL_DURATION_BEATS,
     wall_min_gap_bars: int = DEFAULT_WALL_MIN_GAP_BARS,
@@ -1387,6 +1389,7 @@ def analyze_with_metadata(
         anti_burst=anti_burst,
         max_same_lane_run=max_same_lane_run,
         max_same_side_run=max_same_side_run,
+        max_simultaneous_feet=max_simultaneous_feet,
         walls_enabled=walls_enabled,
         wall_duration_beats=wall_duration_beats,
         wall_min_gap_bars=wall_min_gap_bars,
@@ -1567,6 +1570,7 @@ def analyze(
     anti_burst: bool = True,
     max_same_lane_run: int = DEFAULT_MAX_SAME_LANE_RUN,
     max_same_side_run: int = DEFAULT_MAX_SAME_SIDE_RUN,
+    max_simultaneous_feet: int = DEFAULT_MAX_SIMULTANEOUS_FEET,
     walls_enabled: bool = DEFAULT_WALL_ENABLED,
     wall_duration_beats: int = DEFAULT_WALL_DURATION_BEATS,
     wall_min_gap_bars: int = DEFAULT_WALL_MIN_GAP_BARS,
@@ -1601,6 +1605,7 @@ def analyze(
         anti_burst=anti_burst,
         max_same_lane_run=max_same_lane_run,
         max_same_side_run=max_same_side_run,
+        max_simultaneous_feet=max_simultaneous_feet,
         walls_enabled=walls_enabled,
         wall_duration_beats=wall_duration_beats,
         wall_min_gap_bars=wall_min_gap_bars,
@@ -1665,6 +1670,7 @@ def main() -> int:
     parser.add_argument("--anti-burst", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--max-same-lane-run", type=int, default=DEFAULT_MAX_SAME_LANE_RUN)
     parser.add_argument("--max-same-side-run", type=int, default=DEFAULT_MAX_SAME_SIDE_RUN)
+    parser.add_argument("--max-simultaneous-feet", type=int, choices=(1, 2), default=DEFAULT_MAX_SIMULTANEOUS_FEET)
     parser.add_argument("--walls", action=argparse.BooleanOptionalAction, default=DEFAULT_WALL_ENABLED)
     parser.add_argument("--wall-duration-beats", type=int, default=DEFAULT_WALL_DURATION_BEATS)
     parser.add_argument("--wall-min-gap-bars", type=int, default=DEFAULT_WALL_MIN_GAP_BARS)
@@ -1713,6 +1719,7 @@ def main() -> int:
             anti_burst=args.anti_burst,
             max_same_lane_run=args.max_same_lane_run,
             max_same_side_run=args.max_same_side_run,
+            max_simultaneous_feet=args.max_simultaneous_feet,
             walls_enabled=args.walls,
             wall_duration_beats=args.wall_duration_beats,
             wall_min_gap_bars=args.wall_min_gap_bars,

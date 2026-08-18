@@ -73,16 +73,16 @@ static func build_mesh(
 		var z0 := target_z + rail_length * t0
 		var z1 := target_z + rail_length * t1
 		_add_quad(fill,
-			Vector3(x0 - half_width, 0.072, z0), Vector3(x0 + half_width, 0.072, z0),
-			Vector3(x1 + half_width, 0.072, z1), Vector3(x1 - half_width, 0.072, z1)
+			Vector3(x0 - half_width, -0.025, z0), Vector3(x0 + half_width, -0.025, z0),
+			Vector3(x1 + half_width, -0.025, z1), Vector3(x1 - half_width, -0.025, z1)
 		)
 		_add_quad(edge,
-			Vector3(x0 - half_width, 0.078, z0), Vector3(x0 - half_width + edge_width, 0.078, z0),
-			Vector3(x1 - half_width + edge_width, 0.078, z1), Vector3(x1 - half_width, 0.078, z1)
+			Vector3(x0 - half_width, -0.019, z0), Vector3(x0 - half_width + edge_width, -0.019, z0),
+			Vector3(x1 - half_width + edge_width, -0.019, z1), Vector3(x1 - half_width, -0.019, z1)
 		)
 		_add_quad(edge,
-			Vector3(x0 + half_width - edge_width, 0.078, z0), Vector3(x0 + half_width, 0.078, z0),
-			Vector3(x1 + half_width, 0.078, z1), Vector3(x1 + half_width - edge_width, 0.078, z1)
+			Vector3(x0 + half_width - edge_width, -0.019, z0), Vector3(x0 + half_width, -0.019, z0),
+			Vector3(x1 + half_width, -0.019, z1), Vector3(x1 + half_width - edge_width, -0.019, z1)
 		)
 	fill.commit(mesh)
 	edge.commit(mesh)

@@ -29,6 +29,10 @@ from choreography_ornaments import (
     hand_target_metadata,
     rail_trajectory_for_note,
 )
+from choreography_concurrency import (
+    ground_step_target_count as _ground_step_target_count,
+    limit_renderer_foot_concurrency as _limit_renderer_foot_concurrency,
+)
 
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
 BEATMAP_SCHEMA = "neon_music.beatmap.v4"
@@ -1951,13 +1955,15 @@ def build_choreography(
                 lanes = [lane]
                 optional_renderer_metadata["rail_trajectory"] = rail_trajectory
             renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side), **optional_renderer_metadata})
+    max_simultaneous_feet = int(grid.get("generation_settings", {}).get("anti_burst", {}).get("max_simultaneous_feet", 2))
+    renderer_notes, foot_concurrency = _limit_renderer_foot_concurrency(renderer_notes, max_simultaneous_feet)
     renderer_events = [_renderer_obstacle(value) for value in obstacles]
     return {
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
         "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.5",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}},
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
         "phrase_plan": phrase_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
@@ -2024,6 +2030,7 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
     obstacles = beatmap.get("semantic_obstacle_events", [])
     movement_ids = {value["id"]: value for value in movements}
     simultaneous_groups: dict[str, list[dict[str, Any]]] = {}
+    foot_targets_by_time: Counter[float] = Counter()
     for note in beatmap.get("notes", []):
         if str(note.get("movement", "")).startswith("HAND_HOLD_") and (
             not note.get("sustained") or float(note.get("duration", 0.0)) <= 0.0
@@ -2032,6 +2039,12 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         group = note.get("simultaneous_group")
         if note.get("simultaneous") and group:
             simultaneous_groups.setdefault(str(group), []).append(note)
+        target_count = _ground_step_target_count(note)
+        if target_count:
+            foot_targets_by_time[round(float(note.get("time", note.get("hit_time", 0.0))), 6)] += target_count
+    foot_limit = max(1, min(2, int(grid.get("generation_settings", {}).get("anti_burst", {}).get("max_simultaneous_feet", 2))))
+    if any(count > foot_limit for count in foot_targets_by_time.values()):
+        errors.append("simultaneous_foot_target_limit_exceeded")
     simultaneous_pair_kinds = Counter()
     for notes in simultaneous_groups.values():
         channels = []
@@ -2222,6 +2235,8 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         "compound_pattern_distribution": dict(Counter(event["compound_grammar"]["pattern"] for event in compound_events)),
         "simultaneous_renderer_note_count": sum(bool(note.get("simultaneous")) for note in beatmap.get("notes", [])),
         "simultaneous_pair_distribution": dict(simultaneous_pair_kinds),
+        "max_simultaneous_foot_targets": max(foot_targets_by_time.values(), default=0),
+        "max_simultaneous_foot_target_limit": foot_limit,
         "reference_hand_hold_event_count": len(hand_hold_events),
     }
     return {"schema": REPORT_SCHEMA, "hard_errors": sorted(set(errors)), "warnings": sorted(set(warnings)), "summary": summary}

@@ -18,6 +18,7 @@ from lane_assignment import (
     DEFAULT_DIFFICULTY,
     DEFAULT_MAX_SAME_LANE_RUN,
     DEFAULT_MAX_SAME_SIDE_RUN,
+    DEFAULT_MAX_SIMULTANEOUS_FEET,
     DEFAULT_HOLD_ENABLED,
     DEFAULT_HOLD_MAX_DURATION,
     DEFAULT_HOLD_MIN_DURATION,
@@ -148,6 +149,7 @@ class AnalyzerApp(tk.Tk):
         self.anti_burst_var = tk.BooleanVar(value=True)
         self.max_lane_run_var = tk.IntVar(value=DEFAULT_MAX_SAME_LANE_RUN)
         self.max_side_run_var = tk.IntVar(value=DEFAULT_MAX_SAME_SIDE_RUN)
+        self.max_simultaneous_feet_var = tk.IntVar(value=DEFAULT_MAX_SIMULTANEOUS_FEET)
         self.walls_enabled_var = tk.BooleanVar(value=DEFAULT_WALL_ENABLED)
         self.wall_duration_beats_var = tk.IntVar(value=DEFAULT_WALL_DURATION_BEATS)
         self.wall_min_gap_bars_var = tk.IntVar(value=DEFAULT_WALL_MIN_GAP_BARS)
@@ -280,7 +282,9 @@ class AnalyzerApp(tk.Tk):
         ttk.Checkbutton(parent, text="Anti-burst protection", variable=self.anti_burst_var).grid(row=0, column=1, sticky="w", pady=4)
         self._spin(parent, 1, "Max lane run", self.max_lane_run_var, 1, 8, 1)
         self._spin(parent, 2, "Max side run", self.max_side_run_var, 1, 12, 1)
-        self._spin(parent, 3, "Wall density brake", self.wall_density_multiplier_var, 1.0, 5.0, 0.05, "x")
+        self._spin(parent, 3, "Simultaneous feet", self.max_simultaneous_feet_var, 1, 2, 1, "max")
+        ttk.Label(parent, text="Hard safety cap: never three step targets at one hit.", style="SectionBody.TLabel").grid(row=4, column=1, sticky="w", pady=(0, 4))
+        self._spin(parent, 5, "Wall density brake", self.wall_density_multiplier_var, 1.0, 5.0, 0.05, "x")
         parent.columnconfigure(1, weight=1)
 
     def _build_wall_timing(self, parent) -> None:
@@ -454,6 +458,7 @@ class AnalyzerApp(tk.Tk):
             "difficulty": self.difficulty_var.get(), "ramp_duration": float(self.ramp_duration_var.get()),
             "ramp_strength": float(self.ramp_strength_var.get()), "anti_burst": bool(self.anti_burst_var.get()),
             "max_same_lane_run": int(self.max_lane_run_var.get()), "max_same_side_run": int(self.max_side_run_var.get()),
+            "max_simultaneous_feet": int(self.max_simultaneous_feet_var.get()),
             "walls_enabled": bool(self.walls_enabled_var.get()), "wall_duration_beats": int(self.wall_duration_beats_var.get()),
             "wall_min_gap_bars": int(self.wall_min_gap_bars_var.get()), "wall_rate_bars": int(self.wall_rate_bars_var.get()),
             "wall_anticipation": float(self.wall_anticipation_var.get()), "wall_density_multiplier": float(self.wall_density_multiplier_var.get()),
@@ -486,6 +491,7 @@ class AnalyzerApp(tk.Tk):
                     stems["mix"],
                     difficulty=options["difficulty"], ramp_duration=options["ramp_duration"], ramp_strength=options["ramp_strength"],
                     anti_burst=options["anti_burst"], max_same_lane_run=options["max_same_lane_run"], max_same_side_run=options["max_same_side_run"],
+                    max_simultaneous_feet=options["max_simultaneous_feet"],
                     walls_enabled=options["walls_enabled"], wall_duration_beats=options["wall_duration_beats"],
                     wall_min_gap_bars=options["wall_min_gap_bars"], wall_rate_bars=options["wall_rate_bars"],
                     wall_anticipation=options["wall_anticipation"], wall_density_multiplier=options["wall_density_multiplier"],

@@ -91,6 +91,10 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 	var heartbeat := 0.5 + 0.5 * sin(song_time * TAU * 2.0)
 	heartbeat = heartbeat * heartbeat
 	var cue_scale := 1.0 + anticipation * (0.045 + heartbeat * 0.022)
+	if _is_step_platform_cue() or _is_double_foot_cue():
+		# Ground cues must read as objects sliding along the road, not UI cards
+		# breathing above it. Keep Y locked and use only a restrained X/Z approach.
+		cue_scale = 1.0 + anticipation * (0.022 + heartbeat * 0.006)
 	if _is_hand_target():
 		# Compensate perspective loss: distant targets keep a readable screen size.
 		cue_scale += distance_factor * HAND_FAR_SCALE_BOOST
@@ -104,7 +108,7 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 		position.y = GROUND_Y + GROUND_OFFSET + _hand_visual_center_y() * (1.0 - cue_scale)
 	else:
 		position.y = GROUND_Y + GROUND_OFFSET
-	scale = Vector3.ONE * cue_scale
+	scale = Vector3(cue_scale, 1.0, cue_scale) if _is_step_platform_cue() or _is_double_foot_cue() else Vector3.ONE * cue_scale
 	_set_approach_energy(anticipation, distance_factor, heartbeat)
 	_animate_architectural_cue(anticipation, heartbeat)
 	# Long simultaneous-foot rails must visibly travel through the judgment
@@ -202,12 +206,8 @@ func _configure_visuals() -> void:
 	border_material.emission_enabled = true
 	border_material.emission = emission_color
 	border_material.emission_energy_multiplier = 7.0 if _is_double_foot_cue() else 8.5
-	# The footprint frame is gameplay UI in world space. Imported scenery could
-	# previously depth-occlude only the rim while the no-depth shoe decal stayed
-	# visible, producing a confusing floating symbol. Keep both layers atomic.
-	if _is_step_platform_cue():
-		border_material.no_depth_test = true
-		border_material.render_priority = 10
+	# The volumetric shell belongs to the road and must obey scene depth. Only
+	# the semantic shoe insert keeps its dedicated always-readable close frame.
 	for border in $Border.get_children():
 		border.material_override = border_material
 
@@ -219,7 +219,7 @@ func _configure_visuals() -> void:
 	# surface briefly overlaps the lane in perspective.
 	footprint_material.no_depth_test = true
 	footprint_material.render_priority = 11
-	footprint_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	footprint_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	# Every ground action uses an unmistakable left/right shoe print. Silhouette
 	# icons looked like a new body-pose mechanic instead of a step.
 	var footprint_path := "res://assets/images/note_left.png" if lane < 2 else "res://assets/images/note_right.png"
@@ -530,25 +530,20 @@ func _build_hand_hold_prism() -> void:
 
 
 func _build_step_platform() -> void:
-	# Lift the authored top decal as well as adding side walls; otherwise a Box
-	# hidden entirely below the road still reads like the old flat quad.
-	$GlassPanel.position.y = 0.09
-	$Border.position.y = 0.09
-	$Footprint.position.y = 0.145
 	var footprint_mesh := $Footprint.mesh as QuadMesh
 	if footprint_mesh != null:
 		footprint_mesh = footprint_mesh.duplicate() as QuadMesh
 		footprint_mesh.size = Vector2(1.28, 1.86)
 		$Footprint.mesh = footprint_mesh
 	var platform := GAMEPLAY_CUE_KIT.create_step(emission_color)
-	platform.position.y = 0.025
+	platform.position.y = -0.075
 	add_child(platform)
 
 
 func _build_foot_glow_ring() -> void:
 	var ring := MeshInstance3D.new()
 	ring.name = "FootGlowRing"
-	ring.position.y = 0.025
+	ring.position.y = -0.03
 	if _is_double_foot_cue():
 		ring.position.z = DOUBLE_FOOT_RAIL_TARGET_Z
 	var mesh := TorusMesh.new()

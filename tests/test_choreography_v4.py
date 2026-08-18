@@ -10,7 +10,8 @@ from choreography_v4 import (  # noqa: E402
     legacy_notes_to_micro_accents, migrate_beat_grid_v1,
     obstacle_from_movement, sequence_hash, validate_v4, _micro_rise_plan,
     _motif_memory_metrics, _movement_transition_cost,
-    _metrics, _body_counterpoint_fit,
+    _metrics, _body_counterpoint_fit, _ground_step_target_count,
+    _limit_renderer_foot_concurrency,
 )
 from generate_choreography_v4 import synchronize_grid_projection  # noqa: E402
 from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
@@ -401,6 +402,29 @@ def test_active_simultaneous_groups_are_homogeneous_left_right_pairs():
         assert {note["lane_side"] for note in paired} == {"left", "right"}
         kinds.add(channels[0])
     assert kinds == {"hand", "foot"}
+
+
+def test_renderer_never_emits_three_foot_targets_at_one_hit():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {}).setdefault("anti_burst", {})["max_simultaneous_feet"] = 2
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    counts = Counter()
+    for note in beatmap["notes"]:
+        counts[round(float(note.get("time", note.get("hit_time", 0.0))), 6)] += _ground_step_target_count(note)
+    assert max(counts.values(), default=0) <= 2
+    assert beatmap["settings"]["foot_concurrency"]["max_simultaneous_feet"] == 2
+
+
+def test_foot_concurrency_repair_prefers_a_complete_pair():
+    notes = [
+        {"time": 4.0, "lanes": [0], "cue_archetype": "FOOT_PAD_LEFT", "simultaneous_group": None},
+        {"time": 4.0, "lanes": [1], "cue_archetype": "DOUBLE_FOOT_PAD_LEFT", "simultaneous_group": "pair"},
+        {"time": 4.0, "lanes": [2], "cue_archetype": "DOUBLE_FOOT_PAD_RIGHT", "simultaneous_group": "pair"},
+    ]
+    repaired, diagnostics = _limit_renderer_foot_concurrency(notes, 2)
+    assert len(repaired) == 2
+    assert {note["simultaneous_group"] for note in repaired} == {"pair"}
+    assert diagnostics == {"max_simultaneous_feet": 2, "repaired_hit_count": 1, "removed_target_count": 1}
 
 
 def test_reference_hand_holds_are_rare_paired_sustained_accents():
