@@ -12,7 +12,7 @@ const GROUND_Y := -1.72
 const GROUND_OFFSET := 0.045
 const HAND_TARGET_SIZE := 1.35
 const HAND_ICON_SIZE := 1.16
-const HAND_CONTAINER_DEPTH := 0.62
+const HAND_CONTAINER_DEPTH := 0.86
 const HAND_FAR_SCALE_BOOST := 0.72
 const HAND_VISUAL_CENTER_Y := 2.65
 const HAND_MAX_SCALE := 1.24
@@ -21,9 +21,11 @@ const HAND_LATERAL_OFFSET_LIMIT := 0.18
 const HAND_HOLD_MIN_LENGTH := 5.5
 const HAND_HOLD_MAX_LENGTH := 12.0
 const HAND_HOLD_LENGTH_PER_SECOND := 6.0
-const MATERIAL_PUNCH_ICON := "res://assets/images/movement_icons/material/punch.svg"
+const PUNCH_LEFT_ICON := "res://assets/images/hand_targets/punch_left_icon.png"
+const PUNCH_RIGHT_ICON := "res://assets/images/hand_targets/punch_right_icon.png"
 const MOVEMENT_ICON_SHADER := preload("res://assets/models/movement_icon.gdshader")
 const FOOTPRINT_FRAMES := preload("res://scripts/godot/footprint_frames.gd")
+const GAMEPLAY_CUE_KIT := preload("res://scripts/godot/gameplay_cue_kit.gd")
 const JUMP_OBSTACLE_PATH := "res://assets/models/obstacles/jump_obstacle.tscn"
 const DUCK_GATE_PATH := "res://assets/models/obstacles/duck_gate.tscn"
 const FOOT_RAIL_TRAJECTORY := preload("res://scripts/godot/foot_rail_trajectory.gd")
@@ -408,7 +410,7 @@ func _animate_architectural_cue(anticipation: float, heartbeat: float) -> void:
 	elif cue_archetype == "LOW_CLEARANCE_GATE" or cue_archetype == "OVERHEAD_BAR":
 		var beam := get_node_or_null("KenneyDuckGate/OverheadBarrierBeam") as Node3D
 		if beam != null:
-			beam.scale.y = 1.55 + anticipation * 0.06 + heartbeat * 0.025
+			beam.scale.y = 1.0 + anticipation * 0.035 + heartbeat * 0.012
 
 
 func _tint_downloaded_meshes(root: Node, color: Color, energy: float) -> void:
@@ -441,7 +443,7 @@ func _build_icon_glyph(_panel: MeshInstance3D) -> void:
 	mesh.size = Vector2.ONE * HAND_ICON_SIZE
 	glyph.mesh = mesh
 
-	var icon_texture := _load_runtime_texture(MATERIAL_PUNCH_ICON)
+	var icon_texture := _load_runtime_texture(PUNCH_LEFT_ICON if lane < 2 else PUNCH_RIGHT_ICON)
 	var material := _create_icon_mask_material(icon_texture, emission_color, 3.2)
 	glyph.material_override = material
 	add_child(glyph)
@@ -483,26 +485,8 @@ func _build_vertical_action_glyph(icon_path: String, local_position: Vector3, gl
 
 
 func _build_hand_container_model() -> void:
-	var container := Node3D.new()
-	container.name = "HandContainerModel"
+	var container := GAMEPLAY_CUE_KIT.create_punch(emission_color, lane < 2)
 	container.position = Vector3(0.0, _hand_visual_center_y(), 0.0)
-
-	var body := MeshInstance3D.new()
-	body.name = "PunchTargetCube"
-	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(HAND_TARGET_SIZE, HAND_TARGET_SIZE, HAND_CONTAINER_DEPTH)
-	body.mesh = body_mesh
-	body.material_override = _hand_cube_material()
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	container.add_child(body)
-
-	var glow_material := _emissive_material(emission_color, 7.4)
-	var half := HAND_TARGET_SIZE * 0.5
-	var front_z := HAND_CONTAINER_DEPTH * 0.5 + 0.026
-	_add_hand_cube_edge(container, "TopEdge", Vector3(0.0, half + 0.035, front_z), Vector3(HAND_TARGET_SIZE + 0.18, 0.075, 0.075), glow_material)
-	_add_hand_cube_edge(container, "BottomEdge", Vector3(0.0, -half - 0.035, front_z), Vector3(HAND_TARGET_SIZE + 0.18, 0.075, 0.075), glow_material)
-	_add_hand_cube_edge(container, "LeftEdge", Vector3(-half - 0.035, 0.0, front_z), Vector3(0.075, HAND_TARGET_SIZE + 0.18, 0.075), glow_material)
-	_add_hand_cube_edge(container, "RightEdge", Vector3(half + 0.035, 0.0, front_z), Vector3(0.075, HAND_TARGET_SIZE + 0.18, 0.075), glow_material)
 	add_child(container)
 
 
@@ -541,7 +525,7 @@ func _build_hand_hold_prism() -> void:
 		["BottomLeftRail", Vector3(-half, -half, rail_z)],
 		["BottomRightRail", Vector3(half, -half, rail_z)],
 	]:
-		_add_hand_cube_edge(hold, String(rail_data[0]), rail_data[1] as Vector3, Vector3(0.065, 0.065, length), rail_material)
+		GAMEPLAY_CUE_KIT.add_edge(hold, String(rail_data[0]), rail_data[1] as Vector3, Vector3(0.065, 0.065, length), rail_material)
 	add_child(hold)
 
 
@@ -556,62 +540,9 @@ func _build_step_platform() -> void:
 		footprint_mesh = footprint_mesh.duplicate() as QuadMesh
 		footprint_mesh.size = Vector2(1.28, 1.86)
 		$Footprint.mesh = footprint_mesh
-	var platform := Node3D.new()
-	platform.name = "StepPlatform3D"
+	var platform := GAMEPLAY_CUE_KIT.create_step(emission_color)
 	platform.position.y = 0.025
-	var body := MeshInstance3D.new()
-	body.name = "PlatformBody"
-	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(1.76, 0.10, 2.18)
-	body.mesh = body_mesh
-	var body_material := StandardMaterial3D.new()
-	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	body_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	body_material.albedo_color = Color(0.012 + emission_color.r * 0.10, 0.016 + emission_color.g * 0.10, 0.040 + emission_color.b * 0.10, 0.72)
-	body_material.emission_enabled = true
-	body_material.emission = emission_color
-	body_material.emission_energy_multiplier = 0.42
-	body.material_override = body_material
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	platform.add_child(body)
-	var rim := _emissive_material(emission_color, 7.0)
-	rim.no_depth_test = true
-	rim.render_priority = 10
-	_add_hand_cube_edge(platform, "FrontTopRim", Vector3(0.0, 0.055, 1.09), Vector3(1.86, 0.045, 0.065), rim)
-	_add_hand_cube_edge(platform, "BackTopRim", Vector3(0.0, 0.055, -1.09), Vector3(1.86, 0.045, 0.065), rim)
-	_add_hand_cube_edge(platform, "LeftTopRim", Vector3(-0.88, 0.055, 0.0), Vector3(0.065, 0.045, 2.18), rim)
-	_add_hand_cube_edge(platform, "RightTopRim", Vector3(0.88, 0.055, 0.0), Vector3(0.065, 0.045, 2.18), rim)
 	add_child(platform)
-
-
-func _add_hand_cube_edge(parent: Node3D, edge_name: String, edge_position: Vector3, edge_size: Vector3, material: StandardMaterial3D) -> void:
-	var edge := MeshInstance3D.new()
-	edge.name = edge_name
-	edge.position = edge_position
-	var mesh := BoxMesh.new()
-	mesh.size = edge_size
-	edge.mesh = mesh
-	edge.material_override = material
-	edge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	parent.add_child(edge)
-
-
-func _hand_cube_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.albedo_color = Color(
-		0.03 + emission_color.r * 0.72,
-		0.04 + emission_color.g * 0.72,
-		0.09 + emission_color.b * 0.72,
-		0.92
-	)
-	material.emission_enabled = true
-	material.emission = emission_color
-	material.emission_energy_multiplier = 1.55
-	material.no_depth_test = true
-	material.render_priority = 9
-	return material
 
 
 func _build_foot_glow_ring() -> void:

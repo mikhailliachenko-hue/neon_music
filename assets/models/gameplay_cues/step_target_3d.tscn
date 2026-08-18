@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Platform_Round1.gltf" id="1_platform"]
+
+[sub_resource type="TorusMesh" id="Torus_step_halo"]
+inner_radius = 0.71
+outer_radius = 0.83
+rings = 32
+ring_segments = 8
+
+[sub_resource type="BoxMesh" id="Box_rim_horizontal"]
+size = Vector3(1.86, 0.045, 0.065)
+
+[node name="StepTarget3D" type="Node3D"]
+
+[node name="ImportedModel" parent="." instance=ExtResource("1_platform")]
+scale = Vector3(0.292, 0.59, 0.36)
+
+[node name="StepHalo" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.085, 0)
+scale = Vector3(1, 1, 1.27)
+mesh = SubResource("Torus_step_halo")
+cast_shadow = 0
+
+[node name="FrontTopRim" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.075, 1.09)
+mesh = SubResource("Box_rim_horizontal")
+cast_shadow = 0
+
+[node name="BackTopRim" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.075, -1.09)
+mesh = SubResource("Box_rim_horizontal")
+cast_shadow = 0

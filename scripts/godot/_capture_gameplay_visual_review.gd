@@ -85,7 +85,13 @@ func _build_stage() -> void:
 	# Legacy FLOOR_PULSE JSON still exists in older tracks. Keep its cohesive
 	# low-container fallback in the visual review so the removed fence cannot return.
 	_make_note(1, -18.0, "FLOOR_PULSE_LARGE", 0.0)
-	_hand_hold = _make_note(3, -4.6, "HAND_HOLD_TARGET", 1.6)
+	# Keep both sides in one deterministic acceptance frame. The semantic icon,
+	# hue and mirrored tilt must all agree at a glance.
+	_make_note(0, -5.2, "HAND_TARGET_LEFT", 0.0)
+	_hand_hold = _make_note(3, -5.2, "HAND_HOLD_TARGET", 1.6)
+	# The cohesive low-clearance container is reviewed in the same camera and
+	# scale as gameplay instead of only through an isolated scene contract.
+	_make_note(1, -13.8, "LOW_CLEARANCE_GATE", 0.0)
 
 
 func _make_note(lane: int, z_position: float, cue: String, duration: float) -> RhythmNote:

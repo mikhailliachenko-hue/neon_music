@@ -92,16 +92,17 @@ func _test_hand_hold(stage: Node3D, failures: Array[String]) -> void:
 		return
 	note.setup(3, 4.0, -8.0, "HAND_HOLD_TARGET", 2.0)
 	stage.add_child(note)
-	var target := note.get_node_or_null("HandContainerModel/PunchTargetCube") as MeshInstance3D
+	var target := note.get_node_or_null("HandContainerModel") as Node3D
 	var icon := note.get_node_or_null("IconGlyph") as MeshInstance3D
 	var body := note.get_node_or_null("HandHoldPrism/HoldBody") as MeshInstance3D
 	if target == null or icon == null or body == null:
 		failures.append("hand hold is missing target, front icon or sustained body")
 		return
-	var target_size := (target.mesh as BoxMesh).size
 	var body_size := (body.mesh as BoxMesh).size
-	if body_size.x < target_size.x * 1.05 or body_size.y < target_size.y * 1.05:
+	if body_size.x < 1.40 or body_size.y < 1.40:
 		failures.append("hand hold body is not at least 105 percent of its target cap")
+	if target.get_node_or_null("ImportedModel") == null or target.get_node_or_null("FrontHalo") == null:
+		failures.append("hand target does not use the unified volumetric cue kit")
 	if not icon.visible:
 		failures.append("hand hold front icon is hidden before judgment")
 	var prism := note.get_node("HandHoldPrism") as Node3D
@@ -121,7 +122,7 @@ func _test_hand_target_offsets(stage: Node3D, failures: Array[String]) -> void:
 		"hand_pattern": "mirror_arc",
 	})
 	stage.add_child(raised)
-	var target := raised.get_node("HandContainerModel/PunchTargetCube") as MeshInstance3D
+	var target := raised.get_node("HandContainerModel") as Node3D
 	var near_world_y := target.global_position.y
 	raised.sync_to_song_time(4.0, 10.0)
 	var far_world_y := target.global_position.y
@@ -131,6 +132,7 @@ func _test_hand_target_offsets(stage: Node3D, failures: Array[String]) -> void:
 		failures.append("hand lateral offset is not clamped to the safe lane bound")
 	if raised.get_meta("hand_target_zone", "") != "high" or raised.get_meta("hand_pattern", "") != "mirror_arc":
 		failures.append("hand target semantic metadata is unavailable on the rendered note")
+	var raised_icon := raised.get_node("IconGlyph") as MeshInstance3D
 
 	var zone_only := NOTE_SCENE.instantiate() as RhythmNote
 	zone_only.setup(0, 12.0, -60.0, "HAND_TARGET_LEFT", 0.0, {}, {"hand_target_zone": "low"})
@@ -145,6 +147,11 @@ func _test_hand_target_offsets(stage: Node3D, failures: Array[String]) -> void:
 	var legacy_container := legacy.get_node("HandContainerModel") as Node3D
 	if not is_equal_approx(legacy.position.x, -3.0) or not is_equal_approx(legacy_container.position.y, 2.65):
 		failures.append("legacy hand target without metadata no longer uses centered zero offsets")
+	var legacy_icon := legacy.get_node("IconGlyph") as MeshInstance3D
+	var raised_texture := (raised_icon.material_override as ShaderMaterial).get_shader_parameter("icon_texture") as Texture2D
+	var legacy_texture := (legacy_icon.material_override as ShaderMaterial).get_shader_parameter("icon_texture") as Texture2D
+	if raised_texture == legacy_texture:
+		failures.append("left and right punch targets still use the same ambiguous icon")
 
 
 func _test_foot_rail_caps_and_paths(stage: Node3D, failures: Array[String]) -> void:
@@ -186,8 +193,9 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 	stage.add_child(note)
 	var base_rim := note.get_node_or_null("Border/Top") as MeshInstance3D
 	var volume_rim := note.get_node_or_null("StepPlatform3D/FrontTopRim") as MeshInstance3D
+	var imported_platform := note.get_node_or_null("StepPlatform3D/ImportedModel") as Node3D
 	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as MeshInstance3D
-	if base_rim == null or volume_rim == null or footprint_frame == null:
+	if base_rim == null or volume_rim == null or imported_platform == null or footprint_frame == null:
 		failures.append("ordinary step is missing its authored readability frame")
 		return
 	for rim in [base_rim, volume_rim]:
@@ -226,7 +234,9 @@ func _test_duck_container(stage: Node3D, failures: Array[String]) -> void:
 	gate.position.y = -1.675
 	var beam := gate.get_node_or_null("OverheadBarrierBeam") as Node3D
 	var body := gate.get_node_or_null("OverheadBarrierBeam/ContainerBody") as MeshInstance3D
-	if beam == null or body == null:
+	var window := gate.get_node_or_null("OverheadBarrierBeam/GlassWindow") as MeshInstance3D
+	var accent := gate.get_node_or_null("OverheadBarrierBeam/CyanStripeLeft") as MeshInstance3D
+	if beam == null or body == null or window == null or accent == null:
 		failures.append("duck gate has no authored squashed container")
 		return
 	var size := (body.mesh as BoxMesh).size

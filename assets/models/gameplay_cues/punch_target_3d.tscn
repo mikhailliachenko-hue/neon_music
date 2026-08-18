@@ -1,0 +1,45 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_essentials/glTF/Prop_Mine.gltf" id="1_mine"]
+
+[sub_resource type="TorusMesh" id="Torus_front_halo"]
+inner_radius = 0.61
+outer_radius = 0.71
+rings = 32
+ring_segments = 8
+
+[sub_resource type="CylinderMesh" id="Cylinder_icon_bed"]
+top_radius = 0.51
+bottom_radius = 0.51
+height = 0.055
+radial_segments = 32
+
+[sub_resource type="BoxMesh" id="Box_side_key"]
+size = Vector3(0.11, 0.42, 0.08)
+
+[node name="PunchTarget3D" type="Node3D"]
+
+[node name="ImportedModel" parent="." instance=ExtResource("1_mine")]
+scale = Vector3(1.72, 1.72, 0.82)
+
+[node name="IconBed" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, 0.385)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("Cylinder_icon_bed")
+cast_shadow = 0
+
+[node name="FrontHalo" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0, 0.43)
+rotation_degrees = Vector3(90, 0, 0)
+mesh = SubResource("Torus_front_halo")
+cast_shadow = 0
+
+[node name="LeftSideKey" type="MeshInstance3D" parent="."]
+position = Vector3(-0.72, 0, 0.28)
+mesh = SubResource("Box_side_key")
+cast_shadow = 0
+
+[node name="RightSideKey" type="MeshInstance3D" parent="."]
+position = Vector3(0.72, 0, 0.28)
+mesh = SubResource("Box_side_key")
+cast_shadow = 0
