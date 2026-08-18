@@ -10,6 +10,7 @@ static var _cached_panel_mesh: Mesh
 static var _cached_dot_mesh: Mesh
 
 @export_range(5, 9, 1) var side_rows := 7
+@export_range(5, 7, 1) var dot_side_rows := 6
 @export_range(4, 8, 1) var ceiling_columns_per_side := 6
 @export var dot_primary := Color(1.0, 0.64, 0.08, 1.0)
 @export var dot_accent := Color(0.74, 0.10, 1.0, 1.0)
@@ -127,8 +128,20 @@ func _extract_panel_mesh() -> Mesh:
 func _extract_dot_mesh() -> Mesh:
 	if _cached_dot_mesh != null:
 		return _cached_dot_mesh
-	_cached_dot_mesh = _extract_emissive_mesh(DOT_SCENE)
+	# Keep the complete ready-made GLTF for the square section. Its mounting
+	# shell gives each light real depth instead of reading as a flat emissive card.
+	_cached_dot_mesh = _extract_full_mesh(DOT_SCENE)
 	return _cached_dot_mesh
+
+
+func _extract_full_mesh(source_scene: PackedScene) -> Mesh:
+	var source := source_scene.instantiate()
+	if source == null:
+		return null
+	var mesh_instance := _find_mesh_instance(source)
+	var result: Mesh = mesh_instance.mesh.duplicate() if mesh_instance != null and mesh_instance.mesh != null else null
+	source.free()
+	return result
 
 
 func _extract_emissive_mesh(source_scene: PackedScene) -> Mesh:
@@ -194,19 +207,19 @@ func _configure_dot_side_bank(
 	x_position: float,
 	mirror: bool
 ) -> void:
-	var multi_mesh := _new_multi_mesh(dot_mesh, side_rows * DEPTH_SLICES)
+	var multi_mesh := _new_multi_mesh(dot_mesh, dot_side_rows * DEPTH_SLICES)
 	var mesh_center := dot_mesh.get_aabb().get_center()
 	var instance_index := 0
 	for depth_index in range(DEPTH_SLICES):
 		var depth_phase := float(depth_index) / float(maxi(1, DEPTH_SLICES - 1))
 		var z_position := lerpf(-7.2, 7.2, depth_phase)
-		for row_index in range(side_rows):
-			var row_phase := float(row_index) / float(maxi(1, side_rows - 1))
+		for row_index in range(dot_side_rows):
+			var row_phase := float(row_index) / float(maxi(1, dot_side_rows - 1))
 			var y_position := lerpf(-0.92, 4.08, row_phase)
 			var basis := Basis.IDENTITY.rotated(Vector3.UP, PI * 0.5)
-			# Prop_Light_Small is a ready-made rounded light insert. Equalising its
-			# authored long and short axes makes a real circular dot on the Y/Z wall.
-			basis = basis.scaled(Vector3(0.65, 5.20, 0.90))
+			# The full GLTF is scaled into a roughly 0.9m square tile. The authored
+			# shell retains about 0.4m of depth, so perspective and shading stay clear.
+			basis = basis.scaled(Vector3(1.05, 5.0, 0.90))
 			if mirror:
 				basis = basis.rotated(Vector3.FORWARD, PI)
 			var center := Vector3(x_position, y_position, z_position)
@@ -256,7 +269,7 @@ func _configure_dot_ceiling_bank(target: MultiMeshInstance3D, dot_mesh: Mesh) ->
 			for column in range(ceiling_columns_per_side):
 				var column_phase := float(column) / float(maxi(1, ceiling_columns_per_side - 1))
 				var x_position: float = side * lerpf(0.72, 5.42, column_phase)
-				var basis := Basis.IDENTITY.scaled(Vector3(0.65, 1.50, 2.28))
+				var basis := Basis.IDENTITY.scaled(Vector3(1.05, 1.20, 2.05))
 				var center := Vector3(x_position, 5.18, z_position)
 				multi_mesh.set_instance_transform(instance_index, Transform3D(basis, center - basis * mesh_center))
 				multi_mesh.set_instance_custom_data(
