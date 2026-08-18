@@ -2,6 +2,7 @@ extends SceneTree
 
 const NOTE_SCENE := preload("res://scenes/note.tscn")
 const DUCK_GATE_SCENE := preload("res://assets/models/obstacles/duck_gate.tscn")
+const JUMP_OBSTACLE_SCENE := preload("res://assets/models/obstacles/jump_obstacle.tscn")
 const PARSER := preload("res://scripts/beatmap_parser.gd")
 
 
@@ -18,6 +19,8 @@ func _run() -> void:
 	_test_hand_hold(stage, failures)
 	_test_hand_target_offsets(stage, failures)
 	_test_foot_rail_caps_and_paths(stage, failures)
+	_test_step_readability_frame(stage, failures)
+	_test_jump_container(stage, failures)
 	_test_duck_container(stage, failures)
 	await process_frame
 	await process_frame
@@ -175,6 +178,33 @@ func _test_foot_rail_caps_and_paths(stage: Node3D, failures: Array[String]) -> v
 	stage.add_child(legacy)
 	if legacy.lane != 1 or not is_zero_approx((legacy.get_node("RailStartFootprint") as MeshInstance3D).position.x):
 		failures.append("legacy rail without trajectory is no longer straight")
+
+
+func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> void:
+	var note := NOTE_SCENE.instantiate() as RhythmNote
+	note.setup(3, 4.0, -8.0, "FOOT_PAD_RIGHT")
+	stage.add_child(note)
+	var base_rim := note.get_node_or_null("Border/Top") as MeshInstance3D
+	var volume_rim := note.get_node_or_null("StepPlatform3D/FrontTopRim") as MeshInstance3D
+	if base_rim == null or volume_rim == null:
+		failures.append("ordinary step is missing its authored readability frame")
+		return
+	for rim in [base_rim, volume_rim]:
+		var material := rim.material_override as StandardMaterial3D
+		if material == null or not material.no_depth_test or material.render_priority < 10:
+			failures.append("step frame can still be depth-occluded independently from its footprint")
+
+
+func _test_jump_container(stage: Node3D, failures: Array[String]) -> void:
+	var obstacle := JUMP_OBSTACLE_SCENE.instantiate() as Node3D
+	stage.add_child(obstacle)
+	var body := obstacle.get_node_or_null("ReadyMadeJumpRail/ContainerBody") as MeshInstance3D
+	if body == null:
+		failures.append("legacy jump cue still has no cohesive container body")
+		return
+	var size := (body.mesh as BoxMesh).size
+	if size.x < 8.0 or size.y > 0.60:
+		failures.append("jump container is not wide and safely low: %s" % str(size))
 
 
 func _test_duck_container(stage: Node3D, failures: Array[String]) -> void:

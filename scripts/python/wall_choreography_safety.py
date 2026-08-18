@@ -14,6 +14,7 @@ INCOMPATIBLE_MOVEMENTS = {
     "DOUBLE_HAND_HOLD",
 }
 INCOMPATIBLE_CUES = {"LOW_CLEARANCE_GATE", "OVERHEAD_BAR", "SIDE_SWEEP_WALL"}
+WALL_DANCE_MIN_ACTIONS = 3
 
 
 def _overlaps(left_start: float, left_end: float, right_start: float, right_end: float) -> bool:
@@ -86,6 +87,80 @@ def _redirect_note_to_safe_half(note: dict[str, Any], event_type: str, wall_star
     note["wall_event_start"] = round(float(wall_start), 6)
 
 
+def _eligible_wall_dance_notes(
+    notes: list[dict[str, Any]],
+    pattern_start: float,
+    pattern_end: float,
+) -> list[dict[str, Any]]:
+    """Return distinct short solo cues that can carry a dodge-dance pattern."""
+    candidates: list[dict[str, Any]] = []
+    time_counts: dict[float, int] = {}
+    for note in notes:
+        note_time = float(note.get("time", note.get("hit_time", 0.0)))
+        if not pattern_start <= note_time <= pattern_end:
+            continue
+        if _note_is_fixed_movement(note) or bool(note.get("simultaneous", False)):
+            continue
+        time_key = round(note_time, 4)
+        time_counts[time_key] = time_counts.get(time_key, 0) + 1
+        candidates.append(note)
+    # Never split a simultaneous visual pair whose older JSON forgot to publish
+    # the explicit `simultaneous` flag.
+    return [
+        note
+        for note in candidates
+        if time_counts[round(float(note.get("time", note.get("hit_time", 0.0))), 4)] == 1
+    ]
+
+
+def _spread_three(notes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    ordered = sorted(notes, key=lambda note: float(note.get("time", note.get("hit_time", 0.0))))
+    if len(ordered) < WALL_DANCE_MIN_ACTIONS:
+        return []
+    middle = len(ordered) // 2
+    return [ordered[0], ordered[middle], ordered[-1]]
+
+
+def _apply_wall_dance_pattern(
+    notes: list[dict[str, Any]],
+    event: dict[str, Any],
+    event_index: int,
+) -> int:
+    """Reuse three existing hits as left-foot, hand and right-foot dodge cues.
+
+    No extra hit is inserted. The musical timing remains authoritative while
+    the safe half gains a readable mini-combo during the lateral camera move.
+    """
+    safe_lanes = [int(value) for value in event.get("safe_lanes", []) if 0 <= int(value) <= 3]
+    if len(safe_lanes) < 2:
+        safe_lanes = [2, 3] if str(event.get("type")) == "wall_left" else [0, 1]
+    safe_lanes = sorted(safe_lanes)[:2]
+    hand_movement = "PUNCH_RIGHT" if str(event.get("type")) == "wall_left" else "PUNCH_LEFT"
+    roles = [
+        ("step_left", "STEP_TOUCH_LEFT", "FOOT_PAD_LEFT", safe_lanes[0], "left"),
+        ("hand_hit", hand_movement, "HAND_TARGET", safe_lanes[event_index % 2], "hand"),
+        ("step_right", "STEP_TOUCH_RIGHT", "FOOT_PAD_RIGHT", safe_lanes[1], "right"),
+    ]
+    if event_index % 2 == 1:
+        roles = [roles[2], roles[1], roles[0]]
+    for note, (role, movement, cue, lane, side) in zip(notes, roles):
+        note.setdefault("wall_original_movement", note.get("movement", ""))
+        note.setdefault("wall_original_semantic_movement", note.get("semantic_movement", ""))
+        note.setdefault("wall_original_cue_archetype", note.get("cue_archetype", ""))
+        note["movement"] = movement
+        note["semantic_movement"] = movement
+        note["cue_archetype"] = cue
+        note["lane"] = lane
+        note["lanes"] = [lane]
+        note["foot"] = side
+        note["wall_dance_role"] = role
+        note["wall_dance_pattern"] = "two_steps_and_hand"
+        note["wall_event_start"] = round(float(event.get("start", event.get("time", 0.0))), 6)
+    event["dance_pattern"] = "two_steps_and_hand"
+    event["dance_actions"] = [str(role[0]) for role in roles]
+    return len(roles)
+
+
 def prepare_runtime_wall_events(
     wall_events: list[dict[str, Any]],
     notes: list[dict[str, Any]],
@@ -104,8 +179,11 @@ def prepare_runtime_wall_events(
         "high_downgraded": 0,
         "movement_conflict_discarded": 0,
         "lane_conflict_discarded": 0,
+        "wall_dance_insufficient_skipped": 0,
+        "wall_dance_pattern_count": 0,
+        "wall_dance_rewritten_notes": 0,
     }
-    for raw_event in wall_events:
+    for event_index, raw_event in enumerate(wall_events):
         if str(raw_event.get("type", "")) not in WALL_TYPES:
             continue
         event = deepcopy(raw_event)
@@ -142,6 +220,20 @@ def prepare_runtime_wall_events(
                 _redirect_note_to_safe_half(note, event_type, start)
                 redirected_count += 1
         diagnostics["note_lane_redirected"] += redirected_count
+
+        # The player is already shifting laterally, so turn three existing safe
+        # hits into a compact dance phrase: both feet plus one hand. Reusing hits
+        # preserves musical density and avoids random notes inside a dodge.
+        pattern_notes = _spread_three(_eligible_wall_dance_notes(
+            adjusted_notes,
+            start - anticipation * 0.5,
+            min(window_end, end + 0.65),
+        ))
+        if len(pattern_notes) < WALL_DANCE_MIN_ACTIONS:
+            diagnostics["wall_dance_insufficient_skipped"] += 1
+        else:
+            diagnostics["wall_dance_rewritten_notes"] += _apply_wall_dance_pattern(pattern_notes, event, event_index)
+            diagnostics["wall_dance_pattern_count"] += 1
         event["safety_resolution"] = "short_cues_redirected_to_safe_half" if redirected_count else "original_side_clear"
         accepted.append(event)
 

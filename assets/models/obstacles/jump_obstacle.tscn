@@ -1,63 +1,113 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="PackedScene" path="res://assets/models/obstacles/kenney_platformer/fence-low-straight.glb" id="1_rail"]
+[sub_resource type="StandardMaterial3D" id="Mat_jump_body"]
+shading_mode = 0
+transparency = 1
+albedo_color = Color(0.055, 0.025, 0.008, 0.94)
+emission_enabled = true
+emission = Color(0.55, 0.22, 0.015, 1)
+emission_energy_multiplier = 0.42
+
+[sub_resource type="StandardMaterial3D" id="Mat_jump_rim"]
+shading_mode = 0
+albedo_color = Color(1, 0.78, 0.14, 1)
+emission_enabled = true
+emission = Color(1, 0.56, 0.06, 1)
+emission_energy_multiplier = 5.4
 
 [sub_resource type="StandardMaterial3D" id="Mat_up_chevron"]
 shading_mode = 0
 albedo_color = Color(1, 0.94, 0.42, 1)
 emission_enabled = true
 emission = Color(1, 0.82, 0.1, 1)
-emission_energy_multiplier = 8.5
+emission_energy_multiplier = 7.2
+
+[sub_resource type="BoxMesh" id="Mesh_jump_body"]
+size = Vector3(8.4, 0.48, 0.88)
+
+[sub_resource type="BoxMesh" id="Mesh_rim_horizontal"]
+size = Vector3(8.58, 0.08, 0.095)
+
+[sub_resource type="BoxMesh" id="Mesh_rim_vertical"]
+size = Vector3(0.095, 0.58, 0.095)
 
 [sub_resource type="BoxMesh" id="Mesh_chevron_segment"]
-size = Vector3(0.11, 0.62, 0.11)
+size = Vector3(0.11, 0.48, 0.11)
 
 [node name="JumpRail" type="Node3D"]
 
-[node name="ReadyMadeJumpRail" parent="." instance=ExtResource("1_rail")]
-position = Vector3(0, 0.32, 0)
-scale = Vector3(6.8, 1.5, 1.35)
+[node name="ReadyMadeJumpRail" type="Node3D" parent="."]
+position = Vector3(0, 0.42, 0)
+
+[node name="ContainerBody" type="MeshInstance3D" parent="ReadyMadeJumpRail"]
+mesh = SubResource("Mesh_jump_body")
+material_override = SubResource("Mat_jump_body")
+cast_shadow = 0
+
+[node name="TopFrontRim" type="MeshInstance3D" parent="ReadyMadeJumpRail"]
+position = Vector3(0, 0.28, 0.49)
+mesh = SubResource("Mesh_rim_horizontal")
+material_override = SubResource("Mat_jump_rim")
+cast_shadow = 0
+
+[node name="BottomFrontRim" type="MeshInstance3D" parent="ReadyMadeJumpRail"]
+position = Vector3(0, -0.28, 0.49)
+mesh = SubResource("Mesh_rim_horizontal")
+material_override = SubResource("Mat_jump_rim")
+cast_shadow = 0
+
+[node name="LeftFrontRim" type="MeshInstance3D" parent="ReadyMadeJumpRail"]
+position = Vector3(-4.245, 0, 0.49)
+mesh = SubResource("Mesh_rim_vertical")
+material_override = SubResource("Mat_jump_rim")
+cast_shadow = 0
+
+[node name="RightFrontRim" type="MeshInstance3D" parent="ReadyMadeJumpRail"]
+position = Vector3(4.245, 0, 0.49)
+mesh = SubResource("Mesh_rim_vertical")
+material_override = SubResource("Mat_jump_rim")
+cast_shadow = 0
 
 [node name="UpChevrons" type="Node3D" parent="."]
-position = Vector3(0, 1.02, 0.72)
+position = Vector3(0, 0.93, 0.56)
 
 [node name="LeftChevronA" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(-1.68, -0.10, 0)
+position = Vector3(-1.68, -0.08, 0)
 rotation_degrees = Vector3(0, 0, -42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")
 cast_shadow = 0
 
 [node name="LeftChevronB" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(-1.32, -0.10, 0)
+position = Vector3(-1.36, -0.08, 0)
 rotation_degrees = Vector3(0, 0, 42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")
 cast_shadow = 0
 
 [node name="CenterChevronA" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(-0.18, -0.10, 0)
+position = Vector3(-0.16, -0.08, 0)
 rotation_degrees = Vector3(0, 0, -42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")
 cast_shadow = 0
 
 [node name="CenterChevronB" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(0.18, -0.10, 0)
+position = Vector3(0.16, -0.08, 0)
 rotation_degrees = Vector3(0, 0, 42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")
 cast_shadow = 0
 
 [node name="RightChevronA" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(1.32, -0.10, 0)
+position = Vector3(1.36, -0.08, 0)
 rotation_degrees = Vector3(0, 0, -42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")
 cast_shadow = 0
 
 [node name="RightChevronB" type="MeshInstance3D" parent="UpChevrons"]
-position = Vector3(1.68, -0.10, 0)
+position = Vector3(1.68, -0.08, 0)
 rotation_degrees = Vector3(0, 0, 42)
 mesh = SubResource("Mesh_chevron_segment")
 material_override = SubResource("Mat_up_chevron")

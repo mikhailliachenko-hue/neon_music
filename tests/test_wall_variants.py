@@ -112,3 +112,26 @@ def test_runtime_safety_keeps_warning_and_recovery_windows_clear() -> None:
     assert len(accepted) == 1
     assert [note["lanes"] for note in adjusted_notes] == [[2], [3]]
     assert diagnostics["note_lane_redirected"] == 2
+
+
+def test_runtime_wall_dance_reuses_hits_for_both_feet_and_one_hand() -> None:
+    wall = _wall("wall_left", LOW_CORRIDOR)
+    notes = [
+        {"time": 15.50, "lanes": [0], "movement": "STEP_TOUCH_LEFT", "cue_archetype": "FOOT_PAD_LEFT", "duration": 0.0},
+        {"time": 16.50, "lanes": [1], "movement": "STEP_TOUCH_LEFT", "cue_archetype": "FOOT_PAD_LEFT", "duration": 0.0},
+        {"time": 17.50, "lanes": [0], "movement": "STEP_TOUCH_RIGHT", "cue_archetype": "FOOT_PAD_RIGHT", "duration": 0.0},
+        {"time": 18.50, "lanes": [1], "movement": "PUNCH_LEFT", "cue_archetype": "HAND_TARGET", "duration": 0.0},
+    ]
+    first = prepare_runtime_wall_events([wall], notes, [], recovery_window=0.85)
+    second = prepare_runtime_wall_events([wall], notes, [], recovery_window=0.85)
+    assert first == second
+    accepted, adjusted_notes, diagnostics = first
+    assert len(accepted) == 1
+    assert accepted[0]["dance_pattern"] == "two_steps_and_hand"
+    patterned = [note for note in adjusted_notes if note.get("wall_dance_pattern") == "two_steps_and_hand"]
+    assert len(patterned) == 3
+    assert {note["wall_dance_role"] for note in patterned} == {"step_left", "step_right", "hand_hit"}
+    assert {note["cue_archetype"] for note in patterned} == {"FOOT_PAD_LEFT", "FOOT_PAD_RIGHT", "HAND_TARGET"}
+    assert all(set(note["lanes"]) <= {2, 3} for note in patterned)
+    assert diagnostics["wall_dance_pattern_count"] == 1
+    assert diagnostics["wall_dance_rewritten_notes"] == 3

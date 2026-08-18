@@ -82,6 +82,9 @@ func _build_stage() -> void:
 	# SMALL_JUMP hit repeats the same pair two beats later in the real beatmap.
 	_make_note(1, -12.0, "FOOT_PAD_LEFT", 0.0)
 	_make_note(2, -12.0, "FOOT_PAD_RIGHT", 0.0)
+	# Legacy FLOOR_PULSE JSON still exists in older tracks. Keep its cohesive
+	# low-container fallback in the visual review so the removed fence cannot return.
+	_make_note(1, -18.0, "FLOOR_PULSE_LARGE", 0.0)
 	_hand_hold = _make_note(3, -4.6, "HAND_HOLD_TARGET", 1.6)
 
 

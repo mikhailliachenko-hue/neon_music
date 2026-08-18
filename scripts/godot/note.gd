@@ -198,6 +198,12 @@ func _configure_visuals() -> void:
 	border_material.emission_enabled = true
 	border_material.emission = emission_color
 	border_material.emission_energy_multiplier = 7.0 if _is_double_foot_cue() else 8.5
+	# The footprint frame is gameplay UI in world space. Imported scenery could
+	# previously depth-occlude only the rim while the no-depth shoe decal stayed
+	# visible, producing a confusing floating symbol. Keep both layers atomic.
+	if _is_step_platform_cue():
+		border_material.no_depth_test = true
+		border_material.render_priority = 10
 	for border in $Border.get_children():
 		border.material_override = border_material
 
@@ -385,7 +391,9 @@ func _animate_architectural_cue(anticipation: float, heartbeat: float) -> void:
 	elif cue_archetype.begins_with("FLOOR_PULSE"):
 		var rail := get_node_or_null("KenneyJumpObstacle/ReadyMadeJumpRail") as Node3D
 		if rail != null:
-			rail.scale.y = 1.50 + anticipation * 0.08 + heartbeat * 0.03
+			# The cohesive container is authored at its final safe height. Animate
+			# only a subtle readiness pulse instead of stretching the old GLB fence.
+			rail.scale.y = 1.0 + anticipation * 0.035 + heartbeat * 0.012
 	elif cue_archetype == "LOW_CLEARANCE_GATE" or cue_archetype == "OVERHEAD_BAR":
 		var beam := get_node_or_null("KenneyDuckGate/OverheadBarrierBeam") as Node3D
 		if beam != null:
@@ -556,6 +564,8 @@ func _build_step_platform() -> void:
 	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	platform.add_child(body)
 	var rim := _emissive_material(emission_color, 7.0)
+	rim.no_depth_test = true
+	rim.render_priority = 10
 	_add_hand_cube_edge(platform, "FrontTopRim", Vector3(0.0, 0.055, 1.09), Vector3(1.86, 0.045, 0.065), rim)
 	_add_hand_cube_edge(platform, "BackTopRim", Vector3(0.0, 0.055, -1.09), Vector3(1.86, 0.045, 0.065), rim)
 	_add_hand_cube_edge(platform, "LeftTopRim", Vector3(-0.88, 0.055, 0.0), Vector3(0.065, 0.045, 2.18), rim)
