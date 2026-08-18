@@ -31,6 +31,14 @@ func _run() -> void:
 		if spectrum.anchor_mode() != "disabled" or spectrum.source_mode() != "off":
 			failures.append("disabled spectrum still reports an active runtime mode")
 
+	var debug_was_visible := generator.debug_layer.visible
+	generator.set_debug_overlay_suppressed(true)
+	if generator.debug_layer.visible:
+		failures.append("tunnel debug overlay survived GUI suppression")
+	generator.set_debug_overlay_suppressed(false)
+	if debug_was_visible and not generator.debug_layer.visible:
+		failures.append("tunnel debug overlay did not restore with GUI")
+
 	var pooled_segments: Array[Node] = generator.get_node("SegmentPool").get_children()
 	var profiles_before := PackedStringArray()
 	for segment_node in pooled_segments:

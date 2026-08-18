@@ -96,6 +96,9 @@ The earlier side-wall spectrum implementation is retained for experiments but
 sample FFT data and allocates no scene objects: it updates pre-created per-frame
 materials and cached transforms.
 
+The tuning GUI Hide action also suppresses the tunnel debug overlay, so captures
+contain only gameplay and the selected visual level.
+
 Normal tunnel playback explicitly uses an opaque viewport plus the internal
 Backdrop nodes. Native window transparency remains isolated to `--obs-overlay`.
 

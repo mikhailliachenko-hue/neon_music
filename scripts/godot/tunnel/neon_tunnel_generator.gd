@@ -44,6 +44,7 @@ var _world_prepare_style: TunnelWorldStyle
 var _world_prepare_theme_name := ""
 var _world_prepare_generation := 0
 var _world_prepare_max_ms := 0.0
+var _debug_requested := false
 
 
 func _ready() -> void:
@@ -55,7 +56,8 @@ func _ready() -> void:
 	_apply_cli_overrides()
 	_enabled = config.enabled
 	_diagnostics = config.diagnostics_enabled or OS.get_cmdline_user_args().has("--tunnel-diagnostics")
-	debug_layer.visible = _enabled and (config.debug_enabled or OS.get_cmdline_user_args().has("--tunnel-debug"))
+	_debug_requested = config.debug_enabled or OS.get_cmdline_user_args().has("--tunnel-debug")
+	debug_layer.visible = _enabled and _debug_requested
 	visible = _enabled
 	if not _enabled:
 		return
@@ -134,6 +136,11 @@ func trigger_preview_frame_wave(downbeat: bool) -> void:
 
 func is_enabled() -> bool:
 	return _enabled
+
+
+func set_debug_overlay_suppressed(suppressed: bool) -> void:
+	if debug_layer != null:
+		debug_layer.visible = _enabled and _debug_requested and not suppressed
 
 
 func warmup_render_pipelines() -> void:

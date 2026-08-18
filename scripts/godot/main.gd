@@ -1849,6 +1849,8 @@ func _reset_tuning_values() -> void:
 func _hide_tuning_gui() -> void:
 	if tuning_gui_layer != null:
 		tuning_gui_layer.visible = false
+	if tunnel_generator != null:
+		tunnel_generator.set_debug_overlay_suppressed(true)
 	print("Track tuning GUI: hidden")
 
 
