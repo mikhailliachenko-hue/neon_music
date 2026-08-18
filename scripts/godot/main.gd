@@ -457,6 +457,7 @@ func _process(delta: float) -> void:
 				bool(note.get_meta("finale_callback", false))
 			)
 			note.set_meta("hit_triggered", true)
+			note.on_primary_hit()
 			if note.continues_past_hit():
 				continue
 			active_notes.remove_at(index)
@@ -3071,7 +3072,8 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 	if cue_name == "POSE_FRAME":
 		return
 	var note := NOTE_SCENE.instantiate() as RhythmNote
-	var seconds_until_hit := maxf(0.0, float(beat.time) - song_time)
+	var gameplay_hit_time := float(beat.get("hit_time", beat.get("time", 0.0)))
+	var seconds_until_hit := maxf(0.0, gameplay_hit_time - song_time)
 	var spawn_z := -(seconds_until_hit * scroll_speed)
 	var lane := clampi(int(beat.get("lane", 0)), 0, 3)
 	var choreography_lanes = beat.get("lanes", [lane])
@@ -3084,7 +3086,7 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 		"hand_lateral_offset": beat.get("hand_lateral_offset", 0.0),
 		"hand_pattern": beat.get("hand_pattern", "legacy_center"),
 	}
-	note.setup(lane, float(beat.time), spawn_z, visual_cue, float(beat.get("duration", 0.0)), rail_trajectory, hand_target_metadata)
+	note.setup(lane, gameplay_hit_time, spawn_z, visual_cue, float(beat.get("duration", 0.0)), rail_trajectory, hand_target_metadata)
 	if tuning_values.has("note_y"):
 		note.position.y = float(tuning_values["note_y"])
 	note.set_meta("note_index", int(beat.get("source_note_index", note_index)))

@@ -24,9 +24,6 @@ static func create_step(color: Color) -> Node3D:
 	cue.name = "StepPlatform3D"
 	_apply_imported_material(cue.get_node("ImportedModel"), _body_material(color, "step"))
 	(cue.get_node("ContactBed") as MeshInstance3D).material_override = _contact_material(color)
-	for node_name in ["StepHalo", "FrontTopRim", "BackTopRim"]:
-		var accent := cue.get_node(node_name) as MeshInstance3D
-		accent.material_override = _accent_material(color, "step_accent")
 	return cue
 
 

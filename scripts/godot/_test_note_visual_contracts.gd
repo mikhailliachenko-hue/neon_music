@@ -13,6 +13,7 @@ func _init() -> void:
 func _run() -> void:
 	var failures: Array[String] = []
 	_test_centered_architectural_expansion(failures)
+	_test_hand_hold_terminal_parser_contract(failures)
 	_test_hand_metadata_contract(failures)
 	var stage := Node3D.new()
 	root.add_child(stage)
@@ -53,6 +54,24 @@ func _test_centered_architectural_expansion(failures: Array[String]) -> void:
 	}]))
 	if paired.size() != 2:
 		failures.append("paired foot cue no longer expands to two visuals")
+
+
+func _test_hand_hold_terminal_parser_contract(failures: Array[String]) -> void:
+	var expanded: Array = PARSER.expanded_notes(PARSER.normalize_notes([{
+		"time": 4.0,
+		"hit_time": 7.5,
+		"lanes": [0],
+		"movement": "PUNCH_LEFT",
+		"semantic_movement": "DOUBLE_HAND_HOLD",
+		"cue_archetype": "HAND_TARGET",
+		"hold_terminal": true,
+	}]))
+	if expanded.size() != 1:
+		failures.append("hand hold terminal parser fixture did not produce one note")
+		return
+	var terminal := expanded[0] as Dictionary
+	if not bool(terminal.get("hold_terminal", false)) or not is_equal_approx(float(terminal.hit_time), 7.5) or not is_equal_approx(float(terminal.time), 4.0):
+		failures.append("hand hold terminal lost its early-spawn or later-hit contract")
 
 
 func _test_hand_metadata_contract(failures: Array[String]) -> void:
@@ -106,8 +125,14 @@ func _test_hand_hold(stage: Node3D, failures: Array[String]) -> void:
 	if not icon.visible:
 		failures.append("hand hold front icon is hidden before judgment")
 	var prism := note.get_node("HandHoldPrism") as Node3D
-	if prism.position.z <= 0.31:
-		failures.append("hand hold body still overlaps the front target plane")
+	if prism.position.z >= -0.31 or body.position.z >= 0.0:
+		failures.append("hand hold body is not extending behind its first target")
+	note.sync_to_song_time(4.0, 20.0)
+	if not note.continues_past_hit():
+		failures.append("hand hold does not survive its first hit until the terminal glove")
+	note.on_primary_hit()
+	if target.visible or icon.visible or not prism.visible:
+		failures.append("hand hold first target does not clear while its travel volume remains")
 
 
 func _test_hand_target_offsets(stage: Node3D, failures: Array[String]) -> void:
@@ -191,18 +216,16 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 	var note := NOTE_SCENE.instantiate() as RhythmNote
 	note.setup(3, 4.0, -8.0, "FOOT_PAD_RIGHT")
 	stage.add_child(note)
-	var base_rim := note.get_node_or_null("Border/Top") as MeshInstance3D
-	var volume_rim := note.get_node_or_null("StepPlatform3D/FrontTopRim") as MeshInstance3D
 	var imported_platform := note.get_node_or_null("StepPlatform3D/ImportedModel") as Node3D
 	var contact_bed := note.get_node_or_null("StepPlatform3D/ContactBed") as MeshInstance3D
 	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as Node3D
-	if base_rim == null or volume_rim == null or imported_platform == null or contact_bed == null or footprint_frame == null:
+	if imported_platform == null or contact_bed == null or footprint_frame == null:
 		failures.append("ordinary step is missing its authored readability frame")
 		return
-	for rim in [base_rim, volume_rim]:
-		var material := rim.material_override as StandardMaterial3D
-		if material == null or material.no_depth_test:
-			failures.append("volumetric step shell still renders as a floating no-depth overlay")
+	if (note.get_node("Border") as Node3D).visible or (note.get_node("GlassPanel") as MeshInstance3D).visible:
+		failures.append("ordinary step still stacks the legacy panel and border over its 3D shell")
+	if note.get_node_or_null("StepPlatform3D/StepHalo") != null or note.get_node_or_null("FootGlowRing") != null:
+		failures.append("ordinary step still stacks a circular halo under its rectangular semantic frame")
 	var frame_top := footprint_frame.get_node_or_null("Top") as MeshInstance3D
 	var frame_material := frame_top.material_override as StandardMaterial3D if frame_top != null else null
 	if frame_material == null or not frame_material.no_depth_test:

@@ -1806,6 +1806,34 @@ def build_choreography(
         beat_index = item["start_beat"]
         hit_time = float(beats[beat_index]["time"])
         duration_seconds = item["duration_beats"] * interval
+        hit_specs = (
+            [
+                (
+                    offset,
+                    item.get("internal_hit_components", {}).get(
+                        str(offset),
+                        item.get("internal_hit_components", {}).get(offset, item["movement"]),
+                    ),
+                )
+                for offset in item["internal_hit_offsets"]
+            ]
+            if item.get("internal_hit_components")
+            else COMPOSITE_HITS.get(
+                item["movement"],
+                [(offset, item["movement"]) for offset in item["internal_hit_offsets"]],
+            )
+        )
+        if item["movement"] == "DOUBLE_HAND_HOLD":
+            # A sustained hand action is an explicit hit -> travel -> hit
+            # phrase. Leave one recovery beat before the next movement so the
+            # terminal pair never collides with the following instruction.
+            terminal_offset = max(1, int(item["duration_beats"]) - 1)
+            hit_specs = [
+                (0, "HAND_HOLD_LEFT"),
+                (0, "HAND_HOLD_RIGHT"),
+                (terminal_offset, "PUNCH_LEFT"),
+                (terminal_offset, "PUNCH_RIGHT"),
+            ]
         lead_beats = max(2, meta["preparation_beats"])
         cue_left = {"left": .36, "center": .5, "right": .66}.get(meta["side"], .5)
         cue_bounds = {"left": cue_left, "top": .22, "width": .16, "height": .56}
@@ -1822,20 +1850,7 @@ def build_choreography(
             "hit_time": round(hit_time, 6), "feedback_end_time": round(hit_time + .15, 6),
             "recovery_end_time": round(hit_time + duration_seconds + meta["recovery_beats"] * interval, 6),
             "despawn_time": round(hit_time + duration_seconds + .25, 6), "duration": round(duration_seconds, 6),
-            "duration_beats": item["duration_beats"], "internal_hits": [{"beat_offset": offset, "time": round(float(beats[beat_index + offset]["time"]), 6), "component": component} for offset, component in (
-                [
-                    (
-                        offset,
-                        item.get("internal_hit_components", {}).get(
-                            str(offset),
-                            item.get("internal_hit_components", {}).get(offset, item["movement"]),
-                        ),
-                    )
-                    for offset in item["internal_hit_offsets"]
-                ]
-                if item.get("internal_hit_components")
-                else COMPOSITE_HITS.get(item["movement"], [(offset, item["movement"]) for offset in item["internal_hit_offsets"]])
-            ) if beat_index + offset < len(beats)],
+            "duration_beats": item["duration_beats"], "internal_hits": [{"beat_offset": offset, "time": round(float(beats[beat_index + offset]["time"]), 6), "component": component} for offset, component in hit_specs if beat_index + offset < len(beats)],
             "family": meta["family"], "cue_archetype": meta["cue_archetype"], "cell_function": item["cell_function"],
             "dynamic_role": item.get("dynamic_role", ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[min(3, (beat_index % 32) // 8)]),
             "count8_in_phrase": min(3, (beat_index % 32) // 8),
@@ -1940,6 +1955,15 @@ def build_choreography(
             simultaneous = sum(abs(float(other["time"]) - float(hit["time"])) < 1e-6 for other in event["internal_hits"]) > 1
             sustained = bool(component_meta.get("sustained", False))
             visual_duration = event["duration"] if sustained or event["movement"] == "DOUBLE_FOOT_PULSE" else 0.0
+            hold_terminal = event["movement"] == "DOUBLE_HAND_HOLD" and component_id in {"PUNCH_LEFT", "PUNCH_RIGHT"} and int(hit.get("beat_offset", 0)) > 0
+            if event["movement"] == "DOUBLE_HAND_HOLD" and sustained:
+                terminal_times = [
+                    float(candidate["time"])
+                    for candidate in event["internal_hits"]
+                    if str(candidate.get("component", "")) in {"PUNCH_LEFT", "PUNCH_RIGHT"}
+                ]
+                if terminal_times:
+                    visual_duration = max(0.0, min(terminal_times) - float(hit["time"]))
             cell_function = str(event.get("cell_function", ""))
             optional_renderer_metadata: dict[str, Any] = {}
             if "arms" in set(component_meta.get("body_parts", [])):
@@ -1954,7 +1978,11 @@ def build_choreography(
                 lane = int(rail_trajectory["end_lane"])
                 lanes = [lane]
                 optional_renderer_metadata["rail_trajectory"] = rail_trajectory
-            renderer_notes.append({"time": hit["time"], "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side), **optional_renderer_metadata})
+            # Terminal gloves are sorted/spawned with the start of the long
+            # volume but keep their real later hit_time. Godot therefore shows
+            # both caps from the first frame without inflating global lookahead.
+            render_time = event["hit_time"] if hold_terminal else hit["time"]
+            renderer_notes.append({"time": render_time, "hit_time": hit["time"], "duration": visual_duration, "sustained": sustained, "hold_terminal": hold_terminal, "lane": lanes[0] if len(lanes) > 1 else lane, "lanes": lanes, "type": "note", "double_note": len(lanes) == 2, "simultaneous": simultaneous, "simultaneous_group": f"{event['id']}@{hit['beat_offset']}" if simultaneous else None, "movement_event_id": event["id"], "mandatory": True, "movement": component_id, "semantic_movement": event["movement"], "cue_archetype": cue_archetype, "instruction_time": event["instruction_time"], "cell_function": cell_function, "dynamic_role": event.get("dynamic_role", ""), "phrase_id": event.get("phrase_id", ""), "phrase_index": event.get("phrase_index", -1), "count8_index": event.get("count8_index", -1), "finale_callback": cell_function.startswith("FINALE_CALLBACK_"), **_side_fields(component_side), **optional_renderer_metadata})
     max_simultaneous_feet = int(grid.get("generation_settings", {}).get("anti_burst", {}).get("max_simultaneous_feet", 2))
     renderer_notes, foot_concurrency = _limit_renderer_foot_concurrency(renderer_notes, max_simultaneous_feet)
     renderer_events = [_renderer_obstacle(value) for value in obstacles]
@@ -2173,7 +2201,11 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
     hand_hold_events = [event for event in movements if event.get("movement") == "DOUBLE_HAND_HOLD"]
     for event in hand_hold_events:
         hold_notes = [note for note in beatmap.get("notes", []) if note.get("movement_event_id") == event.get("id")]
-        if len(hold_notes) != 2 or {str(note.get("movement", "")) for note in hold_notes} != {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}:
+        start_notes = [note for note in hold_notes if str(note.get("movement", "")).startswith("HAND_HOLD_")]
+        terminal_notes = [note for note in hold_notes if bool(note.get("hold_terminal", False))]
+        if len(start_notes) != 2 or {str(note.get("movement", "")) for note in start_notes} != {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}:
+            errors.append("double_hand_hold_projection_mismatch")
+        if len(terminal_notes) != 2 or {str(note.get("movement", "")) for note in terminal_notes} != {"PUNCH_LEFT", "PUNCH_RIGHT"}:
             errors.append("double_hand_hold_projection_mismatch")
     arc_rows = [phrase.get("arc_metrics", {}) for phrase in beatmap.get("phrase_plan", []) if phrase.get("arc_metrics")]
     arc_summary = {

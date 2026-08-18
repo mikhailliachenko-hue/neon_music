@@ -440,9 +440,14 @@ def test_reference_hand_holds_are_rare_paired_sustained_accents():
     assert all(right - left >= 4 for left, right in zip(phrase_indices, phrase_indices[1:]))
     for event in events:
         notes = [note for note in beatmap["notes"] if note["movement_event_id"] == event["id"]]
-        assert len(notes) == 2
-        assert {note["movement"] for note in notes} == {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}
-        assert all(note["sustained"] and note["duration"] == event["duration"] for note in notes)
+        starts = [note for note in notes if note["movement"].startswith("HAND_HOLD_")]
+        terminals = [note for note in notes if note.get("hold_terminal")]
+        assert len(starts) == 2
+        assert {note["movement"] for note in starts} == {"HAND_HOLD_LEFT", "HAND_HOLD_RIGHT"}
+        assert all(note["sustained"] and 0.0 < note["duration"] < event["duration"] for note in starts)
+        assert len(terminals) == 2
+        assert {note["movement"] for note in terminals} == {"PUNCH_LEFT", "PUNCH_RIGHT"}
+        assert all(note["time"] == event["hit_time"] < note["hit_time"] and not note["sustained"] for note in terminals)
         assert {note["lane_side"] for note in notes} == {"left", "right"}
 
 
@@ -455,6 +460,7 @@ def test_reference_hand_holds_can_be_disabled_without_changing_contract():
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
     assert not any(event["movement"] == "DOUBLE_HAND_HOLD" for event in beatmap["movement_events"])
     assert not any(note["movement"].startswith("HAND_HOLD_") for note in beatmap["notes"])
+    assert not any(note.get("hold_terminal") for note in beatmap["notes"])
 
 
 def test_hand_renderer_notes_export_safe_mirrored_position_hints():

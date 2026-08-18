@@ -18,9 +18,9 @@ const HAND_VISUAL_CENTER_Y := 2.65
 const HAND_MAX_SCALE := 1.24
 const HAND_HEIGHT_OFFSET_LIMIT := 0.42
 const HAND_LATERAL_OFFSET_LIMIT := 0.18
-const HAND_HOLD_MIN_LENGTH := 5.5
-const HAND_HOLD_MAX_LENGTH := 12.0
-const HAND_HOLD_LENGTH_PER_SECOND := 6.0
+const HAND_HOLD_MIN_LENGTH := 8.0
+const HAND_HOLD_MAX_LENGTH := 96.0
+const HAND_HOLD_PREVIEW_SPEED := 20.0
 const PUNCH_LEFT_ICON := "res://assets/images/hand_targets/punch_left_icon.png"
 const PUNCH_RIGHT_ICON := "res://assets/images/hand_targets/punch_right_icon.png"
 const MOVEMENT_ICON_SHADER := preload("res://assets/models/movement_icon.gdshader")
@@ -64,7 +64,7 @@ func setup(note_lane: int, note_hit_time: float, spawn_position_z: float, note_c
 	duration_seconds = maxf(0.0, note_duration_seconds)
 	_configure_rail_trajectory(note_lane, note_rail_trajectory)
 	_configure_hand_target_metadata(note_hand_metadata)
-	_hand_hold_length = clampf(duration_seconds * HAND_HOLD_LENGTH_PER_SECOND, HAND_HOLD_MIN_LENGTH, HAND_HOLD_MAX_LENGTH) if _is_hand_hold_cue() else 0.0
+	_hand_hold_length = clampf(duration_seconds * HAND_HOLD_PREVIEW_SPEED, HAND_HOLD_MIN_LENGTH, HAND_HOLD_MAX_LENGTH) if _is_hand_hold_cue() else 0.0
 	if _is_double_foot_cue() and duration_seconds > 0.0:
 		_double_foot_rail_length = clampf(duration_seconds * DOUBLE_FOOT_RAIL_LENGTH_PER_SECOND, DOUBLE_FOOT_RAIL_BASE_LENGTH, DOUBLE_FOOT_RAIL_MAX_LENGTH)
 	if cue_archetype.begins_with("FLOOR_PULSE"):
@@ -86,6 +86,8 @@ func _ready() -> void:
 
 func sync_to_song_time(song_time: float, speed: float) -> bool:
 	position.z = -(hit_time - song_time) * speed
+	if _is_hand_hold_cue():
+		_sync_hand_hold_geometry(speed)
 	var anticipation := clampf(1.0 - absf(position.z) / 12.0, 0.0, 1.0)
 	var distance_factor := clampf(absf(position.z) / 80.0, 0.0, 1.0)
 	var heartbeat := 0.5 + 0.5 * sin(song_time * TAU * 2.0)
@@ -115,6 +117,8 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 	# plane. Retire them only after the rear edge has cleared the player.
 	if _is_double_foot_cue():
 		return position.z >= maxf(12.0, _double_foot_rail_length - 2.0)
+	if _is_hand_hold_cue():
+		return position.z >= _hand_hold_length + 2.0
 	if position.z >= 0.0:
 		position.z = 0.0
 		return true
@@ -122,13 +126,22 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 
 
 func continues_past_hit() -> bool:
-	# Foot rails pass under the player to preserve their full duration. Hand
-	# holds collapse at the judgment plane so their prisms never enter the camera.
-	return _is_double_foot_cue()
+	# Long rails pass the judgment plane until their terminal target reaches the
+	# player. This preserves the authored hit -> travel -> hit rhythm.
+	return _is_double_foot_cue() or _is_hand_hold_cue()
 
 
 func supports_hit_shatter() -> bool:
-	return _is_hand_target() or _is_step_platform_cue()
+	return (_is_hand_target() and not _is_hand_hold_cue()) or _is_step_platform_cue()
+
+
+func on_primary_hit() -> void:
+	if not _is_hand_hold_cue():
+		return
+	for node_name in ["HandContainerModel", "IconGlyph", "IconHalo"]:
+		var target := get_node_or_null(node_name) as Node3D
+		if target != null:
+			target.visible = false
 
 
 func _apply_semantic_shape() -> void:
@@ -178,6 +191,11 @@ func _apply_semantic_shape() -> void:
 		footprint.visible = false
 		border.visible = false
 	elif _is_step_platform_cue():
+		# Ordinary steps used to stack the legacy panel/border, a circular halo,
+		# platform rims and a second footprint frame. Keep one grounded shell and
+		# one semantic outline so the cue reads as a single object.
+		panel.visible = false
+		border.visible = false
 		_build_step_platform()
 
 
@@ -239,7 +257,8 @@ func _configure_visuals() -> void:
 		rail_start_footprint.material_override = $Footprint.material_override
 	_sync_smooth_rail_materials()
 	if cue_archetype.begins_with("FOOT_PAD") or _is_double_foot_cue():
-		_build_foot_glow_ring()
+		if _is_double_foot_cue():
+			_build_foot_glow_ring()
 		_build_footprint_frames()
 
 
@@ -493,15 +512,16 @@ func _build_hand_container_model() -> void:
 func _build_hand_hold_prism() -> void:
 	var hold := Node3D.new()
 	hold.name = "HandHoldPrism"
-	# Keep the sustained volume behind the readable punch cap. Starting both on
-	# the same plane made the long body visually swallow the front icon.
-	hold.position = Vector3(0.0, _hand_visual_center_y(), HAND_CONTAINER_DEPTH * 0.5 + 0.10)
+	# Negative Z is the approach side. The body connects the first punch cap to
+	# the explicit terminal punch exported by the analyzer.
+	hold.position = Vector3(0.0, _hand_visual_center_y(), -HAND_CONTAINER_DEPTH * 0.5)
 	var length := maxf(HAND_HOLD_MIN_LENGTH, _hand_hold_length)
+	var span := maxf(0.5, length - HAND_CONTAINER_DEPTH)
 	var body := MeshInstance3D.new()
 	body.name = "HoldBody"
-	body.position.z = length * 0.5
+	body.position.z = -span * 0.5
 	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, length)
+	body_mesh.size = Vector3(HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, span)
 	body.mesh = body_mesh
 	var body_material := StandardMaterial3D.new()
 	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -518,15 +538,39 @@ func _build_hand_hold_prism() -> void:
 	hold.add_child(body)
 	var rail_material := _emissive_material(emission_color, 2.8)
 	var half := HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE * 0.5
-	var rail_z := length * 0.5
+	var rail_z := -span * 0.5
 	for rail_data in [
 		["TopLeftRail", Vector3(-half, half, rail_z)],
 		["TopRightRail", Vector3(half, half, rail_z)],
 		["BottomLeftRail", Vector3(-half, -half, rail_z)],
 		["BottomRightRail", Vector3(half, -half, rail_z)],
 	]:
-		GAMEPLAY_CUE_KIT.add_edge(hold, String(rail_data[0]), rail_data[1] as Vector3, Vector3(0.065, 0.065, length), rail_material)
+		GAMEPLAY_CUE_KIT.add_edge(hold, String(rail_data[0]), rail_data[1] as Vector3, Vector3(0.065, 0.065, span), rail_material)
 	add_child(hold)
+
+
+func _sync_hand_hold_geometry(speed: float) -> void:
+	var target_length := clampf(duration_seconds * maxf(1.0, speed), HAND_HOLD_MIN_LENGTH, HAND_HOLD_MAX_LENGTH)
+	_hand_hold_length = target_length
+	var hold := get_node_or_null("HandHoldPrism") as Node3D
+	if hold == null:
+		return
+	# After the first hit the root keeps moving toward +Z. Pin the front edge to
+	# the judgment plane and shorten only the passed portion; otherwise the four
+	# rails extend behind the camera as giant full-screen streaks.
+	var passed_length := clampf(position.z, 0.0, _hand_hold_length)
+	var remaining_length := maxf(HAND_CONTAINER_DEPTH + 0.5, _hand_hold_length - passed_length)
+	var span := maxf(0.5, remaining_length - HAND_CONTAINER_DEPTH)
+	hold.position.z = -HAND_CONTAINER_DEPTH * 0.5 - passed_length
+	var body := hold.get_node_or_null("HoldBody") as MeshInstance3D
+	if body != null and body.mesh is BoxMesh:
+		(body.mesh as BoxMesh).size.z = span
+		body.position.z = -span * 0.5
+	for rail_name in ["TopLeftRail", "TopRightRail", "BottomLeftRail", "BottomRightRail"]:
+		var rail := hold.get_node_or_null(rail_name) as MeshInstance3D
+		if rail != null and rail.mesh is BoxMesh:
+			(rail.mesh as BoxMesh).size.z = span
+			rail.position.z = -span * 0.5
 
 
 func _build_step_platform() -> void:

@@ -121,6 +121,7 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 		"hand_height_offset": clampf(float(raw_note.get("hand_height_offset", hand_height_default)), -HAND_HEIGHT_OFFSET_LIMIT, HAND_HEIGHT_OFFSET_LIMIT),
 		"hand_lateral_offset": clampf(float(raw_note.get("hand_lateral_offset", 0.0)), -HAND_LATERAL_OFFSET_LIMIT, HAND_LATERAL_OFFSET_LIMIT),
 		"hand_pattern": String(raw_note.get("hand_pattern", "legacy_center")).substr(0, 48),
+		"hold_terminal": bool(raw_note.get("hold_terminal", false)),
 		"feet": _feet_for_lanes(lanes),
 	}
 
@@ -163,6 +164,7 @@ static func expanded_notes(notes: Array) -> Array:
 				"hand_height_offset": float(note.get("hand_height_offset", 0.0)),
 				"hand_lateral_offset": float(note.get("hand_lateral_offset", 0.0)),
 				"hand_pattern": String(note.get("hand_pattern", "legacy_center")),
+				"hold_terminal": bool(note.get("hold_terminal", false)),
 				"foot": lane_to_foot(int(lane)),
 				"source_note_index": note_index,
 			})
