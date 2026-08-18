@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "LightGridViolet"
+emission_color = Color(0.74, 0.10, 1, 1)
+accent_color = Color(1, 0.64, 0.08, 1)
+background_color = Color(0.003, 0.0015, 0.008, 1)
+fog_color = Color(0.07, 0.018, 0.12, 1)
+fog_density = 0.0019
+glow_intensity = 0.56
+emission_energy = 4.6
+floor_color = Color(0.014, 0.005, 0.022, 1)
+floor_emission = 0.6
+ambient_color = Color(0.045, 0.012, 0.07, 1)
+ambient_energy = 0.16
+ring_probability_scale = 1.0
+decoration_probability_scale = 0.1
+layout_weights = {"DecoratedTunnel": 0.0, "DoubleRing": 0.0, "EnergyGate": 0.0, "NarrowTunnel": 0.0, "NeonGrid": 0.0, "Ring": 3.0, "SidePanels": 0.0, "Straight": 0.0, "WideTunnel": 0.0}

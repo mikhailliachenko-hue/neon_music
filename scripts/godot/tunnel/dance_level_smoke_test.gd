@@ -5,7 +5,7 @@ const EXPECTED_NAMES := [
 	"CYBER AWAKENING", "GOLDEN STAR", "PULSE CIRCLE", "SYNTH VIOLET",
 	"ICE HALO", "REDLINE GATE", "TOXIC PORTAL", "ELECTRIC PINK",
 	"WHITE SIGNAL", "SUNSET DRIVE", "DEEP SPACE RING", "MATRIX FRAME",
-	"FINAL SPECTRUM", "LIGHT GRID RUNNER",
+	"FINAL SPECTRUM", "LIGHT GRID RUNNER", "VIOLET GRID RUNNER",
 ]
 
 
@@ -56,6 +56,10 @@ func _run() -> void:
 				failures.append("%s: %s" % [preset.display_name(), world_error])
 		if preset.color_palette.size() < 3 or preset.effective_segment_sequence().is_empty():
 			failures.append("missing preview/spatial data: %s" % preset.display_name())
+		if preset.display_name() == "LIGHT GRID RUNNER" and preset.light_grid_mode != 1:
+			failures.append("LIGHT GRID RUNNER must stay capsule-only")
+		if preset.display_name() == "VIOLET GRID RUNNER" and preset.light_grid_mode != 2:
+			failures.append("VIOLET GRID RUNNER must stay dot-only")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:

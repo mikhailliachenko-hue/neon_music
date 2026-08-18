@@ -24,6 +24,7 @@ class_name TunnelWorldAssetSet
 @export_range(2.5, 6.5, 0.05) var frame_opening_top_y := 4.25
 @export_range(12.0, 24.0, 0.1) var frame_target_width := 16.2
 @export_range(8.0, 16.0, 0.1) var frame_target_height := 10.2
+@export_range(0.5, 20.0, 0.1) var frame_target_depth := 1.25
 @export_range(1.5, 5.0, 0.05) var frame_target_center_y := 2.55
 
 

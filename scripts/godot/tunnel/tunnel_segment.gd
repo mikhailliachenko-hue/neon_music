@@ -50,6 +50,7 @@ var _frame_accent := Color.WHITE
 var _frame_emission := 1.0
 var _frame_rest_glow := 0.22
 var _frame_rest_emission_scale := 1.0
+var _light_grid_mode := 0
 
 
 func _ready() -> void:
@@ -87,6 +88,7 @@ func configure_layout(
 ) -> void:
 	_active_world_style = preset.world_style if preset != null else null
 	_active_world_key = _world_cache_key(_active_world_style)
+	_light_grid_mode = preset.light_grid_mode if preset != null else 0
 	var show_floor_rails := _active_world_style.show_floor_rails if _active_world_style != null else true
 	var show_ceiling_rails := _active_world_style.show_ceiling_rails if _active_world_style != null else true
 	$VisualRoot/NeonElements/LeftFloorRail.visible = show_floor_rails
@@ -207,10 +209,13 @@ func configure_layout(
 func _configure_reference_light_grid_variant() -> void:
 	if _active_world_style == null or _active_world_style.world_id != "rhythm_light_grid":
 		return
-	# Each eight-segment streamed section uses one coherent authored matrix.
-	# Recycling then reveals the next matrix progressively from the far end,
-	# instead of mixing capsule and dot patterns randomly in the same corridor.
-	var variant := posmod(floori(float(logical_index) / 8.0), 2)
+	# Dedicated presets keep the capsule and violet-dot corridors visually
+	# separate. Mode 0 remains as a compatibility fallback for old Resources.
+	var variant := posmod(floori(float(logical_index) / 16.0), 2)
+	if _light_grid_mode == 1:
+		variant = 0
+	elif _light_grid_mode == 2:
+		variant = 1
 	for slot_name in ["Rings", "Arches"]:
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -274,7 +279,7 @@ func apply_visual_state(
 	reaction: float
 ) -> void:
 	if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid" \
-		and posmod(floori(float(logical_index) / 8.0), 2) == 1:
+		and _light_grid_mode == 2:
 		# The dot section owns a violet/gold palette. Applying it to the road and
 		# rails as well removes the previous red/white/purple visual split.
 		primary = Color(0.74, 0.10, 1.0, 1.0)
@@ -878,7 +883,7 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 				target_size = Vector3(
 					asset_set.frame_target_width if asset_set != null else 16.2,
 					asset_set.frame_target_height if asset_set != null else 10.2,
-					18.4 if frame_count == 1 else 1.25
+					asset_set.frame_target_depth if asset_set != null else 1.25
 				)
 				var frame_spacing := BASE_LENGTH / float(frame_count)
 				target_center = Vector3(

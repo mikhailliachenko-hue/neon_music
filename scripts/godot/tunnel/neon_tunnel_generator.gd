@@ -307,6 +307,8 @@ func get_runtime_stats() -> Dictionary:
 		"spectrum_bands": spectrum_controller.band_count() if spectrum_controller != null else 0,
 		"spectrum_source": spectrum_controller.source_mode() if spectrum_controller != null else "off",
 		"frame_waves": _frame_wave_controller.active_count(),
+		"frame_wave_speed": _frame_wave_controller.wave_speed,
+		"frame_wave_width": _frame_wave_controller.wave_width,
 		"frame_wave_near_fade_distance": _frame_wave_controller.wave_near_fade_distance,
 		"frame_wave_emission_strength": _frame_wave_controller.wave_emission_strength,
 	}

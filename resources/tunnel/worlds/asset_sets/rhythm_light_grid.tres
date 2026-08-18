@@ -17,4 +17,5 @@ frame_opening_bottom_y = -2.0
 frame_opening_top_y = 4.35
 frame_target_width = 16.4
 frame_target_height = 10.4
+frame_target_depth = 18.4
 frame_target_center_y = 2.65

@@ -2,6 +2,8 @@ extends RefCounted
 class_name TunnelFrameWaveController
 
 const SLOT_COUNT := 4
+const ACTION_WAVE_SPEED_MULTIPLIER := 3.0
+const ACTION_WAVE_WIDTH_MULTIPLIER := 5.0
 
 var wave_speed := 64.0
 var wave_width := 11.5
@@ -25,14 +27,19 @@ func _init() -> void:
 
 
 func configure(preset: TunnelLevelPreset) -> void:
+	var authored_speed := 64.0
+	var authored_width := 11.5
 	if preset != null:
-		wave_speed = preset.setting(preset.music_reaction_settings, "wave_speed", 64.0)
-		wave_width = preset.setting(preset.music_reaction_settings, "wave_width", 11.5)
+		authored_speed = preset.setting(preset.music_reaction_settings, "wave_speed", 64.0)
+		authored_width = preset.setting(preset.music_reaction_settings, "wave_width", 11.5)
 		wave_lifetime = preset.setting(preset.music_reaction_settings, "wave_lifetime", 2.2)
 		wave_near_fade_distance = preset.setting(preset.music_reaction_settings, "wave_near_fade_distance", 24.0)
 		wave_emission_strength = preset.setting(preset.music_reaction_settings, "wave_emission_strength", 0.46)
-	wave_speed = clampf(wave_speed, 24.0, 110.0)
-	wave_width = clampf(wave_width, 5.0, 24.0)
+	# The front crosses the corridor three times faster. A wider asymmetric band
+	# lets several authored rows overlap and leaves the reference-style soft tail
+	# instead of exposing the boundaries between streamed segments.
+	wave_speed = clampf(authored_speed * ACTION_WAVE_SPEED_MULTIPLIER, 72.0, 330.0)
+	wave_width = clampf(authored_width * ACTION_WAVE_WIDTH_MULTIPLIER, 25.0, 120.0)
 	wave_lifetime = clampf(wave_lifetime, 0.8, 3.5)
 	wave_near_fade_distance = clampf(wave_near_fade_distance, 8.0, 48.0)
 	wave_emission_strength = clampf(wave_emission_strength, 0.1, 1.0)
@@ -115,7 +122,10 @@ func peak_strength() -> float:
 static func spatial_visibility(depth: float, front_depth: float, width: float, near_fade_distance: float) -> float:
 	var safe_width := maxf(0.001, width)
 	var safe_fade_distance := maxf(0.001, near_fade_distance)
-	var distance_to_front := absf(depth - front_depth)
-	var spatial_mask := 1.0 - smoothstep(safe_width * 0.15, safe_width * 0.5, distance_to_front)
+	var signed_distance := depth - front_depth
+	# A fast leading edge reads as forward motion; the longer release behind it
+	# keeps adjacent pooled frames blended instead of flashing one by one.
+	var fade_distance := safe_width * (0.28 if signed_distance >= 0.0 else 0.72)
+	var spatial_mask := 1.0 - smoothstep(0.0, fade_distance, absf(signed_distance))
 	var near_fade := smoothstep(safe_fade_distance * 0.52, safe_fade_distance, maxf(0.0, depth))
 	return spatial_mask * near_fade

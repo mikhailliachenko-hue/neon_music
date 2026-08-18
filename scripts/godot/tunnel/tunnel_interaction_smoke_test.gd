@@ -134,6 +134,10 @@ func _run() -> void:
 		failures.append("section transition did not return to the camera baseline")
 
 	var stats := generator.get_runtime_stats()
+	if not is_equal_approx(float(stats.get("frame_wave_speed", 0.0)), 192.0):
+		failures.append("action wave speed is not the requested 3x value")
+	if not is_equal_approx(float(stats.get("frame_wave_width", 0.0)), 57.5):
+		failures.append("action wave width no longer preserves the smooth fade duration")
 	if float(stats.get("frame_wave_near_fade_distance", 0.0)) < 20.0:
 		failures.append("frame wave near fade is too close to gameplay")
 	if float(stats.get("frame_wave_emission_strength", 99.0)) > 0.6:

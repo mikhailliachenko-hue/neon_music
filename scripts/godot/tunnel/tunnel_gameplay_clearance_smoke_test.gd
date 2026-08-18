@@ -33,6 +33,9 @@ func _run() -> void:
 		if preset.world_style.world_id == "rhythm_star_frames" \
 			and asset_set.frame_instances_per_segment != 1:
 			failures.append("%s must keep one star crown per segment" % preset.display_name())
+		if preset.world_style.world_id == "rhythm_star_frames" \
+			and asset_set.frame_target_depth > 2.0:
+			failures.append("%s star rails are stretched along the gameplay lane" % preset.display_name())
 		generator.select_level_by_index(index, 730000 + index)
 		song_time += 16.0
 		generator.sync_to_song_time(song_time, {})
@@ -92,6 +95,9 @@ func _validate_open_star_bottom(segment: TunnelSegment, failures: PackedStringAr
 			var unsafe_edge := star.get_node_or_null(unsafe_edge_name) as Node3D
 			if unsafe_edge != null and unsafe_edge.visible:
 				failures.append("star bottom edge %s enters the gameplay corridor" % unsafe_edge_name)
+		var star_bounds := _combined_global_bounds(star)
+		if star_bounds.size.z > 2.0:
+			failures.append("star frame is stretched %.2fm along the gameplay lane" % star_bounds.size.z)
 
 
 func _combined_global_bounds(root_node: Node3D) -> AABB:

@@ -36,21 +36,20 @@ godot --path . -- --preview-level "--tunnel-preset=FINAL DROP" --tunnel-seed=777
 
 ## Dance Mode level library
 
-The 14 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
+The 15 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
 GOLDEN STAR, PULSE CIRCLE, SYNTH VIOLET, ICE HALO, REDLINE GATE,
 TOXIC PORTAL, ELECTRIC PINK, WHITE SIGNAL, SUNSET DRIVE, DEEP SPACE RING,
-MATRIX FRAME, FINAL SPECTRUM and LIGHT GRID RUNNER. They use the same generator, fixed pool,
+MATRIX FRAME, FINAL SPECTRUM, LIGHT GRID RUNNER and VIOLET GRID RUNNER. They use the same generator, fixed pool,
 asset cache and shared segment scenes. Each resource owns identity, palette,
 frame silhouette, densities and particle/light/fog/camera/music reaction
 settings; selecting one reapplies those settings to the existing pool without
 restarting gameplay.
 
-`LIGHT GRID RUNNER` is intentionally separate from the thirteen authored arch
-levels. It uses the ready-made Quaternius `Prop_Light_Wide.gltf` emissive insert
-for red/yellow/green side and ceiling banks, batches those repeats with
-`MultiMeshInstance3D`, keeps the gameplay aperture empty, and leaves the audio
-spectrum disabled. Only the existing distant action wave can softly travel
-through the panel modules.
+The two grid presets are intentionally separate from the thirteen authored arch
+levels. `LIGHT GRID RUNNER` owns the red/yellow/green Quaternius capsule bank;
+`VIOLET GRID RUNNER` owns the volumetric violet/gold dot bank. Both batch their
+repeats with `MultiMeshInstance3D`, keep the gameplay aperture empty, leave the
+audio spectrum disabled and react only to the distant action wave.
 
 `lighting_settings.frame_rest_glow` and
 `lighting_settings.frame_rest_emission_scale` calibrate the steady readability

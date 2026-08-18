@@ -13,6 +13,7 @@ class_name TunnelLevelPreset
 @export var segment_types: PackedStringArray = []
 @export var asset_weights: Dictionary = {}
 @export var world_style: TunnelWorldStyle
+@export_enum("Sectioned", "Capsules", "Dots") var light_grid_mode := 0
 
 @export_group("Runtime Settings")
 @export var particle_settings: Dictionary = {}

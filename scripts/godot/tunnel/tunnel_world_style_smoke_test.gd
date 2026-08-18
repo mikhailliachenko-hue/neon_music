@@ -9,6 +9,7 @@ const WORLD_CASES := [
 	{"level": "TOXIC PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
 	{"level": "LIGHT GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
+	{"level": "VIOLET GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
 ]
 
 
@@ -80,7 +81,7 @@ func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: Pac
 	var module: Node = null
 	for segment in generator._segments:
 		for candidate in segment.find_children("*", "", true, false):
-			if candidate.has_method("set_light_grid_variant"):
+			if candidate.has_method("set_light_grid_variant") and candidate.is_visible_in_tree():
 				module = candidate
 				break
 		if module != null:
@@ -88,6 +89,10 @@ func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: Pac
 	if module == null:
 		failures.append("LIGHT GRID RUNNER has no pooled light-grid module")
 		return
+	var preset := generator.current_level_preset()
+	var expected_variant := preset.light_grid_mode - 1 if preset != null else -1
+	if expected_variant >= 0 and int(module.call("light_grid_variant")) != expected_variant:
+		failures.append("%s activated the wrong grid corridor" % preset.display_name())
 	module.call("set_light_grid_variant", 0)
 	var capsule_bank := module.get_node_or_null("LeftBank") as MultiMeshInstance3D
 	var dot_bank := module.get_node_or_null("DotLeftBank") as MultiMeshInstance3D
