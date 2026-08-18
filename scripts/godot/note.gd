@@ -23,6 +23,7 @@ const HAND_HOLD_MAX_LENGTH := 12.0
 const HAND_HOLD_LENGTH_PER_SECOND := 6.0
 const MATERIAL_PUNCH_ICON := "res://assets/images/movement_icons/material/punch.svg"
 const MOVEMENT_ICON_SHADER := preload("res://assets/models/movement_icon.gdshader")
+const FOOTPRINT_FRAMES := preload("res://scripts/godot/footprint_frames.gd")
 const JUMP_OBSTACLE_PATH := "res://assets/models/obstacles/jump_obstacle.tscn"
 const DUCK_GATE_PATH := "res://assets/models/obstacles/duck_gate.tscn"
 const FOOT_RAIL_TRAJECTORY := preload("res://scripts/godot/foot_rail_trajectory.gd")
@@ -52,6 +53,7 @@ var _hand_height_offset := 0.0
 var _hand_lateral_offset := 0.0
 var _hand_pattern := "legacy_center"
 var _shattered := false
+var _footprint_frames
 
 
 func setup(note_lane: int, note_hit_time: float, spawn_position_z: float, note_cue_archetype: String = "FOOT_PAD_LEFT", note_duration_seconds: float = 0.0, note_rail_trajectory: Variant = {}, note_hand_metadata: Variant = {}) -> void:
@@ -236,6 +238,7 @@ func _configure_visuals() -> void:
 	_sync_smooth_rail_materials()
 	if cue_archetype.begins_with("FOOT_PAD") or _is_double_foot_cue():
 		_build_foot_glow_ring()
+		_build_footprint_frames()
 
 
 func _is_center_wide_cue() -> bool:
@@ -310,6 +313,14 @@ func _configure_double_foot_rail(panel: MeshInstance3D, footprint: MeshInstance3
 	# Keep the authored rail visible at its full length from spawn. Growing it
 	# only near the player looked like geometry popping into existence.
 	_set_double_foot_reveal(1.0)
+
+
+func _build_footprint_frames() -> void:
+	_footprint_frames = FOOTPRINT_FRAMES.new()
+	_footprint_frames.name = "FootprintFrames"
+	add_child(_footprint_frames)
+	var rail_start := get_node_or_null("RailStartFootprint") as MeshInstance3D
+	_footprint_frames.configure($Footprint as MeshInstance3D, rail_start, emission_color)
 
 
 func _set_double_foot_reveal(amount: float) -> void:
@@ -728,6 +739,8 @@ func _set_approach_energy(amount: float, distance_factor: float, heartbeat: floa
 	var rail_start_footprint := get_node_or_null("RailStartFootprint") as MeshInstance3D
 	if rail_start_footprint != null and rail_start_footprint.visible:
 		rail_start_footprint.scale = Vector3.ONE * lerpf(1.0, 1.08, amount)
+	if _footprint_frames != null:
+		_footprint_frames.sync_visuals(distance_factor, amount)
 	var foot_ring := get_node_or_null("FootGlowRing") as MeshInstance3D
 	if foot_ring != null:
 		foot_ring.scale = Vector3.ONE * lerpf(0.90, 1.18, amount)

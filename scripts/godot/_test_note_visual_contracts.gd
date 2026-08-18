@@ -186,13 +186,26 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 	stage.add_child(note)
 	var base_rim := note.get_node_or_null("Border/Top") as MeshInstance3D
 	var volume_rim := note.get_node_or_null("StepPlatform3D/FrontTopRim") as MeshInstance3D
-	if base_rim == null or volume_rim == null:
+	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as MeshInstance3D
+	if base_rim == null or volume_rim == null or footprint_frame == null:
 		failures.append("ordinary step is missing its authored readability frame")
 		return
 	for rim in [base_rim, volume_rim]:
 		var material := rim.material_override as StandardMaterial3D
 		if material == null or not material.no_depth_test or material.render_priority < 10:
 			failures.append("step frame can still be depth-occluded independently from its footprint")
+	var frame_material := footprint_frame.material_override as ShaderMaterial
+	if frame_material == null or frame_material.shader != preload("res://assets/models/footprint_frame.gdshader"):
+		failures.append("ordinary footprint has no dedicated always-visible frame shader")
+	note.sync_to_song_time(-2.0, 10.0)
+	if footprint_frame.scale.x < 1.20:
+		failures.append("distant footprint frame is still too small to remain readable")
+
+	var rail := NOTE_SCENE.instantiate() as RhythmNote
+	rail.setup(0, 5.0, -20.0, "DOUBLE_FOOT_PAD_LEFT", 1.8)
+	stage.add_child(rail)
+	if rail.get_node_or_null("FootprintFrames/FootprintFrame") == null or rail.get_node_or_null("FootprintFrames/RailStartFootprintFrame") == null:
+		failures.append("long foot rail does not frame both endpoint footprints")
 
 
 func _test_jump_container(stage: Node3D, failures: Array[String]) -> void:
