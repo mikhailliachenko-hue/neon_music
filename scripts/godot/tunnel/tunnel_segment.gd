@@ -201,6 +201,28 @@ func configure_layout(
 				_:
 					_activate_external_slot("Panels", 0.78, rng, theme_name)
 					_activate_external_slot("Particles", 0.62, rng, theme_name)
+	_configure_reference_light_grid_variant()
+
+
+func _configure_reference_light_grid_variant() -> void:
+	if _active_world_style == null or _active_world_style.world_id != "rhythm_light_grid":
+		return
+	# Each eight-segment streamed section uses one coherent authored matrix.
+	# Recycling then reveals the next matrix progressively from the far end,
+	# instead of mixing capsule and dot patterns randomly in the same corridor.
+	var variant := posmod(floori(float(logical_index) / 8.0), 2)
+	for slot_name in ["Rings", "Arches"]:
+		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
+		if slot == null:
+			continue
+		for group_node in slot.get_children():
+			var group := group_node as Node3D
+			if group == null or not group.visible or String(group.get_meta("world_style", "")) != _active_world_key:
+				continue
+			for module_node in group.get_children():
+				var module := module_node as Node3D
+				if module != null and module.has_method("set_light_grid_variant"):
+					module.call("set_light_grid_variant", variant)
 
 
 func _profile_layout(proposed: String, index: int) -> String:

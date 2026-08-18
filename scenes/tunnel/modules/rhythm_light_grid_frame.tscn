@@ -12,3 +12,9 @@ script = ExtResource("1_script")
 [node name="CeilingBank" type="MultiMeshInstance3D" parent="."]
 
 [node name="GuideBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="DotLeftBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="DotRightBank" type="MultiMeshInstance3D" parent="."]
+
+[node name="DotCeilingBank" type="MultiMeshInstance3D" parent="."]

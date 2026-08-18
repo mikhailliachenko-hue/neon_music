@@ -8,7 +8,7 @@
 [resource]
 script = ExtResource("1_preset")
 level_name = "LIGHT GRID RUNNER"
-description = "Тёмный световой коридор с красно-жёлто-зелёными панелями в стиле референса STAY ON BEAT #6."
+description = "Две тёмные световые матрицы: капсулы и круглые точки загораются только от действий игрока."
 difficulty = "Medium"
 color_palette = PackedColorArray(1, 0.08, 0.025, 1, 0.12, 1, 0.28, 1, 0.0015, 0.0015, 0.003, 1)
 preview_texture = ExtResource("4_background")
@@ -16,10 +16,10 @@ background_texture = ExtResource("4_background")
 segment_types = PackedStringArray("Ring")
 asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
 particle_settings = {"density": 0.04, "amount_scale": 0.04}
-lighting_settings = {"glow_intensity": 0.58, "glow_strength": 0.64, "bloom": 0.038, "frame_rest_glow": 0.16, "frame_rest_emission_scale": 0.84}
+lighting_settings = {"glow_intensity": 0.52, "glow_strength": 0.58, "bloom": 0.032, "frame_rest_glow": 0.12, "frame_rest_emission_scale": 0.78}
 fog_settings = {"density": 0.00105}
 camera_settings = {"step_impact": 0.48, "step_duration": 0.18, "fov_pulse": 0.34}
-music_reaction_settings = {"beat_strength": 0.22, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 68.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.30}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 68.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.34}
 preset_name = "LIGHT GRID RUNNER"
 style_id = "ReferenceLightGrid"
 world_style = ExtResource("3_world")

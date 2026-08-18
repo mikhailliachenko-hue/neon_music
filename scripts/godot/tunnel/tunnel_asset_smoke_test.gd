@@ -55,7 +55,7 @@ func _initialize() -> void:
 			failures.append("Cyber Awakening pool must stay between 6 and 12 segments")
 		if cyber_awakening.segment_scenes.size() != 4:
 			failures.append("Cyber Awakening requires four directed segment scenes")
-		if cyber_awakening.presets.size() != 13 or cyber_awakening.presets[0].segment_sequence != PackedStringArray(["Ring"]):
+		if cyber_awakening.presets.size() != 14 or cyber_awakening.presets[0].segment_sequence != PackedStringArray(["Ring"]):
 			failures.append("minimal rhythm-frame catalog is invalid")
 	print("TUNNEL_ASSET_SMOKE indexed=%d enabled=%d categories=%s segments=%d materials=%d" % [
 		indexed, registry.active_entry_count(), str(counts), config.segment_scenes.size(),

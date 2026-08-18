@@ -63,6 +63,8 @@ func _run() -> void:
 		for segment in generator._segments:
 			for lane_error in segment.validate_active_safe_lane():
 				failures.append("%s: %s" % [level_name, lane_error])
+		if expected_world == "rhythm_light_grid":
+			_validate_light_grid_variants(generator, failures)
 		verified_worlds.append("%s=%s" % [level_name, expected_world])
 	print("TUNNEL_WORLD_SMOKE cases=%d pool=%d asset_pool=%d worlds=%s" % [
 		WORLD_CASES.size(), initial_pool_size, int(generator.get_runtime_stats().get("asset_pool", 0)),
@@ -72,3 +74,25 @@ func _run() -> void:
 		push_error("TUNNEL_WORLD_SMOKE: %s" % failure)
 	generator.queue_free()
 	quit(0 if failures.is_empty() else 1)
+
+
+func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: PackedStringArray) -> void:
+	var module: Node = null
+	for segment in generator._segments:
+		for candidate in segment.find_children("*", "", true, false):
+			if candidate.has_method("set_light_grid_variant"):
+				module = candidate
+				break
+		if module != null:
+			break
+	if module == null:
+		failures.append("LIGHT GRID RUNNER has no pooled light-grid module")
+		return
+	module.call("set_light_grid_variant", 0)
+	var capsule_bank := module.get_node_or_null("LeftBank") as MultiMeshInstance3D
+	var dot_bank := module.get_node_or_null("DotLeftBank") as MultiMeshInstance3D
+	if capsule_bank == null or dot_bank == null or not capsule_bank.visible or dot_bank.visible:
+		failures.append("LIGHT GRID RUNNER capsule matrix did not activate cleanly")
+	module.call("set_light_grid_variant", 1)
+	if capsule_bank == null or dot_bank == null or capsule_bank.visible or not dot_bank.visible:
+		failures.append("LIGHT GRID RUNNER dot matrix did not activate cleanly")
