@@ -23,6 +23,9 @@ from lane_assignment import (
     DEFAULT_HOLD_MIN_DURATION,
     DEFAULT_HOLD_MIN_GAP,
     DEFAULT_HOLD_RATE_BARS,
+    DEFAULT_HIGH_WALL_ENABLED,
+    DEFAULT_HIGH_WALL_MIN_GAP_BARS,
+    DEFAULT_HIGH_WALL_TARGET_RATIO,
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_RAMP_DURATION,
@@ -154,6 +157,9 @@ class AnalyzerApp(tk.Tk):
         self.wall_preparation_window_var = tk.DoubleVar(value=DEFAULT_WALL_PREPARATION_WINDOW)
         self.wall_recovery_window_var = tk.DoubleVar(value=DEFAULT_WALL_RECOVERY_WINDOW)
         self.wall_rest_window_var = tk.DoubleVar(value=DEFAULT_WALL_REST_WINDOW)
+        self.high_wall_enabled_var = tk.BooleanVar(value=DEFAULT_HIGH_WALL_ENABLED)
+        self.high_wall_target_ratio_var = tk.DoubleVar(value=DEFAULT_HIGH_WALL_TARGET_RATIO)
+        self.high_wall_min_gap_bars_var = tk.IntVar(value=DEFAULT_HIGH_WALL_MIN_GAP_BARS)
         self.holds_enabled_var = tk.BooleanVar(value=DEFAULT_HOLD_ENABLED)
         self.hold_rate_bars_var = tk.IntVar(value=DEFAULT_HOLD_RATE_BARS)
         self.hold_min_duration_var = tk.DoubleVar(value=DEFAULT_HOLD_MIN_DURATION)
@@ -286,6 +292,10 @@ class AnalyzerApp(tk.Tk):
         self._spin(parent, 5, "Preparation rest", self.wall_preparation_window_var, 0.0, 3.0, 0.05, "sec")
         self._spin(parent, 6, "Recovery rest", self.wall_recovery_window_var, 0.0, 3.0, 0.05, "sec")
         self._spin(parent, 7, "Selection rest", self.wall_rest_window_var, 0.0, 3.0, 0.05, "sec")
+        ttk.Separator(parent, orient="horizontal").grid(row=8, column=0, columnspan=3, sticky="ew", pady=(8, 6))
+        ttk.Checkbutton(parent, text="Bright high walls", variable=self.high_wall_enabled_var).grid(row=9, column=1, sticky="w", pady=4)
+        self._spin(parent, 10, "High wall share", self.high_wall_target_ratio_var, 0.0, 0.5, 0.05)
+        self._spin(parent, 11, "High wall gap", self.high_wall_min_gap_bars_var, 8, 32, 1, "bars")
         parent.columnconfigure(1, weight=1)
 
     def _build_hold_notes(self, parent) -> None:
@@ -449,6 +459,9 @@ class AnalyzerApp(tk.Tk):
             "wall_anticipation": float(self.wall_anticipation_var.get()), "wall_density_multiplier": float(self.wall_density_multiplier_var.get()),
             "wall_preparation_window": float(self.wall_preparation_window_var.get()), "wall_recovery_window": float(self.wall_recovery_window_var.get()),
             "wall_rest_window": float(self.wall_rest_window_var.get()), "holds_enabled": bool(self.holds_enabled_var.get()),
+            "high_wall_enabled": bool(self.high_wall_enabled_var.get()),
+            "high_wall_target_ratio": float(self.high_wall_target_ratio_var.get()),
+            "high_wall_min_gap_bars": int(self.high_wall_min_gap_bars_var.get()),
             "hold_rate_bars": int(self.hold_rate_bars_var.get()), "hold_min_duration": float(self.hold_min_duration_var.get()),
             "hold_max_duration": float(self.hold_max_duration_var.get()), "hold_min_gap": float(self.hold_min_gap_var.get()),
             "reference_hand_holds_enabled": bool(self.reference_hand_holds_enabled_var.get()),
@@ -478,6 +491,9 @@ class AnalyzerApp(tk.Tk):
                     wall_anticipation=options["wall_anticipation"], wall_density_multiplier=options["wall_density_multiplier"],
                     wall_preparation_window=options["wall_preparation_window"], wall_recovery_window=options["wall_recovery_window"],
                     wall_rest_window=options["wall_rest_window"], holds_enabled=options["holds_enabled"],
+                    high_wall_enabled=options["high_wall_enabled"],
+                    high_wall_target_ratio=options["high_wall_target_ratio"],
+                    high_wall_min_gap_bars=options["high_wall_min_gap_bars"],
                     hold_rate_bars=options["hold_rate_bars"], hold_min_duration=options["hold_min_duration"],
                     hold_max_duration=options["hold_max_duration"], hold_min_gap=options["hold_min_gap"],
                     reference_hand_holds_enabled=options["reference_hand_holds_enabled"],
@@ -524,9 +540,13 @@ class AnalyzerApp(tk.Tk):
             hold_summary = timing.get("hold_generation", {})
             hold_count = int(timing.get("hold_count", 0))
             hand_hold_count = sum(str(event.get("movement", "")) == "DOUBLE_HAND_HOLD" for event in beatmap.get("movement_events", []))
-            self._queue.put(("ok", "Detected {notes} gameplay notes, {walls} wall events, {hand_holds} double-hand holds, and {holds} legacy floor holds. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
+            variant_counts = wall_summary.get("variant_counts", {})
+            self._queue.put(("ok", "Detected {notes} gameplay notes and {walls} analyzer wall windows ({high_walls} bright high / {low_walls} low corridor); {runtime_walls} remain after V4 movement safety. Double-hand holds: {hand_holds}; legacy floor holds: {holds}. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
                 notes=len(audio_analyzer._beatmap_notes(beatmap)),
-                walls=len([event for event in audio_analyzer._beatmap_events(beatmap) if str(event.get("type", "")) in audio_analyzer.WALL_EVENT_TYPES]),
+                walls=wall_summary.get("event_count", 0),
+                runtime_walls=wall_summary.get("runtime_event_count", 0),
+                high_walls=variant_counts.get("high_side_wall", 0),
+                low_walls=variant_counts.get("low_corridor", 0),
                 holds=hold_count,
                 hand_holds=hand_hold_count,
                 sections=len(timing.get("sections", [])),

@@ -1,6 +1,8 @@
 extends SceneTree
 
 const POOL_SCRIPT := preload("res://scripts/godot/obstacles/dodge_obstacle_pool.gd")
+const PROFILE_SCRIPT := preload("res://scripts/godot/obstacles/dodge_wall_profile.gd")
+const LEGACY_BRIDGE_SCRIPT := preload("res://scripts/godot/obstacles/dodge_wall_legacy_bridge.gd")
 const LEFT_COLOR := Color(0.18, 0.86, 1.0)
 const RIGHT_COLOR := Color(0.72, 0.16, 0.96)
 
@@ -10,6 +12,14 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 64}), "high_side_wall", "legacy 64-beat boundary must use rare high-wall fallback")
+	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 96}), "low_corridor", "legacy non-64 boundary must use low corridor")
+	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 64, "visual_variant": "low_corridor"}), "low_corridor", "explicit visual_variant must override legacy fallback")
+	var legacy_wall := {"type": "wall_left", "start": 4.0, "duration": 2.0, "end": 6.0, "anticipation": 1.5}
+	var legacy_safe: Dictionary = LEGACY_BRIDGE_SCRIPT.apply([legacy_wall], [{"time": 5.0, "lane": 0, "duration": 0.0}], [])
+	_assert_equal(int((legacy_safe["notes"] as Array)[0]["lane"]), 2, "legacy short cue must move to the safe half")
+	var legacy_duck: Dictionary = LEGACY_BRIDGE_SCRIPT.apply([legacy_wall], [], [{"movement": "DUCK", "hit_time": 5.0, "duration": 1.0}])
+	_assert_equal((legacy_duck["walls"] as Array).size(), 0, "legacy wall must not replace or overlap duck choreography")
 	var host := Node3D.new()
 	root.add_child(host)
 	var pool := POOL_SCRIPT.new() as Node3D
@@ -22,16 +32,18 @@ func _run() -> void:
 	var initial_ids: Array[int] = []
 	for index in range(4):
 		var event_type := "wall_left" if index % 2 == 0 else "wall_right"
+		var visual_variant := "high_side_wall" if index < 2 else "low_corridor"
 		var x := -2.0 if event_type == "wall_left" else 2.0
 		var obstacle := pool.call(
 			"acquire",
 			event_type,
+			visual_variant,
 			index,
 			1.5 + index,
 			1.8,
 			LEFT_COLOR if event_type == "wall_left" else RIGHT_COLOR,
 			Vector3(x, -1.82, -40.0 - index * 12.0),
-			Vector3(3.9, 4.8, 24.0),
+			Vector3(3.9, 4.8, 24.0) if visual_variant == "high_side_wall" else Vector3(3.8, 0.5, 20.0),
 			2.0,
 			3.2
 		) as Node3D
@@ -39,8 +51,12 @@ func _run() -> void:
 		acquired.append(obstacle)
 		initial_ids.append(obstacle.get_instance_id())
 		var bounds := _combined_global_bounds(obstacle)
-		_assert_true(bounds.size.y >= 4.65, "obstacle must read as a full-height volume")
-		_assert_true(bounds.size.z >= 23.0, "obstacle must have a long pass-by silhouette")
+		if visual_variant == "high_side_wall":
+			_assert_true(bounds.size.y >= 4.65, "high obstacle must read as a full-height volume")
+			_assert_true(bounds.size.z >= 23.0, "high obstacle must have a long pass-by silhouette")
+		else:
+			_assert_true(bounds.size.y >= 0.45 and bounds.size.y <= 0.65, "low corridor must stay below the camera")
+			_assert_true(bounds.size.z >= 19.0, "low corridor must retain a long silhouette")
 		if event_type == "wall_left":
 			_assert_true(bounds.end.x <= 0.06, "left obstacle must not enter the right safe half")
 		else:
@@ -55,6 +71,7 @@ func _run() -> void:
 	var recycled := pool.call(
 		"acquire",
 		"wall_right",
+		"high_side_wall",
 		99,
 		9.0,
 		1.8,

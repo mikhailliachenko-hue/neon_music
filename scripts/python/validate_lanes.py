@@ -16,6 +16,7 @@ from typing import Any
 from validate_choreography_v3 import validate as validate_choreography_v3
 from choreography_v4 import validate_v4
 from neon_track_io import extract_beat_grid, extract_beatmap, load_neon_track
+from wall_variant_assignment import HIGH_SIDE_WALL, normalize_visual_variant, variant_counts
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 TRACK_PATH = PROJECT_DIR / "output" / "neon_track.json"
@@ -480,6 +481,11 @@ def _validate_wall_events(
     )
     previous_start = -float("inf")
     previous_type = ""
+    previous_high_beat = -10**9
+    generation = timing.get("wall_generation", {})
+    generation_strategy = str(generation.get("strategy", ""))
+    modern_variant_diagnostics = isinstance(generation.get("variant_counts"), dict)
+    high_gap_beats = max(32, int(wall_settings.get("high_wall_min_gap_bars", 16)) * 4)
     if wall_events:
         strict_count = int(timing.get("wall_generation", {}).get("strict_candidate_count", 0))
         if strict_count < len(wall_events):
@@ -520,9 +526,23 @@ def _validate_wall_events(
         expected = _expected_annotation(start, float(timing["anchor"]["time"]), beat_interval)
         for key, value in expected.items():
             _assert_field(f"wall_events[{index}].{key}", event.get(key), value)
+        variant = normalize_visual_variant(event.get("visual_variant"), allow_missing=True)
+        if modern_variant_diagnostics and generation_strategy.startswith("auto_") and variant is None:
+            _fail(f"wall_events[{index}] auto event is missing visual_variant.")
+        if variant == HIGH_SIDE_WALL:
+            beat_index = int(event.get("beat_index", -1))
+            if beat_index < 32 or beat_index % 32 != 0:
+                _fail(f"wall_events[{index}] high_side_wall must start on a 32-count boundary.")
+            if beat_index - previous_high_beat < high_gap_beats:
+                _fail(f"wall_events[{index}] high_side_wall violates configured high-wall gap.")
+            previous_high_beat = beat_index
         selection = event.get("selection", {})
-        if not isinstance(selection, dict) or selection.get("strict_low") is not True:
+        if generation_strategy.startswith("auto_") and (not isinstance(selection, dict) or selection.get("strict_low") is not True):
             _fail(f"wall_events[{index}] must carry strict_low selection diagnostics.")
+        if modern_variant_diagnostics and generation_strategy.startswith("auto_") and (
+            "variant_score" not in selection or not isinstance(selection.get("variant_reasons"), list)
+        ):
+            _fail(f"wall_events[{index}] is missing visual variant diagnostics.")
         analysis_start = float(selection.get("analysis_start", start))
         analysis_end = float(selection.get("analysis_end", end))
         if analysis_start > start or analysis_end < end:
@@ -536,12 +556,57 @@ def _validate_wall_events(
             _fail(f"wall_events[{index}] leaves {len(bad_notes)} notes on blocked lanes.")
         previous_start = start
         previous_type = event_type
+    expected_counts = variant_counts(wall_events)
+    if isinstance(generation.get("variant_counts"), dict) and generation.get("variant_counts") != expected_counts:
+        _fail("wall_generation.variant_counts does not match generated wall events.")
     print(f"Wall events: OK ({len(wall_events)} events)")
 
 
 def _event_end(event: dict[str, Any]) -> float:
     start = float(event.get("start", event.get("time", 0.0)))
     return float(event.get("end_time", event.get("end", start + float(event.get("duration", 0.0)))))
+
+
+def _validate_runtime_wall_bridge(beatmap: dict[str, Any], timing: dict[str, Any]) -> None:
+    generation = timing.get("wall_generation", {})
+    generated = generation.get("events", []) if isinstance(generation, dict) else []
+    if not isinstance(generated, list):
+        _fail("wall_generation.events must be an array.")
+    wall_settings = timing.get("generation_settings", {}).get("walls", {})
+    legacy_notes = beatmap.get("legacy_notes", beatmap.get("notes", []))
+    modern_generation = isinstance(generation.get("variant_counts"), dict)
+    if modern_generation:
+        _validate_wall_events(generated, legacy_notes, timing, wall_settings)
+    else:
+        # Удалить когда станет неактуально: older V4 files used nearest-grid
+        # wall annotations and did not publish visual variant diagnostics.
+        previous_start = -float("inf")
+        for index, event in enumerate(generated):
+            if not isinstance(event, dict) or str(event.get("type", "")) not in WALL_EVENT_TYPES:
+                _fail(f"legacy wall_generation.events[{index}] is invalid.")
+            start = float(event.get("start", event.get("time", 0.0)))
+            duration = float(event.get("duration", 0.0))
+            if duration <= 0.0 or start + EPSILON < previous_start:
+                _fail(f"legacy wall_generation.events[{index}] has invalid timing.")
+            normalize_visual_variant(event.get("visual_variant"), allow_missing=True)
+            previous_start = start
+        print(f"Legacy wall events: OK ({len(generated)} events, runtime fallback enabled)")
+
+    runtime_walls = beatmap.get("independent_wall_events", [])
+    if not isinstance(runtime_walls, list):
+        _fail("beatmap.independent_wall_events must be an array.")
+    runtime_events = beatmap.get("events", [])
+    for index, event in enumerate(runtime_walls):
+        if event not in runtime_events:
+            _fail(f"independent_wall_events[{index}] is missing from beatmap.events.")
+        normalize_visual_variant(event.get("visual_variant"), allow_missing=True)
+    expected_runtime_count = int(generation.get("runtime_event_count", len(runtime_walls)))
+    if expected_runtime_count != len(runtime_walls):
+        _fail("wall_generation.runtime_event_count does not match beatmap.independent_wall_events.")
+    if modern_generation:
+        print(f"Runtime wall bridge: OK ({len(runtime_walls)}/{len(generated)} safe events)")
+    else:
+        print(f"Runtime wall bridge: legacy Godot safety fallback ({len(generated)} source events)")
 
 
 def _ranges_overlap(left_start: float, left_end: float, right_start: float, right_end: float) -> bool:
@@ -1004,6 +1069,8 @@ def main() -> int:
         if choreography_report["hard_errors"]:
             _fail("Phase 3/4 choreography hard errors: " + json.dumps(choreography_report["hard_errors"][:3], ensure_ascii=False))
         print(f"Phase 3/4 choreography: OK ({choreography_report['summary']['warnings']} warnings)")
+    if isinstance(beatmap, dict):
+        _validate_runtime_wall_bridge(beatmap, timing)
     _validate_deterministic_regeneration(audio_value)
     godot = _resolve_godot(args.godot or None)
     _validate_clock_smoke(godot)

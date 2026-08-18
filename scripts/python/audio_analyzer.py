@@ -29,6 +29,9 @@ from lane_assignment import (
     DEFAULT_HOLD_MIN_DURATION,
     DEFAULT_HOLD_MIN_GAP,
     DEFAULT_HOLD_RATE_BARS,
+    DEFAULT_HIGH_WALL_ENABLED,
+    DEFAULT_HIGH_WALL_MIN_GAP_BARS,
+    DEFAULT_HIGH_WALL_TARGET_RATIO,
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_RAMP_DURATION,
@@ -49,6 +52,12 @@ from lane_assignment import (
     assign_lanes,
     build_generation_settings,
 )
+from wall_variant_assignment import (
+    assign_visual_variants,
+    normalize_visual_variant,
+    variant_counts,
+)
+from wall_choreography_safety import prepare_runtime_wall_events
 from phrase_grid import attach_phrase_metadata, choreography_config
 from neon_track_io import build_neon_track, write_neon_track
 from music_expression import (
@@ -266,13 +275,37 @@ def _attach_v4_projection(
         legacy_events = list(beatmap.get("events", []))
         legacy_movement_events = list(beatmap.get("movement_events", []))
         runtime_movement_events = list(v4_plan.get("movement_events", []))
+        legacy_wall_events = [
+            event for event in legacy_events
+            if isinstance(event, dict) and str(event.get("type", "")) in WALL_EVENT_TYPES
+        ]
+        wall_settings = timing.get("generation_settings", {}).get("walls", {})
+        runtime_wall_events, runtime_notes, wall_runtime_safety = prepare_runtime_wall_events(
+            legacy_wall_events,
+            list(v4_plan.get("notes", [])),
+            runtime_movement_events,
+            recovery_window=float(wall_settings.get("recovery_window", DEFAULT_WALL_RECOVERY_WINDOW)),
+        )
+        v4_plan["notes"] = runtime_notes
+        runtime_events = sorted(
+            list(v4_plan.get("events", [])) + runtime_wall_events,
+            key=lambda event: (float(event.get("start", event.get("time", 0.0))), str(event.get("type", ""))),
+        )
+        v4_plan["events"] = runtime_events
+        v4_plan["independent_wall_events"] = runtime_wall_events
+        v4_plan["wall_runtime_safety"] = wall_runtime_safety
         beatmap["legacy_notes"] = legacy_notes
         beatmap["legacy_events"] = legacy_events
         beatmap["legacy_movement_events"] = legacy_movement_events
         beatmap["notes"] = list(v4_plan.get("notes", []))
-        beatmap["events"] = list(v4_plan.get("events", []))
+        beatmap["events"] = runtime_events
+        beatmap["independent_wall_events"] = runtime_wall_events
+        beatmap["wall_runtime_safety"] = wall_runtime_safety
         beatmap["movement_events"] = runtime_movement_events
         v4_grid["movement_events"] = runtime_movement_events
+        if isinstance(v4_grid.get("wall_generation"), dict):
+            v4_grid["wall_generation"]["runtime_safety"] = wall_runtime_safety
+            v4_grid["wall_generation"]["runtime_event_count"] = len(runtime_wall_events)
         beatmap["runtime_choreography_source"] = "choreography_v4"
         beatmap["runtime_note_count"] = len(beatmap["notes"])
         beatmap["runtime_event_count"] = len(beatmap["events"])
@@ -387,6 +420,8 @@ def _normalize_wall_event(
     }
     if "source" in raw_event:
         event["source"] = str(raw_event["source"])
+    if "visual_variant" in raw_event:
+        event["visual_variant"] = normalize_visual_variant(raw_event.get("visual_variant"), allow_missing=False)
     return event
 
 
@@ -427,6 +462,9 @@ def generate_wall_events(
     preparation_window = max(0.0, float(wall_settings.get("preparation_window", DEFAULT_WALL_PREPARATION_WINDOW)))
     recovery_window = max(0.0, float(wall_settings.get("recovery_window", DEFAULT_WALL_RECOVERY_WINDOW)))
     rest_window = max(0.0, float(wall_settings.get("rest_window", DEFAULT_WALL_REST_WINDOW)))
+    high_wall_enabled = bool(wall_settings.get("high_wall_enabled", DEFAULT_HIGH_WALL_ENABLED))
+    high_wall_target_ratio = max(0.0, min(0.5, float(wall_settings.get("high_wall_target_ratio", DEFAULT_HIGH_WALL_TARGET_RATIO))))
+    high_wall_min_gap_bars = max(1, int(wall_settings.get("high_wall_min_gap_bars", DEFAULT_HIGH_WALL_MIN_GAP_BARS)))
     quiet_lead = max(anticipation, preparation_window, rest_window)
     quiet_tail = max(recovery_window, rest_window)
     min_gap_seconds = max(float(min_gap_bars * 4) * beat_interval, event_duration + quiet_lead + quiet_tail + beat_interval)
@@ -440,6 +478,7 @@ def generate_wall_events(
             "strategy": "manual_override",
             "override_path": str(override_path),
             "event_count": len(events),
+            "variant_counts": variant_counts(events),
             "events": events,
         }
 
@@ -448,6 +487,7 @@ def generate_wall_events(
             "schema": WALL_GENERATION_SCHEMA,
             "strategy": "disabled" if not bool(wall_settings.get("enabled", DEFAULT_WALL_ENABLED)) else "track_too_short",
             "event_count": 0,
+            "variant_counts": variant_counts([]),
             "events": [],
         }
 
@@ -483,6 +523,14 @@ def generate_wall_events(
         quiet_rms_mean = _feature_window_mean(rms_energy, quiet_start, quiet_end, sample_rate)
         onset_max = _feature_window_max(onset_envelope, quiet_start, quiet_end, sample_rate)
         rms_max = _feature_window_max(rms_energy, quiet_start, quiet_end, sample_rate)
+        transition_span = beat_interval * 4.0
+        pre_start = max(0.0, start - transition_span)
+        post_end = min(track_duration, end + transition_span)
+        pre_onset_mean = _feature_window_mean(onset_envelope, pre_start, start, sample_rate)
+        post_onset_mean = _feature_window_mean(onset_envelope, end, post_end, sample_rate)
+        pre_rms_mean = _feature_window_mean(rms_energy, pre_start, start, sample_rate)
+        post_rms_mean = _feature_window_mean(rms_energy, end, post_end, sample_rate)
+        annotation = _wall_annotation(start, timing)
         candidates.append({
             "start": _round_time(start),
             "duration": event_duration,
@@ -503,6 +551,15 @@ def generate_wall_events(
             "quiet_rms_mean": round(quiet_rms_mean, 6),
             "onset_max": round(onset_max, 6),
             "rms_max": round(rms_max, 6),
+            "beat_index": int(annotation.get("beat_index", -1)),
+            "transition_pre_start": _round_time(pre_start),
+            "transition_post_end": _round_time(post_end),
+            "transition_pre_onset_mean": round(pre_onset_mean, 6),
+            "transition_post_onset_mean": round(post_onset_mean, 6),
+            "transition_onset_delta": round(abs(post_onset_mean - pre_onset_mean), 6),
+            "transition_pre_rms_mean": round(pre_rms_mean, 6),
+            "transition_post_rms_mean": round(post_rms_mean, 6),
+            "transition_rms_delta": round(abs(post_rms_mean - pre_rms_mean), 6),
         })
 
     if not candidates:
@@ -510,6 +567,7 @@ def generate_wall_events(
             "schema": WALL_GENERATION_SCHEMA,
             "strategy": "no_phrase_candidates",
             "event_count": 0,
+            "variant_counts": variant_counts([]),
             "events": [],
         }
 
@@ -551,6 +609,12 @@ def generate_wall_events(
             break
 
     selected.sort(key=lambda item: float(item["start"]))
+    selected = assign_visual_variants(
+        selected,
+        enabled=high_wall_enabled,
+        target_ratio=high_wall_target_ratio,
+        min_gap_bars=high_wall_min_gap_bars,
+    )
     events: list[dict[str, object]] = []
     for index, candidate in enumerate(selected):
         event_type = "wall_right" if index % 2 == 0 else "wall_left"
@@ -561,6 +625,7 @@ def generate_wall_events(
                 "duration": event_duration,
                 "anticipation": anticipation,
                 "source": "auto_sustained_low_onset_energy_phrase",
+                "visual_variant": candidate["visual_variant"],
             },
             timing,
             index,
@@ -587,6 +652,16 @@ def generate_wall_events(
             "quiet_rms_mean": candidate["quiet_rms_mean"],
             "onset_max": candidate["onset_max"],
             "rms_max": candidate["rms_max"],
+            "variant_score": candidate["variant_score"],
+            "variant_reasons": candidate["variant_reasons"],
+            "transition_pre_start": candidate["transition_pre_start"],
+            "transition_post_end": candidate["transition_post_end"],
+            "transition_pre_onset_mean": candidate["transition_pre_onset_mean"],
+            "transition_post_onset_mean": candidate["transition_post_onset_mean"],
+            "transition_onset_delta": candidate["transition_onset_delta"],
+            "transition_pre_rms_mean": candidate["transition_pre_rms_mean"],
+            "transition_post_rms_mean": candidate["transition_post_rms_mean"],
+            "transition_rms_delta": candidate["transition_rms_delta"],
         }
         events.append(event)
 
@@ -597,6 +672,7 @@ def generate_wall_events(
         "target_count": target_count,
         "candidate_count": len(candidates),
         "strict_candidate_count": len(strict_candidates),
+        "variant_counts": variant_counts(events),
         "settings": {
             "duration_beats": duration_beats,
             "duration_seconds": event_duration,
@@ -608,6 +684,10 @@ def generate_wall_events(
             "preparation_window": _round_time(preparation_window),
             "recovery_window": _round_time(recovery_window),
             "rest_window": _round_time(rest_window),
+            "high_wall_enabled": high_wall_enabled,
+            "high_wall_target_ratio": round(high_wall_target_ratio, 6),
+            "high_wall_min_gap_bars": high_wall_min_gap_bars,
+            "high_wall_min_gap_beats": high_wall_min_gap_bars * 4,
         },
         "score_bounds": {
             "quiet_density_p15": round(density_low, 6),
@@ -1279,6 +1359,9 @@ def analyze_with_metadata(
     wall_preparation_window: float = DEFAULT_WALL_PREPARATION_WINDOW,
     wall_recovery_window: float = DEFAULT_WALL_RECOVERY_WINDOW,
     wall_rest_window: float = DEFAULT_WALL_REST_WINDOW,
+    high_wall_enabled: bool = DEFAULT_HIGH_WALL_ENABLED,
+    high_wall_target_ratio: float = DEFAULT_HIGH_WALL_TARGET_RATIO,
+    high_wall_min_gap_bars: int = DEFAULT_HIGH_WALL_MIN_GAP_BARS,
     wall_override: Path | None = None,
     holds_enabled: bool = DEFAULT_HOLD_ENABLED,
     hold_rate_bars: int = DEFAULT_HOLD_RATE_BARS,
@@ -1313,6 +1396,9 @@ def analyze_with_metadata(
         wall_preparation_window=wall_preparation_window,
         wall_recovery_window=wall_recovery_window,
         wall_rest_window=wall_rest_window,
+        high_wall_enabled=high_wall_enabled,
+        high_wall_target_ratio=high_wall_target_ratio,
+        high_wall_min_gap_bars=high_wall_min_gap_bars,
         holds_enabled=holds_enabled,
         hold_rate_bars=hold_rate_bars,
         hold_min_duration=hold_min_duration,
@@ -1332,7 +1418,7 @@ def analyze_with_metadata(
     if samples.size == 0:
         metadata = _estimate_timing_metadata(audio_path, sample_rate, 0.0, np.asarray([]))
         metadata["generation_settings"] = generation_settings
-        metadata["wall_generation"] = {"schema": WALL_GENERATION_SCHEMA, "strategy": "empty_audio", "event_count": 0, "events": []}
+        metadata["wall_generation"] = {"schema": WALL_GENERATION_SCHEMA, "strategy": "empty_audio", "event_count": 0, "variant_counts": variant_counts([]), "events": []}
         metadata["hold_generation"] = {"schema": HOLD_GENERATION_SCHEMA, "strategy": "empty_audio", "event_count": 0, "events": []}
         metadata["note_count"] = 0
         metadata["event_count"] = 0
@@ -1490,6 +1576,9 @@ def analyze(
     wall_preparation_window: float = DEFAULT_WALL_PREPARATION_WINDOW,
     wall_recovery_window: float = DEFAULT_WALL_RECOVERY_WINDOW,
     wall_rest_window: float = DEFAULT_WALL_REST_WINDOW,
+    high_wall_enabled: bool = DEFAULT_HIGH_WALL_ENABLED,
+    high_wall_target_ratio: float = DEFAULT_HIGH_WALL_TARGET_RATIO,
+    high_wall_min_gap_bars: int = DEFAULT_HIGH_WALL_MIN_GAP_BARS,
     wall_override: Path | None = None,
     holds_enabled: bool = DEFAULT_HOLD_ENABLED,
     hold_rate_bars: int = DEFAULT_HOLD_RATE_BARS,
@@ -1521,6 +1610,9 @@ def analyze(
         wall_preparation_window=wall_preparation_window,
         wall_recovery_window=wall_recovery_window,
         wall_rest_window=wall_rest_window,
+        high_wall_enabled=high_wall_enabled,
+        high_wall_target_ratio=high_wall_target_ratio,
+        high_wall_min_gap_bars=high_wall_min_gap_bars,
         wall_override=wall_override,
         holds_enabled=holds_enabled,
         hold_rate_bars=hold_rate_bars,
@@ -1582,6 +1674,9 @@ def main() -> int:
     parser.add_argument("--wall-preparation-window", type=float, default=DEFAULT_WALL_PREPARATION_WINDOW)
     parser.add_argument("--wall-recovery-window", type=float, default=DEFAULT_WALL_RECOVERY_WINDOW)
     parser.add_argument("--wall-rest-window", type=float, default=DEFAULT_WALL_REST_WINDOW)
+    parser.add_argument("--high-walls", action=argparse.BooleanOptionalAction, default=DEFAULT_HIGH_WALL_ENABLED)
+    parser.add_argument("--high-wall-target-ratio", type=float, default=DEFAULT_HIGH_WALL_TARGET_RATIO)
+    parser.add_argument("--high-wall-min-gap-bars", type=int, default=DEFAULT_HIGH_WALL_MIN_GAP_BARS)
     parser.add_argument("--wall-override", type=Path, default=None, help="JSON array or beatmap object with replacement wall events.")
     parser.add_argument("--holds", action=argparse.BooleanOptionalAction, default=DEFAULT_HOLD_ENABLED)
     parser.add_argument("--hold-rate-bars", type=int, default=DEFAULT_HOLD_RATE_BARS)
@@ -1627,6 +1722,9 @@ def main() -> int:
             wall_preparation_window=args.wall_preparation_window,
             wall_recovery_window=args.wall_recovery_window,
             wall_rest_window=args.wall_rest_window,
+            high_wall_enabled=args.high_walls,
+            high_wall_target_ratio=args.high_wall_target_ratio,
+            high_wall_min_gap_bars=args.high_wall_min_gap_bars,
             wall_override=args.wall_override,
             holds_enabled=args.holds,
             hold_rate_bars=args.hold_rate_bars,
@@ -1708,9 +1806,13 @@ def main() -> int:
         )
     )
     wall_summary = timing.get("wall_generation", {})
-    print("Walls {strategy}; events {events}; wall-filtered {filtered}; redirected {redirected}.".format(
+    wall_variant_counts = wall_summary.get("variant_counts", {})
+    print("Walls {strategy}; selected {selected}; runtime-safe {events}; high {high}; low {low}; wall-filtered {filtered}; redirected {redirected}.".format(
         strategy=wall_summary.get("strategy", "unknown"),
+        selected=wall_summary.get("event_count", 0),
         events=len(wall_events),
+        high=wall_variant_counts.get("high_side_wall", 0),
+        low=wall_variant_counts.get("low_corridor", 0),
         filtered=diagnostics.get("wall_density_filtered_notes", 0),
         redirected=diagnostics.get("wall_lane_redirected_notes", 0),
     ))

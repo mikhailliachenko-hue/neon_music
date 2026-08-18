@@ -36,6 +36,7 @@ func prewarm() -> void:
 
 func acquire(
 	event_type: String,
+	visual_variant: String,
 	event_index: int,
 	start_time: float,
 	duration: float,
@@ -53,6 +54,7 @@ func acquire(
 	obstacle.call(
 		"activate",
 		event_type,
+		visual_variant,
 		event_index,
 		start_time,
 		duration,

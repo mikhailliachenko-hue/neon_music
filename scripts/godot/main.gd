@@ -29,6 +29,8 @@ const BACKGROUND_MP4_BACKEND_SCRIPT := preload("res://scripts/godot/background_m
 const BACKGROUND_EXTERNAL_PLAYER_SCRIPT := preload("res://scripts/godot/background_external_player.gd")
 const BACKGROUND_NV12_SHADER := preload("res://assets/models/background_nv12.gdshader")
 const DODGE_LANE_TELEGRAPH_SHADER := preload("res://assets/models/obstacles/dodge_lane_telegraph.gdshader")
+const DODGE_WALL_PROFILE := preload("res://scripts/godot/obstacles/dodge_wall_profile.gd")
+const DODGE_WALL_LEGACY_BRIDGE := preload("res://scripts/godot/obstacles/dodge_wall_legacy_bridge.gd")
 const GHOST_CUE_CENTER_Z := -8.75
 const GHOST_CUE_LENGTH := 17.5
 const GHOST_CUE_WIDTH := 1.55
@@ -501,10 +503,16 @@ func _load_inputs() -> bool:
 
 	var file := FileAccess.open(beatmap_path, FileAccess.READ)
 	var parsed = JSON.parse_string(file.get_as_text())
+	var legacy_timing_wall_events: Array = []
 	lane_layout = "4_lanes"
 	if parsed is Dictionary:
 		var track_document := parsed as Dictionary
 		music_timeline_adapter.configure(track_document)
+		var embedded_grid = track_document.get("beat_grid", {})
+		if embedded_grid is Dictionary:
+			var wall_generation = (embedded_grid as Dictionary).get("wall_generation", {})
+			if wall_generation is Dictionary and (wall_generation as Dictionary).get("events", []) is Array:
+				legacy_timing_wall_events = (wall_generation as Dictionary).get("events", [])
 		lane_layout = String(track_document.get("lane_layout", lane_layout))
 		if track_document.has("beatmap"):
 			var embedded_beatmap = track_document.get("beatmap", {})
@@ -533,6 +541,21 @@ func _load_inputs() -> bool:
 			wall_events.append(parsed_event)
 		elif event_type == HOLD_EVENT_TYPE:
 			hold_events.append(parsed_event)
+	if wall_events.is_empty() and not legacy_timing_wall_events.is_empty():
+		# Удалить когда станет неактуально: pre-visual_variant V4 exports kept
+		# independent analyzer walls only inside beat_grid.wall_generation.
+		for raw_event in legacy_timing_wall_events:
+			if raw_event is Dictionary and WALL_EVENT_TYPES.has(String((raw_event as Dictionary).get("type", ""))):
+				wall_events.append((raw_event as Dictionary).duplicate(true))
+		var legacy_safety: Dictionary = DODGE_WALL_LEGACY_BRIDGE.apply(wall_events, beatmap, movement_events)
+		wall_events = legacy_safety.get("walls", [])
+		beatmap = legacy_safety.get("notes", beatmap)
+		print("Legacy wall bridge: safe=%d/%d redirected_notes=%d discarded=%d" % [
+			int(legacy_safety.get("accepted", 0)),
+			int(legacy_safety.get("input", 0)),
+			int(legacy_safety.get("note_lane_redirected", 0)),
+			int(legacy_safety.get("discarded", 0)),
+		])
 	wall_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("start", a.get("time", 0.0))) < float(b.get("start", b.get("time", 0.0))))
 	hold_events.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("start", a.get("time", 0.0))) < float(b.get("start", b.get("time", 0.0))))
 
@@ -701,6 +724,8 @@ func _build_wall_preview_inputs() -> void:
 			"safe_lanes": [2, 3] if event_type == "wall_left" else [0, 1],
 			"anticipation": _wall_anticipation_duration(),
 			"height": heights[index],
+			"beat_index": 64 + index * 32,
+			"visual_variant": "high_side_wall" if index % 2 == 0 else "low_corridor",
 			"source": "renderer_wall_preview",
 		})
 		song_duration = maxf(song_duration, start + 2.2)
@@ -2443,12 +2468,13 @@ func _should_quit(song_time: float) -> bool:
 func _apply_camera_transform(song_time: float) -> void:
 	if tuning_values.is_empty():
 		return
-	var dodge_offset := _camera_dodge_offset(song_time)
+	var dodge_transform := _camera_dodge_transform(song_time)
 	var duck_shake := _camera_duck_shake(song_time)
 	var double_foot_bob := _camera_double_foot_bob(song_time)
 	camera.rotation_degrees.x = float(tuning_values["camera_pitch"]) + duck_shake.z * 13.0 + double_foot_bob.x
-	camera.rotation_degrees.z = -dodge_offset * 1.55 + duck_shake.x * 5.0
-	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + dodge_offset + duck_shake.x
+	camera.rotation_degrees.y = dodge_transform.y
+	camera.rotation_degrees.z = dodge_transform.z + duck_shake.x * 5.0
+	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + dodge_transform.x + duck_shake.x
 	camera.position.y = float(tuning_values["camera_y"]) + _camera_duck_y_offset(song_time) + duck_shake.y + double_foot_bob.y
 	camera.position.z = float(tuning_values["camera_z"]) + duck_shake.z + double_foot_bob.z
 	if not _movie_writer_is_active() and frame_sequence_dir.is_empty():
@@ -2538,8 +2564,8 @@ func _camera_double_foot_bob(song_time: float) -> Vector3:
 				best_bob = bob
 	return best_bob
 
-func _camera_dodge_offset(song_time: float) -> float:
-	var best_offset := 0.0
+func _camera_dodge_transform(song_time: float) -> Vector3:
+	var best_transform := Vector3.ZERO
 	for raw_event in wall_events:
 		var event := raw_event as Dictionary
 		var event_type := String(event.get("type", ""))
@@ -2547,27 +2573,40 @@ func _camera_dodge_offset(song_time: float) -> float:
 			continue
 		var start := _wall_start(event)
 		var duration := _wall_duration(event)
+		var profile: Dictionary = DODGE_WALL_PROFILE.camera_settings(event)
 		var anticipation := maxf(
 			_wall_anticipation_duration(),
 			maxf(0.0, float(event.get("anticipation", 0.0)))
 		)
-		var in_duration := minf(_camera_dodge_in_duration(), maxf(0.001, anticipation))
+		var tuned_in_default := maxf(0.05, float(tuning_defaults.get("camera_dodge_in_duration", DEFAULT_CAMERA_DODGE_IN_DURATION)))
+		var in_scale := _camera_dodge_in_duration() / tuned_in_default
+		var in_duration := minf(float(profile["in_duration"]) * in_scale, maxf(0.001, anticipation))
 		var in_start := start - anticipation
 		var full_time := in_start + in_duration
 		var return_start := start + duration + _camera_dodge_hold()
-		var return_end := return_start + _camera_dodge_return_duration()
+		var tuned_return_default := maxf(0.05, float(tuning_defaults.get("camera_dodge_return_duration", DEFAULT_CAMERA_DODGE_RETURN_DURATION)))
+		var return_scale := _camera_dodge_return_duration() / tuned_return_default
+		var return_duration := float(profile["return_duration"]) * return_scale
+		var return_end := return_start + return_duration
 		if song_time < in_start or song_time > return_end:
 			continue
 		var strength := 1.0
 		if song_time < full_time:
 			strength = _camera_dodge_ease((song_time - in_start) / in_duration)
 		elif song_time > return_start:
-			strength = 1.0 - _camera_dodge_ease((song_time - return_start) / _camera_dodge_return_duration())
+			strength = 1.0 - _camera_dodge_ease((song_time - return_start) / return_duration)
 		var direction := 1.0 if event_type == "wall_left" else -1.0
-		var offset := direction * _camera_dodge_distance() * clampf(strength, 0.0, 1.0)
-		if absf(offset) > absf(best_offset):
-			best_offset = offset
-	return best_offset
+		var envelope := clampf(strength, 0.0, 1.0)
+		var tuned_distance_default := maxf(0.05, float(tuning_defaults.get("camera_dodge_distance", DEFAULT_CAMERA_DODGE_DISTANCE)))
+		var distance_scale := _camera_dodge_distance() / tuned_distance_default
+		var candidate := Vector3(
+			direction * float(profile["distance"]) * distance_scale * envelope,
+			-direction * float(profile["yaw_degrees"]) * envelope,
+			-direction * float(profile["roll_degrees"]) * envelope
+		)
+		if absf(candidate.x) > absf(best_transform.x):
+			best_transform = candidate
+	return best_transform
 
 
 func _camera_dodge_ease(value: float) -> float:
@@ -3350,7 +3389,12 @@ func _wall_center_x(event: Dictionary) -> float:
 
 
 func _wall_color(event: Dictionary) -> Color:
-	return wall_left_color if String(event.get("type", "")) == "wall_left" else wall_right_color
+	var side_color := wall_left_color if String(event.get("type", "")) == "wall_left" else wall_right_color
+	return DODGE_WALL_PROFILE.obstacle_color(event, side_color)
+
+
+func _wall_visual_variant(event: Dictionary) -> String:
+	return DODGE_WALL_PROFILE.event_variant(event)
 
 
 func _spawn_due_wall_events(song_time: float) -> void:
@@ -3366,8 +3410,8 @@ func _spawn_due_wall_events(song_time: float) -> void:
 		next_wall_event_index += 1
 
 
-func _wall_center_z_for_time(start: float, song_time: float) -> float:
-	return -((start - song_time) * scroll_speed) - (_wall_length_z() * 0.5) + WALL_FRONT_OVERHANG_Z
+func _wall_center_z_for_time(start: float, song_time: float, wall_length: float) -> float:
+	return -((start - song_time) * scroll_speed) - (wall_length * 0.5) + WALL_FRONT_OVERHANG_Z
 
 
 func _spawn_wall(event: Dictionary, event_index: int, song_time: float) -> void:
@@ -3376,27 +3420,30 @@ func _spawn_wall(event: Dictionary, event_index: int, song_time: float) -> void:
 		return
 	var color := _wall_color(event)
 	var start := _wall_start(event)
+	var visual_variant := _wall_visual_variant(event)
+	var dimensions: Vector3 = DODGE_WALL_PROFILE.dimensions(
+		event,
+		Vector3(_wall_width_x(), _wall_height(), _wall_length_z())
+	)
 	var wall_position := Vector3(
 		_wall_center_x(event),
 		float(tuning_values.get("track_y", track.position.y)),
-		_wall_center_z_for_time(start, song_time)
+		_wall_center_z_for_time(start, song_time, dimensions.z)
 	)
-	var dimensions := Vector3(
-		_wall_width_x(),
-		clampf(float(event.get("height", _wall_height())), 2.4, 6.2),
-		_wall_length_z()
-	)
-	var face_brightness := _wall_emission_strength() + _wall_edge_emission() * 0.035
+	var high_profile := visual_variant == DODGE_WALL_PROFILE.HIGH_SIDE_WALL
+	var body_emission := 5.0 if high_profile else minf(2.2, _wall_emission_strength())
+	var face_brightness := 5.2 if high_profile else minf(2.4, _wall_emission_strength() + _wall_edge_emission() * 0.035)
 	var wall = dodge_obstacle_pool.call(
 		"acquire",
 		String(event.get("type", "")),
+		visual_variant,
 		event_index,
 		start,
 		_wall_duration(event),
 		color,
 		wall_position,
 		dimensions,
-		_wall_emission_strength(),
+		body_emission,
 		face_brightness
 	)
 	if wall == null:
@@ -3412,7 +3459,8 @@ func _update_active_walls(song_time: float) -> void:
 			active_walls.remove_at(index)
 			continue
 		var start := float(wall.get_meta("start", 0.0))
-		wall.position.z = _wall_center_z_for_time(start, song_time)
+		var wall_length := maxf(1.0, float(wall.get_meta("wall_length", _wall_length_z())))
+		wall.position.z = _wall_center_z_for_time(start, song_time, wall_length)
 		# The obstacle stays fully readable while it crosses the player. It is only
 		# recycled after its trailing edge is behind the camera, never faded by the
 		# choreography event duration.
@@ -3570,12 +3618,13 @@ func _safe_lane_pulse() -> float:
 func _print_wall_diagnostic(event_name: String, song_time: float, event_index: int, event: Dictionary) -> void:
 	if clock_diagnostic_seconds < 0.0 or song_time > clock_diagnostic_seconds:
 		return
-	var line := "CLOCK_DIAG event=%s frame=%06d song_time=%.6f wall=%03d type=%s start=%.6f duration=%.6f z=%.6f" % [
+	var line := "CLOCK_DIAG event=%s frame=%06d song_time=%.6f wall=%03d type=%s variant=%s start=%.6f duration=%.6f z=%.6f" % [
 		event_name,
 		render_frame_index,
 		song_time,
 		event_index,
 		String(event.get("type", "")),
+		_wall_visual_variant(event) if not event.is_empty() else String(event.get("visual_variant", "")),
 		float(event.get("start", event.get("time", 0.0))),
 		float(event.get("duration", 0.0)),
 		0.0,

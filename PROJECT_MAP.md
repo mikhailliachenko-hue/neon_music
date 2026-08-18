@@ -143,7 +143,7 @@ Runtime renderer scripts.
 
 - `audio/` - active source audio and Godot imports; canonical source is currently `audio.wav`.
 - `images/` - footprints, floor grid, note textures, reference screenshots, hand targets, movement icons, VFX masks, track texture. `images/vfx/cethiel_weapon_slash/` contains the selected blue/purple six-frame directional arcs and its CC0 attribution; Kenney particle/light-mask selections keep separate attribution files beside their PNGs.
-- `models/` - shaders, wall visual config and imported GLB assets. Active duck/jump obstacles reuse the selected CC0 Kenney Platformer Kit `fence-low-straight.glb` as a low jump rail or elevated duck beam with neon runtime materials. Half-lane dodge walls use the pooled `models/obstacles/reference_dodge_wall.tscn`, assembled from cached modular sci-fi GLB-derived panels with low-glare shader faces; `DodgeObstaclePool` prewarms six instances and recycles each one only after its trailing edge passes the camera.
+- `models/` - shaders, wall visual config and imported GLB assets. Active duck/jump obstacles reuse the selected CC0 Kenney Platformer Kit `fence-low-straight.glb` as a low jump rail or elevated duck beam with neon runtime materials. Half-lane dodge walls use the pooled `models/obstacles/reference_dodge_wall.tscn`, assembled from cached modular sci-fi GLB-derived panels. One prewarmed object supports `low_corridor` (long 0.5 m floor-side run) and `high_side_wall` (4.6-4.9 m graphite wall with bright diagonal magenta bands); `DodgeObstaclePool` prewarms six instances and recycles each one only after its trailing edge passes the camera.
 - `models/wall_visual_config.json` - renderer-only wall/camera/timing visual settings. Important for wall height/glow/safe lanes/audio offsets.
 - `tunnel/` - CC0 modular tunnel library: Quaternius Modular Sci-Fi MegaKit
   (190 GLTF), Quaternius Sci-Fi Essentials (37 GLTF) and Kenney Modular Space
@@ -205,7 +205,7 @@ Embedded `beatmap` shape:
 - `movement_events`, `phrase_plan`, `candidate_debug`, `semantic_obstacle_events`, `micro_accents` and validation summary in direct V4 output.
 - `choreography_v4`: optional nested V4 bridge when the document comes directly from Audio Analyzer before canonical V4 normalization.
 - Notes include timing, lanes, movement, cue archetype, phrase/count metadata and optional beat-grid annotations. Sustained hand targets carry `sustained: true` and their positive `duration`; ordinary taps carry duration `0`.
-- Wall events include start/time, duration, blocked lanes, mirrored `safe_lanes`, anticipation. Their visual layer does not alter gameplay lanes: it drives a pooled half-track obstacle, a soft cyan safe-lane flow guide and the existing lateral camera dodge.
+- Wall events include start/time, duration, blocked lanes, mirrored `safe_lanes`, anticipation and optional backward-compatible `visual_variant`. The analyzer assigns `high_side_wall` only at ranked 32-count transitions with a 64-beat minimum gap; other safe windows use `low_corridor`. After V4 generation, jump/duck/long holds keep priority while ordinary short renderer targets on the blocked half are deterministically redirected to the safe half. Godot drives the pooled obstacle, safe-lane guide and profile-specific lateral camera dodge without runtime instantiation.
 - Hold events include lane, start/end/duration, side/foot and clearance constraints.
 
 Embedded `beat_grid` shape:

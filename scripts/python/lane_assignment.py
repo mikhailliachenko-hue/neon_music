@@ -22,6 +22,9 @@ DEFAULT_WALL_DENSITY_MULTIPLIER = 2.6
 DEFAULT_WALL_PREPARATION_WINDOW = 0.9
 DEFAULT_WALL_RECOVERY_WINDOW = 0.85
 DEFAULT_WALL_REST_WINDOW = 1.0
+DEFAULT_HIGH_WALL_ENABLED = True
+DEFAULT_HIGH_WALL_TARGET_RATIO = 0.30
+DEFAULT_HIGH_WALL_MIN_GAP_BARS = 16
 DEFAULT_HOLD_ENABLED = False
 DEFAULT_HOLD_RATE_BARS = 8
 DEFAULT_HOLD_MIN_DURATION = 1.0
@@ -195,6 +198,9 @@ def build_generation_settings(
     wall_preparation_window: float = DEFAULT_WALL_PREPARATION_WINDOW,
     wall_recovery_window: float = DEFAULT_WALL_RECOVERY_WINDOW,
     wall_rest_window: float = DEFAULT_WALL_REST_WINDOW,
+    high_wall_enabled: bool = DEFAULT_HIGH_WALL_ENABLED,
+    high_wall_target_ratio: float = DEFAULT_HIGH_WALL_TARGET_RATIO,
+    high_wall_min_gap_bars: int = DEFAULT_HIGH_WALL_MIN_GAP_BARS,
     holds_enabled: bool = DEFAULT_HOLD_ENABLED,
     hold_rate_bars: int = DEFAULT_HOLD_RATE_BARS,
     hold_min_duration: float = DEFAULT_HOLD_MIN_DURATION,
@@ -243,6 +249,9 @@ def build_generation_settings(
             "preparation_window": max(0.0, float(wall_preparation_window)),
             "recovery_window": max(0.0, float(wall_recovery_window)),
             "rest_window": max(0.0, float(wall_rest_window)),
+            "high_wall_enabled": bool(high_wall_enabled),
+            "high_wall_target_ratio": max(0.0, min(0.5, float(high_wall_target_ratio))),
+            "high_wall_min_gap_bars": max(1, int(high_wall_min_gap_bars)),
         },
         "lane_layout": normalized_lane_layout,
         "layout": {
