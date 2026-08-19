@@ -81,6 +81,7 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 	var movement := String(raw_note.get("movement", raw_note.get("choreography_type", DEFAULT_NOTE_TYPE)))
 	var semantic_movement := String(raw_note.get("semantic_movement", movement))
 	var cue_archetype := String(raw_note.get("cue_archetype", "FOOT_LANE_TARGET"))
+	var cell_function := String(raw_note.get("cell_function", ""))
 	var lead_beats := int(raw_note.get("lead_beats", 2))
 	var instruction_time := maxf(0.0, float(raw_note.get("instruction_time", hit_time)))
 	var note_type := String(raw_note.get("type", DEFAULT_NOTE_TYPE))
@@ -102,11 +103,17 @@ static func normalize_note(raw_note: Dictionary, index: int = -1) -> Dictionary:
 		"semantic_movement": semantic_movement,
 		"cue_archetype": cue_archetype,
 		"movement_event_id": String(raw_note.get("movement_event_id", "")),
-		"cell_function": String(raw_note.get("cell_function", "")),
+		"cell_function": cell_function,
 		"dynamic_role": String(raw_note.get("dynamic_role", "")),
 		"finale_callback": bool(raw_note.get("finale_callback", false)),
 		"simultaneous": bool(raw_note.get("simultaneous", false)),
 		"simultaneous_group": raw_note.get("simultaneous_group"),
+		"jump_laser_enabled": bool(raw_note.get(
+			"jump_laser_enabled",
+			cell_function == "REFERENCE_JUMP_REPEAT"
+			and semantic_movement.to_upper() in ["SMALL_JUMP", "JUMP"]
+			and cue_archetype.begins_with("FLOOR_PULSE")
+		)),
 		"lead_beats": lead_beats,
 		"instruction_time": instruction_time,
 		"phrase_id": String(raw_note.get("phrase_id", "")),
@@ -137,6 +144,7 @@ static func expanded_notes(notes: Array) -> Array:
 		if String(note.get("cue_archetype", "")).to_upper() in CENTERED_ARCHITECTURAL_CUES and not render_lanes.is_empty():
 			render_lanes = [render_lanes[0]]
 		for lane in render_lanes:
+			var simultaneous_primary := render_lanes.is_empty() or int(lane) == int(render_lanes[0])
 			expanded.append({
 				"time": float(note.get("time", 0.0)),
 				"lane": int(lane),
@@ -153,6 +161,8 @@ static func expanded_notes(notes: Array) -> Array:
 				"finale_callback": bool(note.get("finale_callback", false)),
 				"simultaneous": bool(note.get("simultaneous", false)),
 				"simultaneous_group": note.get("simultaneous_group"),
+				"simultaneous_primary": simultaneous_primary,
+				"jump_laser_anchor": bool(note.get("jump_laser_enabled", false)) and simultaneous_primary,
 				"lead_beats": int(note.get("lead_beats", 2)),
 				"instruction_time": float(note.get("instruction_time", note.get("time", 0.0))),
 				"phrase_id": String(note.get("phrase_id", "")),

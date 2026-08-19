@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/receptor.tscn" id="3_receptor"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening.tscn" id="4_tunnel"]
 [ext_resource type="Script" path="res://scripts/godot/obstacles/dodge_obstacle_pool.gd" id="5_dodge_pool"]
+[ext_resource type="Script" path="res://scripts/godot/obstacles/floor_laser_pool.gd" id="6_floor_laser_pool"]
 
 [sub_resource type="Environment" id="Environment_neon"]
 background_mode = 1
@@ -100,6 +101,10 @@ lane = 3
 [node name="DodgeObstaclePool" type="Node3D" parent="TunnelFrames"]
 script = ExtResource("5_dodge_pool")
 pool_size = 6
+
+[node name="FloorLaserPool" type="Node3D" parent="TunnelFrames"]
+script = ExtResource("6_floor_laser_pool")
+pool_size = 4
 
 [node name="NeonTunnelGenerator" parent="TunnelFrames" instance=ExtResource("4_tunnel")]
 

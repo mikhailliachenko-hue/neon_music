@@ -61,7 +61,7 @@ func trigger_action_impact(action: String, strength: float, lane_bias: float) ->
 	_step_impact_strength = maxf(_step_impact_strength * 0.45, clampf(strength, 0.45, 1.6))
 	_action_kind = next_action
 	match _action_kind:
-		"JUMP": _action_duration = clampf(_step_duration * 1.28, 0.18, 0.42)
+		"JUMP": _action_duration = clampf(_step_duration * 1.90, 0.34, 0.62)
 		"DUCK": _action_duration = clampf(_step_duration * 1.18, 0.18, 0.40)
 		"HAND", "PUNCH": _action_duration = clampf(_step_duration * 0.82, 0.12, 0.28)
 		"HOLD": _action_duration = clampf(_step_duration * 1.05, 0.16, 0.36)
@@ -92,9 +92,10 @@ func apply(song_time: float, _pulse: float, _drop_pulse: float) -> void:
 		var wave := sin(step_t * PI * 3.0) * envelope * _step_impact_strength * _step_scale
 		match _action_kind:
 			"JUMP":
-				step_position = Vector3(_step_lane_bias * absf(wave) * 0.006, wave * 0.038, -absf(wave) * 0.012)
-				step_rotation = Vector3(-wave * 0.30, 0.0, _step_lane_bias * absf(wave) * 0.08)
-				action_fov = absf(wave) * 0.34
+				var jump_arc := sin(step_t * PI) * _step_impact_strength * _step_scale
+				step_position = Vector3(_step_lane_bias * jump_arc * 0.004, jump_arc * 0.052, -jump_arc * 0.010)
+				step_rotation = Vector3(-jump_arc * 0.18, 0.0, _step_lane_bias * jump_arc * 0.05)
+				action_fov = jump_arc * 0.28
 			"DUCK":
 				step_position = Vector3(_step_lane_bias * absf(wave) * 0.006, -absf(wave) * 0.024, -absf(wave) * 0.014)
 				step_rotation = Vector3(wave * 0.24, 0.0, _step_lane_bias * absf(wave) * 0.06)

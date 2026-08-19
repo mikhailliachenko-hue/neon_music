@@ -13,6 +13,7 @@ func _init() -> void:
 func _run() -> void:
 	var failures: Array[String] = []
 	_test_centered_architectural_expansion(failures)
+	_test_jump_laser_anchor_contract(failures)
 	_test_hand_hold_terminal_parser_contract(failures)
 	_test_hand_metadata_contract(failures)
 	var stage := Node3D.new()
@@ -54,6 +55,39 @@ func _test_centered_architectural_expansion(failures: Array[String]) -> void:
 	}]))
 	if paired.size() != 2:
 		failures.append("paired foot cue no longer expands to two visuals")
+
+
+func _test_jump_laser_anchor_contract(failures: Array[String]) -> void:
+	var expanded: Array = PARSER.expanded_notes(PARSER.normalize_notes([{
+		"time": 8.0,
+		"hit_time": 8.0,
+		"lanes": [1, 2],
+		"movement": "SMALL_JUMP",
+		"semantic_movement": "SMALL_JUMP",
+		"cue_archetype": "FLOOR_PULSE_SMALL",
+		"cell_function": "REFERENCE_JUMP_REPEAT",
+		"simultaneous": true,
+		"simultaneous_group": "jump_pair_0",
+	}]))
+	if expanded.size() != 2:
+		failures.append("reference jump did not preserve its two landing feet")
+		return
+	var anchor_count := 0
+	var primary_count := 0
+	for note in expanded:
+		anchor_count += 1 if bool((note as Dictionary).get("jump_laser_anchor", false)) else 0
+		primary_count += 1 if bool((note as Dictionary).get("simultaneous_primary", false)) else 0
+	if anchor_count != 1 or primary_count != 1:
+		failures.append("paired reference jump must create one pooled laser and one camera impact")
+	var legacy: Array = PARSER.expanded_notes(PARSER.normalize_notes([{
+		"time": 9.0,
+		"lanes": [1, 2],
+		"semantic_movement": "SMALL_JUMP",
+		"cue_archetype": "FLOOR_PULSE_SMALL",
+	}]))
+	for note in legacy:
+		if bool((note as Dictionary).get("jump_laser_anchor", false)):
+			failures.append("legacy jump outside the authored chapter unexpectedly gained a laser")
 
 
 func _test_hand_hold_terminal_parser_contract(failures: Array[String]) -> void:
@@ -249,9 +283,13 @@ func _test_jump_container(stage: Node3D, failures: Array[String]) -> void:
 	var obstacle := JUMP_OBSTACLE_SCENE.instantiate() as Node3D
 	stage.add_child(obstacle)
 	var body := obstacle.get_node_or_null("ReadyMadeJumpRail/ContainerBody") as MeshInstance3D
+	var imported_light := obstacle.get_node_or_null("ReadyMadeJumpRail/QuaterniusFloorLight") as Node3D
+	var warning_strips := obstacle.get_node_or_null("WarningStrips") as Node3D
 	if body == null:
 		failures.append("legacy jump cue still has no cohesive container body")
 		return
+	if imported_light == null or warning_strips == null or warning_strips.get_child_count() != 3:
+		failures.append("jump obstacle is missing its real modular floor light or anticipation strips")
 	var size := (body.mesh as BoxMesh).size
 	if size.x < 8.0 or size.y > 0.60:
 		failures.append("jump container is not wide and safely low: %s" % str(size))

@@ -94,6 +94,7 @@ const TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC := 25000
 @onready var receptors: Array[Node] = $Receptors.get_children()
 @onready var frames_root: Node3D = $TunnelFrames
 @onready var dodge_obstacle_pool: Node3D = $TunnelFrames/DodgeObstaclePool
+@onready var floor_laser_pool: Node3D = $TunnelFrames/FloorLaserPool
 @onready var tunnel_generator: NeonTunnelGenerator = $TunnelFrames/NeonTunnelGenerator
 @onready var effects_root: Node3D = $HitEffects
 
@@ -372,6 +373,8 @@ func _soft_restart() -> void:
 	if dodge_obstacle_pool != null:
 		dodge_obstacle_pool.call("release_all")
 	active_walls.clear()
+	if floor_laser_pool != null:
+		floor_laser_pool.call("release_all")
 	for hold in active_holds:
 		if is_instance_valid(hold):
 			hold.queue_free()
@@ -428,6 +431,8 @@ func _process(delta: float) -> void:
 	# No predictive brackets/rings in warm-up mode.
 	_spawn_due_wall_events(song_time)
 	_update_active_walls(song_time)
+	if floor_laser_pool != null:
+		floor_laser_pool.call("update_all", song_time, scroll_speed, camera.global_position.z)
 	_spawn_due_hold_events(song_time)
 	_update_active_holds(song_time)
 
@@ -454,7 +459,8 @@ func _process(delta: float) -> void:
 				note.cue_archetype,
 				String(note.get_meta("movement", "")),
 				int(note.get_meta("combo_index", 0)),
-				bool(note.get_meta("finale_callback", false))
+				bool(note.get_meta("finale_callback", false)),
+				bool(note.get_meta("action_primary", true))
 			)
 			note.set_meta("hit_triggered", true)
 			note.on_primary_hit()
@@ -2987,7 +2993,8 @@ func _trigger_hit_event(
 	cue_archetype: String = "",
 	movement: String = "",
 	combo_index: int = 0,
-	finale_callback: bool = false
+	finale_callback: bool = false,
+	action_primary: bool = true
 ) -> void:
 	var clamped_lane := clampi(lane, 0, receptors.size() - 1)
 	var receptor := receptors[clamped_lane] as NoteReceptor
@@ -2996,8 +3003,9 @@ func _trigger_hit_event(
 		_pulse_execution_lane(clamped_lane, color, hit_strength)
 		receptor.flash()
 		_spawn_hit_effect(receptor.global_position, color, cue_archetype, movement, combo_index, finale_callback)
-		_show_hit_feedback(hit_time, combo_index)
-		var camera_action := _camera_action_for_cue(kind, cue_archetype, movement)
+		if action_primary:
+			_show_hit_feedback(hit_time, combo_index)
+		var camera_action := _camera_action_for_cue(kind, cue_archetype, movement) if action_primary else ""
 		if not camera_action.is_empty():
 			var lane_bias := (float(clamped_lane) - 1.5) / 1.5
 			var action_scale := 1.0
@@ -3101,8 +3109,18 @@ func _spawn_note(beat: Dictionary, note_index: int, song_time: float) -> void:
 	note.set_meta("combo_index", int(combo_context.get("index", 0)))
 	note.set_meta("combo_key", String(combo_context.get("key", "")))
 	note.set_meta("finale_callback", bool(beat.get("finale_callback", false)))
+	note.set_meta("action_primary", bool(beat.get("simultaneous_primary", true)))
 	notes_root.add_child(note)
 	active_notes.append(note)
+	if bool(beat.get("jump_laser_anchor", false)) and floor_laser_pool != null:
+		floor_laser_pool.call(
+			"acquire",
+			gameplay_hit_time,
+			song_time,
+			scroll_speed,
+			track.position.y,
+			String(beat.get("movement_event_id", "jump@%.4f" % gameplay_hit_time))
+		)
 	_print_clock_diagnostic("spawn", song_time, note_index, note.lane, note.hit_time, spawn_z)
 
 
