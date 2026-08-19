@@ -11,6 +11,7 @@ const INNER_FACE_X := 1.96
 @onready var front_face: MeshInstance3D = $VisualRoot/FrontFace
 @onready var back_face: MeshInstance3D = $VisualRoot/BackFace
 @onready var inner_face: MeshInstance3D = $VisualRoot/InnerLaneFace
+@onready var frame_root: Node3D = $VisualRoot/FrameRoot
 
 var event_type := ""
 var visual_variant := "low_corridor"
@@ -21,6 +22,7 @@ var active := false
 
 var _body_material: ShaderMaterial
 var _face_material: ShaderMaterial
+var _frame_material: StandardMaterial3D
 var _face_brightness := 2.2
 var _base_color := Color(0.2, 0.9, 1.0)
 
@@ -41,6 +43,16 @@ func _initialize_cached_materials() -> void:
 	front_face.material_override = _face_material
 	back_face.material_override = _face_material
 	inner_face.material_override = _face_material
+
+	_frame_material = StandardMaterial3D.new()
+	_frame_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_frame_material.emission_enabled = true
+	_frame_material.metallic = 0.78
+	_frame_material.roughness = 0.24
+	for child in frame_root.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).material_override = _frame_material
+			(child as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func activate(
 	new_event_type: String,
@@ -74,6 +86,8 @@ func activate(
 	_face_brightness = clampf(face_brightness, 0.9, 5.5 if high_profile else 2.4)
 	_body_material.set_shader_parameter("profile_mode", 1.0 if high_profile else 0.0)
 	_face_material.set_shader_parameter("profile_mode", 1.0 if high_profile else 0.0)
+	_body_material.set_shader_parameter("pattern_offset", float(event_index % 4) * 0.19)
+	_face_material.set_shader_parameter("pattern_offset", float(event_index % 4) * 0.19)
 	_apply_color()
 	set_fade(0.32)
 	set_meta("start", start_time)
@@ -116,3 +130,7 @@ func _apply_color() -> void:
 	_body_material.set_shader_parameter("obstacle_color", _base_color)
 	_face_material.set_shader_parameter("obstacle_color", _base_color)
 	_face_material.set_shader_parameter("accent_color", _base_color.lerp(Color(0.94, 0.98, 1.0), 0.72))
+	var frame_color := _base_color.lerp(Color(0.88, 0.96, 1.0), 0.42)
+	_frame_material.albedo_color = frame_color * 0.22
+	_frame_material.emission = frame_color
+	_frame_material.emission_energy_multiplier = 4.6 if visual_variant == "high_side_wall" else 3.1

@@ -15,6 +15,7 @@ INCOMPATIBLE_MOVEMENTS = {
 }
 INCOMPATIBLE_CUES = {"LOW_CLEARANCE_GATE", "OVERHEAD_BAR", "SIDE_SWEEP_WALL"}
 WALL_DANCE_MIN_ACTIONS = 3
+WALL_DANCE_PHASES = ("teach", "repeat", "mirror", "payoff")
 
 
 def _overlaps(left_start: float, left_end: float, right_start: float, right_end: float) -> bool:
@@ -124,7 +125,8 @@ def _spread_three(notes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _apply_wall_dance_pattern(
     notes: list[dict[str, Any]],
     event: dict[str, Any],
-    event_index: int,
+    accepted_event_index: int,
+    phase: str,
 ) -> int:
     """Reuse three existing hits as left-foot, hand and right-foot dodge cues.
 
@@ -136,13 +138,19 @@ def _apply_wall_dance_pattern(
         safe_lanes = [2, 3] if str(event.get("type")) == "wall_left" else [0, 1]
     safe_lanes = sorted(safe_lanes)[:2]
     hand_movement = "PUNCH_RIGHT" if str(event.get("type")) == "wall_left" else "PUNCH_LEFT"
-    roles = [
+    base_roles = [
         ("step_left", "STEP_TOUCH_LEFT", "FOOT_PAD_LEFT", safe_lanes[0], "left"),
-        ("hand_hit", hand_movement, "HAND_TARGET", safe_lanes[event_index % 2], "hand"),
+        ("hand_hit", hand_movement, "HAND_TARGET", safe_lanes[accepted_event_index % 2], "hand"),
         ("step_right", "STEP_TOUCH_RIGHT", "FOOT_PAD_RIGHT", safe_lanes[1], "right"),
     ]
-    if event_index % 2 == 1:
-        roles = [roles[2], roles[1], roles[0]]
+    phase_index = WALL_DANCE_PHASES.index(phase)
+    role_orders = {
+        "teach": (0, 2, 1),
+        "repeat": (0, 1, 2),
+        "mirror": (2, 1, 0),
+        "payoff": (1, 0, 2),
+    }
+    roles = [base_roles[index] for index in role_orders[phase]]
     for note, (role, movement, cue, lane, side) in zip(notes, roles):
         note.setdefault("wall_original_movement", note.get("movement", ""))
         note.setdefault("wall_original_semantic_movement", note.get("semantic_movement", ""))
@@ -155,10 +163,32 @@ def _apply_wall_dance_pattern(
         note["foot"] = side
         note["wall_dance_role"] = role
         note["wall_dance_pattern"] = "two_steps_and_hand"
+        note["wall_dance_phase"] = phase
+        note["wall_dance_chapter"] = accepted_event_index // len(WALL_DANCE_PHASES)
+        note["wall_dance_cell"] = phase_index
         note["wall_event_start"] = round(float(event.get("start", event.get("time", 0.0))), 6)
     event["dance_pattern"] = "two_steps_and_hand"
+    event["dance_phase"] = phase
+    event["dance_chapter"] = accepted_event_index // len(WALL_DANCE_PHASES)
+    event["dance_cell"] = phase_index
     event["dance_actions"] = [str(role[0]) for role in roles]
     return len(roles)
+
+
+def _wall_dance_phase_schedule(count: int) -> list[str]:
+    """Keep incomplete safe chapters musical instead of forcing unsafe walls."""
+    if count <= 0:
+        return []
+    schedule: list[str] = []
+    full_chapters, remainder = divmod(count, len(WALL_DANCE_PHASES))
+    schedule.extend(WALL_DANCE_PHASES * full_chapters)
+    if remainder == 1:
+        schedule.append("teach")
+    elif remainder == 2:
+        schedule.extend(("teach", "payoff"))
+    elif remainder == 3:
+        schedule.extend(("teach", "mirror", "payoff"))
+    return schedule
 
 
 def prepare_runtime_wall_events(
@@ -167,7 +197,7 @@ def prepare_runtime_wall_events(
     movement_events: list[dict[str, Any]],
     *,
     recovery_window: float,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     """Keep authored movement events immutable and move only short renderer targets."""
     accepted: list[dict[str, Any]] = []
     adjusted_notes = deepcopy(notes)
@@ -182,8 +212,11 @@ def prepare_runtime_wall_events(
         "wall_dance_insufficient_skipped": 0,
         "wall_dance_pattern_count": 0,
         "wall_dance_rewritten_notes": 0,
+        "wall_dance_phase_counts": {phase: 0 for phase in WALL_DANCE_PHASES},
     }
-    for event_index, raw_event in enumerate(wall_events):
+    pending_patterns: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
+    last_accepted_type = ""
+    for raw_event in wall_events:
         if str(raw_event.get("type", "")) not in WALL_TYPES:
             continue
         event = deepcopy(raw_event)
@@ -199,7 +232,13 @@ def prepare_runtime_wall_events(
             diagnostics["movement_conflict_discarded"] += 1
             continue
 
-        event_type = str(event["type"])
+        raw_event_type = str(event["type"])
+        event_type = raw_event_type
+        if last_accepted_type:
+            event_type = "wall_right" if last_accepted_type == "wall_left" else "wall_left"
+            if event_type != raw_event_type:
+                diagnostics["side_redirected"] += 1
+            _set_side(event, event_type)
         # The escape half stays readable throughout warning, traversal and recovery,
         # not only while the obstacle body crosses the player.
         active_notes = [
@@ -232,10 +271,21 @@ def prepare_runtime_wall_events(
         if len(pattern_notes) < WALL_DANCE_MIN_ACTIONS:
             diagnostics["wall_dance_insufficient_skipped"] += 1
         else:
-            diagnostics["wall_dance_rewritten_notes"] += _apply_wall_dance_pattern(pattern_notes, event, event_index)
-            diagnostics["wall_dance_pattern_count"] += 1
+            pending_patterns.append((pattern_notes, event))
         event["safety_resolution"] = "short_cues_redirected_to_safe_half" if redirected_count else "original_side_clear"
         accepted.append(event)
+        last_accepted_type = event_type
+
+    phases = _wall_dance_phase_schedule(len(pending_patterns))
+    for accepted_index, ((pattern_notes, event), phase) in enumerate(zip(pending_patterns, phases)):
+        diagnostics["wall_dance_rewritten_notes"] += _apply_wall_dance_pattern(
+            pattern_notes,
+            event,
+            accepted_index,
+            phase,
+        )
+        diagnostics["wall_dance_pattern_count"] += 1
+        diagnostics["wall_dance_phase_counts"][phase] += 1
 
     accepted.sort(key=lambda event: float(event.get("start", event.get("time", 0.0))))
     diagnostics["accepted"] = len(accepted)

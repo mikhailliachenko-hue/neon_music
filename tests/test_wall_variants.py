@@ -135,3 +135,79 @@ def test_runtime_wall_dance_reuses_hits_for_both_feet_and_one_hand() -> None:
     assert all(set(note["lanes"]) <= {2, 3} for note in patterned)
     assert diagnostics["wall_dance_pattern_count"] == 1
     assert diagnostics["wall_dance_rewritten_notes"] == 3
+    assert accepted[0]["dance_phase"] == "teach"
+    assert accepted[0]["dance_actions"] == ["step_left", "step_right", "hand_hit"]
+    assert diagnostics["wall_dance_phase_counts"] == {
+        "teach": 1,
+        "repeat": 0,
+        "mirror": 0,
+        "payoff": 0,
+    }
+
+
+def test_runtime_wall_dance_cycles_teach_repeat_mirror_payoff() -> None:
+    walls = [
+        _wall("wall_left" if index % 2 == 0 else "wall_right", LOW_CORRIDOR, 16.0 + index * 10.0)
+        for index in range(4)
+    ]
+    notes: list[dict[str, object]] = []
+    for wall in walls:
+        start = float(wall["start"])
+        notes.extend([
+            {"time": start - 0.5, "lanes": [0], "movement": "STEP_TOUCH_LEFT", "cue_archetype": "FOOT_PAD_LEFT", "duration": 0.0},
+            {"time": start + 0.5, "lanes": [1], "movement": "PUNCH_LEFT", "cue_archetype": "HAND_TARGET", "duration": 0.0},
+            {"time": start + 1.5, "lanes": [0], "movement": "STEP_TOUCH_RIGHT", "cue_archetype": "FOOT_PAD_RIGHT", "duration": 0.0},
+        ])
+
+    accepted, adjusted_notes, diagnostics = prepare_runtime_wall_events(
+        walls,
+        notes,
+        [],
+        recovery_window=0.85,
+    )
+
+    assert [event["dance_phase"] for event in accepted] == ["teach", "repeat", "mirror", "payoff"]
+    assert [event["dance_actions"] for event in accepted] == [
+        ["step_left", "step_right", "hand_hit"],
+        ["step_left", "hand_hit", "step_right"],
+        ["step_right", "hand_hit", "step_left"],
+        ["hand_hit", "step_left", "step_right"],
+    ]
+    assert diagnostics["wall_dance_phase_counts"] == {
+        "teach": 1,
+        "repeat": 1,
+        "mirror": 1,
+        "payoff": 1,
+    }
+    patterned = [note for note in adjusted_notes if note.get("wall_dance_pattern") == "two_steps_and_hand"]
+    assert len(patterned) == 12
+
+
+def test_runtime_wall_dance_keeps_incomplete_chapter_mirrored_with_payoff() -> None:
+    walls = [_wall("wall_left", LOW_CORRIDOR, 16.0 + index * 10.0) for index in range(3)]
+    notes: list[dict[str, object]] = []
+    for wall in walls:
+        start = float(wall["start"])
+        notes.extend([
+            {"time": start - 0.5, "lanes": [0], "movement": "STEP_TOUCH_LEFT", "cue_archetype": "FOOT_PAD_LEFT", "duration": 0.0},
+            {"time": start + 0.5, "lanes": [1], "movement": "PUNCH_LEFT", "cue_archetype": "HAND_TARGET", "duration": 0.0},
+            {"time": start + 1.5, "lanes": [0], "movement": "STEP_TOUCH_RIGHT", "cue_archetype": "FOOT_PAD_RIGHT", "duration": 0.0},
+        ])
+
+    accepted, adjusted_notes, diagnostics = prepare_runtime_wall_events(
+        walls,
+        notes,
+        [],
+        recovery_window=0.85,
+    )
+
+    assert [event["type"] for event in accepted] == ["wall_left", "wall_right", "wall_left"]
+    assert [event["dance_phase"] for event in accepted] == ["teach", "mirror", "payoff"]
+    assert diagnostics["side_redirected"] == 1
+    assert diagnostics["wall_dance_phase_counts"] == {
+        "teach": 1,
+        "repeat": 0,
+        "mirror": 1,
+        "payoff": 1,
+    }
+    assert all(note.get("wall_dance_phase") in {"teach", "mirror", "payoff"} for note in adjusted_notes)
