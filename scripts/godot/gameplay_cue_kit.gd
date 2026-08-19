@@ -10,12 +10,21 @@ static var _materials: Dictionary = {}
 static func create_punch(color: Color, is_left: bool) -> Node3D:
 	var cue := PUNCH_TARGET.instantiate() as Node3D
 	cue.name = "HandContainerModel"
-	cue.rotation_degrees.z = -7.0 if is_left else 7.0
-	_apply_imported_material(cue.get_node("ImportedModel"), _body_material(color, "punch"))
-	(cue.get_node("IconBed") as MeshInstance3D).material_override = _dark_material(color, "punch_bed")
-	for node_name in ["FrontHalo", "LeftSideKey", "RightSideKey"]:
-		var accent := cue.get_node(node_name) as MeshInstance3D
-		accent.material_override = _accent_material(color, "punch_accent")
+	cue.rotation_degrees.z = -10.0 if is_left else 10.0
+	var accent_color := _punch_accent_color(color, is_left)
+	_apply_imported_material(cue.get_node("ImportedModel"), _body_material(accent_color, "punch"))
+	(cue.get_node("IconBed") as MeshInstance3D).material_override = _dark_material(accent_color, "punch_bed")
+	(cue.get_node("FrontHalo") as MeshInstance3D).material_override = _accent_material(accent_color, "punch_halo")
+	var left_key := cue.get_node("LeftSideKey") as MeshInstance3D
+	var right_key := cue.get_node("RightSideKey") as MeshInstance3D
+	left_key.material_override = _accent_material(accent_color, "punch_outer_key") if is_left else _dark_material(accent_color, "punch_inner_key")
+	right_key.material_override = _dark_material(accent_color, "punch_inner_key") if is_left else _accent_material(accent_color, "punch_outer_key")
+	var active_chevron := cue.get_node("LeftChevron" if is_left else "RightChevron") as Node3D
+	var inactive_chevron := cue.get_node("RightChevron" if is_left else "LeftChevron") as Node3D
+	active_chevron.visible = true
+	inactive_chevron.visible = false
+	for child in active_chevron.get_children():
+		(child as MeshInstance3D).material_override = _accent_material(accent_color, "punch_chevron")
 	return cue
 
 
@@ -57,7 +66,7 @@ static func _body_material(color: Color, role: String) -> StandardMaterial3D:
 	material.roughness = 0.28
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 0.48 if role == "step" else 0.72
+	material.emission_energy_multiplier = 0.48 if role == "step" else 0.24
 	_materials[key] = material
 	return material
 
@@ -101,7 +110,7 @@ static func _accent_material(color: Color, role: String, no_depth: bool = false)
 	material.albedo_color = color.lerp(Color.WHITE, 0.16)
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 5.8
+	material.emission_energy_multiplier = 4.6
 	material.no_depth_test = no_depth
 	material.render_priority = 10 if no_depth else 4
 	_materials[key] = material
@@ -110,3 +119,9 @@ static func _accent_material(color: Color, role: String, no_depth: bool = false)
 
 static func _color_key(color: Color) -> String:
 	return color.to_html(false)
+
+
+static func _punch_accent_color(color: Color, is_left: bool) -> Color:
+	# Feet keep the established cyan/magenta lane language. Hands use a slightly
+	# cooler cyan and warmer rose so bloom cannot merge both sides into one hue.
+	return color.lerp(Color(0.06, 0.66, 1.0), 0.34) if is_left else color.lerp(Color(1.0, 0.10, 0.42), 0.42)

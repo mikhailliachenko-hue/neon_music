@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_essentials/glTF/Prop_Mine.gltf" id="1_mine"]
 
@@ -16,6 +16,9 @@ radial_segments = 32
 
 [sub_resource type="BoxMesh" id="Box_side_key"]
 size = Vector3(0.11, 0.42, 0.08)
+
+[sub_resource type="BoxMesh" id="Box_side_chevron"]
+size = Vector3(0.085, 0.34, 0.10)
 
 [node name="PunchTarget3D" type="Node3D"]
 
@@ -42,4 +45,32 @@ cast_shadow = 0
 [node name="RightSideKey" type="MeshInstance3D" parent="."]
 position = Vector3(0.72, 0, 0.28)
 mesh = SubResource("Box_side_key")
+cast_shadow = 0
+
+[node name="LeftChevron" type="Node3D" parent="."]
+
+[node name="Upper" type="MeshInstance3D" parent="LeftChevron"]
+position = Vector3(-0.73, 0.14, 0.31)
+rotation_degrees = Vector3(0, 0, -38)
+mesh = SubResource("Box_side_chevron")
+cast_shadow = 0
+
+[node name="Lower" type="MeshInstance3D" parent="LeftChevron"]
+position = Vector3(-0.73, -0.14, 0.31)
+rotation_degrees = Vector3(0, 0, 38)
+mesh = SubResource("Box_side_chevron")
+cast_shadow = 0
+
+[node name="RightChevron" type="Node3D" parent="."]
+
+[node name="Upper" type="MeshInstance3D" parent="RightChevron"]
+position = Vector3(0.73, 0.14, 0.31)
+rotation_degrees = Vector3(0, 0, 38)
+mesh = SubResource("Box_side_chevron")
+cast_shadow = 0
+
+[node name="Lower" type="MeshInstance3D" parent="RightChevron"]
+position = Vector3(0.73, -0.14, 0.31)
+rotation_degrees = Vector3(0, 0, -38)
+mesh = SubResource("Box_side_chevron")
 cast_shadow = 0

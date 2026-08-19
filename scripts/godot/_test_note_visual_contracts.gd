@@ -156,6 +156,8 @@ func _test_hand_hold(stage: Node3D, failures: Array[String]) -> void:
 		failures.append("hand hold body is not at least 105 percent of its target cap")
 	if target.get_node_or_null("ImportedModel") == null or target.get_node_or_null("FrontHalo") == null:
 		failures.append("hand target does not use the unified volumetric cue kit")
+	if not (target.get_node("RightChevron") as Node3D).visible or (target.get_node("LeftChevron") as Node3D).visible:
+		failures.append("right hand target does not expose only its mirrored outer chevron")
 	if not icon.visible:
 		failures.append("hand hold front icon is hidden before judgment")
 	var prism := note.get_node("HandHoldPrism") as Node3D
@@ -207,8 +209,13 @@ func _test_hand_target_offsets(stage: Node3D, failures: Array[String]) -> void:
 	if not is_equal_approx(legacy.position.x, -3.0) or not is_equal_approx(legacy_container.position.y, 2.65):
 		failures.append("legacy hand target without metadata no longer uses centered zero offsets")
 	var legacy_icon := legacy.get_node("IconGlyph") as MeshInstance3D
+	var legacy_target := legacy.get_node("HandContainerModel") as Node3D
+	if not (legacy_target.get_node("LeftChevron") as Node3D).visible or (legacy_target.get_node("RightChevron") as Node3D).visible:
+		failures.append("left hand target does not expose only its mirrored outer chevron")
 	var raised_texture := (raised_icon.material_override as ShaderMaterial).get_shader_parameter("icon_texture") as Texture2D
 	var legacy_texture := (legacy_icon.material_override as ShaderMaterial).get_shader_parameter("icon_texture") as Texture2D
+	if not bool((raised_icon.material_override as ShaderMaterial).get_shader_parameter("preserve_texture_color")):
+		failures.append("hand icon shader still flattens the authored fist outline into one glow color")
 	if raised_texture == legacy_texture:
 		failures.append("left and right punch targets still use the same ambiguous icon")
 
@@ -226,6 +233,8 @@ func _test_foot_rail_caps_and_paths(stage: Node3D, failures: Array[String]) -> v
 	for note in [left, right]:
 		var start_cap := note.get_node_or_null("RailStartFootprint") as MeshInstance3D
 		var end_cap := note.get_node_or_null("Footprint") as MeshInstance3D
+		var start_platform := note.get_node_or_null("RailStartPlatform") as Node3D
+		var end_platform := note.get_node_or_null("RailEndPlatform") as Node3D
 		var smooth_rail := note.get_node_or_null("SmoothFootRail") as MeshInstance3D
 		if start_cap == null or end_cap == null:
 			failures.append("double-foot rail is missing a start or end footprint")
@@ -233,6 +242,10 @@ func _test_foot_rail_caps_and_paths(stage: Node3D, failures: Array[String]) -> v
 			failures.append("double-foot start footprint does not cap the far end")
 		if smooth_rail == null or not smooth_rail.visible or smooth_rail.mesh.get_surface_count() < 2:
 			failures.append("moving double-foot rail has no smooth fill and rim surfaces")
+		if start_platform == null or end_platform == null:
+			failures.append("long rail endpoints do not use the same round 3D platform as ordinary steps")
+		elif not is_equal_approx(start_platform.position.x, start_cap.position.x) or not is_equal_approx(end_platform.position.z, end_cap.position.z):
+			failures.append("long rail platform no longer follows its footprint endpoint")
 	if left.lane != 0 or right.lane != 3:
 		failures.append("center_to_outer trajectory does not finish on mirrored outer lanes")
 	var left_start := left.get_node("RailStartFootprint") as MeshInstance3D
@@ -252,31 +265,30 @@ func _test_step_readability_frame(stage: Node3D, failures: Array[String]) -> voi
 	stage.add_child(note)
 	var imported_platform := note.get_node_or_null("StepPlatform3D/ImportedModel") as Node3D
 	var contact_bed := note.get_node_or_null("StepPlatform3D/ContactBed") as MeshInstance3D
-	var footprint_frame := note.get_node_or_null("FootprintFrames/FootprintFrame") as Node3D
-	if imported_platform == null or contact_bed == null or footprint_frame == null:
-		failures.append("ordinary step is missing its authored readability frame")
+	if imported_platform == null or contact_bed == null:
+		failures.append("ordinary step is missing its circular imported platform")
 		return
 	if (note.get_node("Border") as Node3D).visible or (note.get_node("GlassPanel") as MeshInstance3D).visible:
 		failures.append("ordinary step still stacks the legacy panel and border over its 3D shell")
-	if note.get_node_or_null("StepPlatform3D/StepHalo") != null or note.get_node_or_null("FootGlowRing") != null:
-		failures.append("ordinary step still stacks a circular halo under its rectangular semantic frame")
-	var frame_top := footprint_frame.get_node_or_null("Top") as MeshInstance3D
-	var frame_material := frame_top.material_override as StandardMaterial3D if frame_top != null else null
-	if frame_material == null or not frame_material.no_depth_test:
-		failures.append("ordinary footprint has no cached always-visible volumetric frame")
+	if note.get_node_or_null("FootprintFrames") != null or note.get_node_or_null("FootGlowRing") != null:
+		failures.append("ordinary step still stacks a square frame or extra halo over its circular platform")
+	if not is_equal_approx(imported_platform.scale.x, imported_platform.scale.z):
+		failures.append("ordinary step platform is not circular in the road plane")
+	var footprint_size := ((note.get_node("Footprint") as MeshInstance3D).mesh as QuadMesh).size
+	if footprint_size.x > 1.0 or footprint_size.y > 1.55:
+		failures.append("shoe insert extends beyond its round platform")
 	note.sync_to_song_time(-2.0, 10.0)
 	if not is_equal_approx(note.scale.y, 1.0):
 		failures.append("step approach animation lifts or vertically scales the grounded cue")
-	if (note.get_node("Footprint") as MeshInstance3D).global_position.y > -1.68:
-		failures.append("ordinary footprint is still visibly suspended above the road surface")
-	if footprint_frame.scale.x < 1.20:
-		failures.append("distant footprint frame is still too small to remain readable")
-
+	var footprint_y := (note.get_node("Footprint") as MeshInstance3D).global_position.y
+	var contact_y := contact_bed.global_position.y
+	if footprint_y < contact_y or footprint_y - contact_y > 0.03:
+		failures.append("ordinary footprint is not seated on its circular contact bed")
 	var rail := NOTE_SCENE.instantiate() as RhythmNote
 	rail.setup(0, 5.0, -20.0, "DOUBLE_FOOT_PAD_LEFT", 1.8)
 	stage.add_child(rail)
-	if rail.get_node_or_null("FootprintFrames/FootprintFrame") == null or rail.get_node_or_null("FootprintFrames/RailStartFootprintFrame") == null:
-		failures.append("long foot rail does not frame both endpoint footprints")
+	if rail.get_node_or_null("RailEndPlatform") == null or rail.get_node_or_null("RailStartPlatform") == null:
+		failures.append("long foot rail does not use round platforms at both endpoints")
 
 
 func _test_jump_container(stage: Node3D, failures: Array[String]) -> void:

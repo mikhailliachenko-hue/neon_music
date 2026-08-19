@@ -3,18 +3,17 @@
 [ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Platform_Round1.gltf" id="1_platform"]
 
 [sub_resource type="CylinderMesh" id="Cylinder_contact_bed"]
-top_radius = 0.88
-bottom_radius = 0.93
-height = 0.018
+top_radius = 0.79
+bottom_radius = 0.84
+height = 0.032
 radial_segments = 32
 
 [node name="StepTarget3D" type="Node3D"]
 
 [node name="ImportedModel" parent="." instance=ExtResource("1_platform")]
-scale = Vector3(0.292, 0.4, 0.36)
+scale = Vector3(0.28, 0.85, 0.28)
 
 [node name="ContactBed" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.045, 0)
-scale = Vector3(1, 1, 1.22)
+position = Vector3(0, 0.15, 0)
 mesh = SubResource("Cylinder_contact_bed")
 cast_shadow = 0
