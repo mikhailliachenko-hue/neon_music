@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/scaffold_rush.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "scaffold_rush"
+display_name = "Scaffold Rush"
+spatial_profile = "IndustrialReactor"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.86
+ring_probability = 0.12
+arch_probability = 0.52
+decoration_scale = 0.72
+layout_weight_scale = {"Straight": 0.85, "SidePanels": 1.4, "NeonGrid": 0.75, "EnergyGate": 0.45, "WideTunnel": 1.15, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.15}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 5.05
+minimum_overhead_y = 4.75
+side_clearance_margin = 0.6
+camera_fov_offset = 2.4
+fog_scale = 0.82
+background_depth = 1.2

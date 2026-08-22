@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/hangar_core.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "hangar_core"
+display_name = "Hangar Core"
+spatial_profile = "IndustrialReactor"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.94
+ring_probability = 0.48
+arch_probability = 0.9
+decoration_scale = 0.74
+layout_weight_scale = {"Straight": 0.8, "Ring": 0.42, "SidePanels": 0.7, "EnergyGate": 1.6, "WideTunnel": 0.82, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.15}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 4.95
+minimum_overhead_y = 4.7
+side_clearance_margin = 0.5
+camera_fov_offset = 1.0
+fog_scale = 1.08
+background_depth = 0.9

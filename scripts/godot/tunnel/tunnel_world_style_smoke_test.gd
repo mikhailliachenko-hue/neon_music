@@ -1,6 +1,10 @@
 extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
+const EXCLUSIVE_NEW_WORLDS := [
+	"orbital_concourse", "zero_g_cargo", "lunar_crystal_run", "monorail_nexus",
+	"hangar_core", "retro_rooftops", "scaffold_rush", "asteroid_temple",
+]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
 	{"level": "GOLDEN STAR", "world": "rhythm_star_frames", "asset_terms": ["Rhythm Star", "Road"]},
@@ -10,6 +14,14 @@ const WORLD_CASES := [
 	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
 	{"level": "LIGHT GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
 	{"level": "VIOLET GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
+	{"level": "ORBITAL CONCOURSE", "world": "orbital_concourse", "asset_terms": ["Floor Panel", "Wall", "Door Double", "Display"]},
+	{"level": "ZERO-G CARGO", "world": "zero_g_cargo", "asset_terms": ["Floor Detail", "Structure", "Container", "Pipe"]},
+	{"level": "LUNAR CRYSTAL RUN", "world": "lunar_crystal_run", "asset_terms": ["Platform", "Crystal", "Meteor", "Gate"]},
+	{"level": "MONORAIL NEXUS", "world": "monorail_nexus", "asset_terms": ["Monorail", "Support", "Gate"]},
+	{"level": "HANGAR CORE", "world": "hangar_core", "asset_terms": ["Hangar", "Gate", "Generator", "Platform"]},
+	{"level": "RETRO ROOFTOPS", "world": "retro_rooftops", "asset_terms": ["Road Asphalt", "Wall", "Roof", "Light"]},
+	{"level": "SCAFFOLD RUSH", "world": "scaffold_rush", "asset_terms": ["Scaffolding", "Beam", "Cable", "Road"]},
+	{"level": "ASTEROID TEMPLE", "world": "asteroid_temple", "asset_terms": ["Cliff", "Crystal", "Gate", "Platform"]},
 ]
 
 
@@ -44,6 +56,9 @@ func _run() -> void:
 		song_time += 16.0
 		generator.sync_to_song_time(song_time, {})
 		var stats := generator.get_runtime_stats()
+		var active_preset := generator.current_level_preset()
+		if expected_world in EXCLUSIVE_NEW_WORLDS and (active_preset == null or active_preset.world_style.allow_registry_fallback):
+			failures.append("%s can leak legacy registry assets" % level_name)
 		if int(stats.get("pool_size", 0)) != initial_pool_size or int(stats.get("active_segments", 0)) != initial_pool_size:
 			failures.append("%s changed the fixed segment pool" % level_name)
 		for segment_world in stats.get("segment_worlds", PackedStringArray()):

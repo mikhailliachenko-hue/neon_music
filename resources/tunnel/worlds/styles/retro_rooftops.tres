@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/retro_rooftops.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "retro_rooftops"
+display_name = "Retro Rooftops"
+spatial_profile = "CityCanyon"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.9
+ring_probability = 0.18
+arch_probability = 0.4
+decoration_scale = 0.68
+layout_weight_scale = {"Straight": 1.15, "SidePanels": 1.0, "NeonGrid": 1.05, "EnergyGate": 0.35, "WideTunnel": 1.55, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.85}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 5.0
+minimum_overhead_y = 4.85
+side_clearance_margin = 0.6
+camera_fov_offset = 4.0
+fog_scale = 0.62
+background_depth = 1.85

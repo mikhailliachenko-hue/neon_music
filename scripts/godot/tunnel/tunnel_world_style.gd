@@ -6,6 +6,7 @@ class_name TunnelWorldStyle
 @export var display_name := "Sci-Fi Corridor"
 @export_enum("Corridor", "OpenHighway", "CityCanyon", "IndustrialReactor", "RhythmFrames") var spatial_profile := "Corridor"
 @export var asset_set: TunnelWorldAssetSet
+@export var allow_registry_fallback := true
 
 @export_group("Architecture Density")
 @export_range(0.0, 1.0, 0.01) var floor_probability := 1.0

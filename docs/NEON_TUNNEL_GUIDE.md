@@ -36,10 +36,12 @@ godot --path . -- --preview-level "--tunnel-preset=FINAL DROP" --tunnel-seed=777
 
 ## Dance Mode level library
 
-The 15 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
+The 23 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
 GOLDEN STAR, PULSE CIRCLE, SYNTH VIOLET, ICE HALO, REDLINE GATE,
 TOXIC PORTAL, ELECTRIC PINK, WHITE SIGNAL, SUNSET DRIVE, DEEP SPACE RING,
-MATRIX FRAME, FINAL SPECTRUM, LIGHT GRID RUNNER and VIOLET GRID RUNNER. They use the same generator, fixed pool,
+MATRIX FRAME, FINAL SPECTRUM, LIGHT GRID RUNNER, VIOLET GRID RUNNER,
+ORBITAL CONCOURSE, ZERO-G CARGO, LUNAR CRYSTAL RUN, MONORAIL NEXUS,
+HANGAR CORE, RETRO ROOFTOPS, SCAFFOLD RUSH and ASTEROID TEMPLE. They use the same generator, fixed pool,
 asset cache and shared segment scenes. Each resource owns identity, palette,
 frame silhouette, densities and particle/light/fog/camera/music reaction
 settings; selecting one reapplies those settings to the existing pool without
@@ -52,6 +54,13 @@ dense 5x11 side banks batched with `MultiMeshInstance3D`, keep the gameplay
 aperture empty, leave the audio spectrum disabled and react only to the distant
 action wave. Their clean GLB floor uses a restrained burgundy or violet tint;
 procedural guide rails and floor-line patterns stay disabled.
+
+Levels 16-23 are eight separate modular worlds rather than recolors. Their
+explicit `TunnelWorldAssetSet` resources use curated CC0 GLB modules from the
+Kenney Space Station, Space Kit, Retro Urban and Nature Kit packs. Missing
+slots intentionally stay empty, so old registry geometry cannot leak into a new
+world. Buildings, trains, rocks and machinery are fitted in mirrored side
+volumes outside the gameplay envelope; the segment count remains eight.
 
 `lighting_settings.frame_rest_glow` and
 `lighting_settings.frame_rest_emission_scale` calibrate the steady readability

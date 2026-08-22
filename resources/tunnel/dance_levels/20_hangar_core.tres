@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/golden_future.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/hangar_core.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "HANGAR CORE"
+description = "Монументальный ангар с круглыми секциями, реакторными машинами и большими золотыми шлюзами."
+difficulty = "Hard"
+color_palette = PackedColorArray(1, 0.64, 0.08, 1, 1, 0.18, 0.06, 1, 0.018, 0.008, 0.002, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("EnergyGate", "DecoratedTunnel", "Straight", "WideTunnel")
+asset_weights = {"Wall": 0.94, "Arch": 0.9, "Pipe": 0.58, "Decoration": 0.76}
+particle_settings = {"density": 0.18, "amount_scale": 0.2}
+lighting_settings = {"glow_intensity": 0.58, "glow_strength": 0.7, "bloom": 0.035}
+fog_settings = {"density": 0.00135}
+camera_settings = {"step_impact": 0.54, "step_duration": 0.2, "fov_pulse": 0.34}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.2, "speed_boost": 0.0, "downbeat_multiplier": 1.0}
+preset_name = "HANGAR CORE"
+style_id = "HangarCore"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 200119
+ring_density = 0.78
+decoration_density = 0.84
+panel_density = 0.42
+pipe_density = 0.68
+fog_amount = 0.86
+glow_strength = 0.9
+camera_motion = 0.3
+speed_multiplier = 1.02
+atmosphere_density = 0.62
+floor_pattern = "None"
+level_id = "20_hangar_core"
+segment_sequence = PackedStringArray("EnergyGate", "DecoratedTunnel", "Straight", "WideTunnel")

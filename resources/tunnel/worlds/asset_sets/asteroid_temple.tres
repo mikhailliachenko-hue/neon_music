@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/platform_long.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/cliff_blockCave_rock.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/cliff_cornerLarge_rock.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/cliff_diagonal_rock.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/cliff_large_rock.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/bridge_stoneRound.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/gate_simple.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/rock_crystalsLargeA.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/rock_crystalsLargeB.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/mushroom_redTall.glb" id="11"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_nature_crystal/path_stoneCircle.glb" id="12"]
+
+[resource]
+script = ExtResource("1")
+asset_set_id = "kenney_asteroid_temple"
+display_name = "Kenney Asteroid Temple"
+floor_assets = Array[PackedScene]([ExtResource("2")])
+wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+arch_assets = Array[PackedScene]([ExtResource("8")])
+panel_assets = Array[PackedScene]([ExtResource("7"), ExtResource("12")])
+prop_assets = Array[PackedScene]([ExtResource("9"), ExtResource("10"), ExtResource("11")])

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/energy_red.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/zero_g_cargo.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "ZERO-G CARGO"
+description = "Грузовая палуба с контейнерами, сервисными трубами и редкими аварийными шлюзами."
+difficulty = "Hard"
+color_palette = PackedColorArray(1, 0.12, 0.18, 1, 1, 0.48, 0.08, 1, 0.02, 0.006, 0.008, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Straight", "DecoratedTunnel", "SidePanels", "EnergyGate")
+asset_weights = {"Wall": 0.84, "Arch": 0.58, "Pipe": 0.82, "Decoration": 0.8}
+particle_settings = {"density": 0.16, "amount_scale": 0.18}
+lighting_settings = {"glow_intensity": 0.5, "glow_strength": 0.62, "bloom": 0.03}
+fog_settings = {"density": 0.00125}
+camera_settings = {"step_impact": 0.5, "step_duration": 0.19, "fov_pulse": 0.32}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.2, "speed_boost": 0.0, "downbeat_multiplier": 1.0}
+preset_name = "ZERO-G CARGO"
+style_id = "ZeroGCargo"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 170913
+ring_density = 0.48
+decoration_density = 0.84
+panel_density = 0.62
+pipe_density = 0.86
+fog_amount = 0.82
+glow_strength = 0.76
+camera_motion = 0.28
+speed_multiplier = 1.04
+atmosphere_density = 0.5
+floor_pattern = "None"
+level_id = "17_zero_g_cargo"
+segment_sequence = PackedStringArray("Straight", "DecoratedTunnel", "SidePanels", "EnergyGate")

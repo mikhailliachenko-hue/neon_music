@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/platform_straight.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/hangar_largeA.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/hangar_largeB.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/hangar_roundA.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/hangar_roundGlass.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/gate_complex.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/machine_generator.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/machine_generatorLarge.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/machine_wirelessCable.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_kit/pipe_straight.glb" id="11"]
+
+[resource]
+script = ExtResource("1")
+asset_set_id = "kenney_hangar_core"
+display_name = "Kenney Hangar Core"
+floor_assets = Array[PackedScene]([ExtResource("2")])
+wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+arch_assets = Array[PackedScene]([ExtResource("7")])
+pipe_assets = Array[PackedScene]([ExtResource("11")])
+prop_assets = Array[PackedScene]([ExtResource("8"), ExtResource("9"), ExtResource("10")])

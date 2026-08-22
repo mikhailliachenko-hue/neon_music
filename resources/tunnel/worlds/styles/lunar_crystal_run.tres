@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/lunar_crystal_run.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "lunar_crystal_run"
+display_name = "Lunar Crystal Run"
+spatial_profile = "OpenHighway"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.66
+ring_probability = 0.46
+arch_probability = 0.64
+decoration_scale = 0.82
+layout_weight_scale = {"Straight": 1.2, "Ring": 0.62, "SidePanels": 0.72, "NeonGrid": 0.55, "EnergyGate": 0.65, "WideTunnel": 1.55, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.0}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 5.05
+minimum_overhead_y = 4.8
+side_clearance_margin = 0.6
+camera_fov_offset = 3.2
+fog_scale = 0.48
+background_depth = 1.8

@@ -102,7 +102,10 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 15 reference-focused Dance Mode levels. The existing Track tuning GUI
+  data-driven library of 23 Dance Mode levels. The first 15 keep the sparse
+  reference-frame family; levels 16-23 add eight distinct CC0 modular worlds
+  (orbital station, cargo deck, crystal moon, monorail, hangar, rooftops,
+  scaffolding and asteroid temple). The existing Track tuning GUI
   selects/reseeds/previews these Resources at runtime; all of them share the
   generator, segment scenes, resource cache and fixed eight-segment pool. Each
   preset also calibrates steady GLB-frame readability independently from bloom
@@ -152,6 +155,10 @@ Runtime renderer scripts.
 - `tunnel/` - CC0 modular tunnel library: Quaternius Modular Sci-Fi MegaKit
   (190 GLTF), Quaternius Sci-Fi Essentials (37 GLTF) and Kenney Modular Space
   Kit (40 GLB), with licenses, textures, registry and metadata sidecars.
+- `worlds/tunnel/` - explicitly authored world packs used by the pooled tunnel
+  streamer. In addition to the earlier city/factory modules, it contains curated
+  GLB subsets from Kenney Space Station, Space Kit, Retro Urban and Nature Kit.
+  Only the selected modules are imported; every pack keeps its CC0 license.
 - `CODEX_CHANGE_REQUEST_V2_CURRENT_PIPELINE.md`, `CODEX_FULL_VISUAL_MASTER_PROMPT_V6(1).md` - task/spec context from previous work.
 
 ### `docs/`

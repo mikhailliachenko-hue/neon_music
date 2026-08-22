@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/asteroid_temple.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "asteroid_temple"
+display_name = "Asteroid Temple"
+spatial_profile = "OpenHighway"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.76
+ring_probability = 0.42
+arch_probability = 0.72
+decoration_scale = 0.86
+layout_weight_scale = {"Straight": 0.9, "Ring": 0.7, "DoubleRing": 0.52, "SidePanels": 0.55, "EnergyGate": 1.1, "WideTunnel": 1.45, "NarrowTunnel": 0.0, "DecoratedTunnel": 1.25}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 5.1
+minimum_overhead_y = 4.9
+side_clearance_margin = 0.65
+camera_fov_offset = 3.5
+fog_scale = 0.52
+background_depth = 1.95

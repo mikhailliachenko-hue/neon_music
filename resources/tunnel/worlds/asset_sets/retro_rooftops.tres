@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/road-asphalt-straight.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-a-window.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-a-roof-detailed.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-b-window.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-b-roof-detailed.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-c-flat.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/roof-metal-poles.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-light-double.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-light-traffic.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/balcony-type-a.glb" id="11"]
+
+[resource]
+script = ExtResource("1")
+asset_set_id = "kenney_retro_rooftops"
+display_name = "Kenney Retro Rooftops"
+floor_assets = Array[PackedScene]([ExtResource("2")])
+wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7")])
+arch_assets = Array[PackedScene]([ExtResource("8")])
+panel_assets = Array[PackedScene]([ExtResource("9"), ExtResource("10")])
+prop_assets = Array[PackedScene]([ExtResource("11")])

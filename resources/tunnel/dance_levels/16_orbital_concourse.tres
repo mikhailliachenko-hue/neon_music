@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/future_white.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/orbital_concourse.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_navy_starfield.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "ORBITAL CONCOURSE"
+description = "Чистая орбитальная галерея: окна станции, широкие шлюзы и голографические терминалы."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.72, 0.96, 1, 1, 0.1, 0.62, 1, 1, 0.005, 0.01, 0.025, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Straight", "SidePanels", "EnergyGate", "WideTunnel")
+asset_weights = {"Wall": 0.92, "Arch": 0.82, "Panel": 0.7, "Decoration": 0.42}
+particle_settings = {"density": 0.09, "amount_scale": 0.12}
+lighting_settings = {"glow_intensity": 0.46, "glow_strength": 0.55, "bloom": 0.025}
+fog_settings = {"density": 0.0008}
+camera_settings = {"step_impact": 0.46, "step_duration": 0.2, "fov_pulse": 0.28}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.24, "speed_boost": 0.0, "downbeat_multiplier": 1.0}
+preset_name = "ORBITAL CONCOURSE"
+style_id = "OrbitalConcourse"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 160701
+ring_density = 0.68
+decoration_density = 0.55
+panel_density = 0.72
+pipe_density = 0.3
+fog_amount = 0.48
+glow_strength = 0.68
+camera_motion = 0.24
+speed_multiplier = 1.0
+atmosphere_density = 0.22
+floor_pattern = "None"
+level_id = "16_orbital_concourse"
+segment_sequence = PackedStringArray("Straight", "SidePanels", "EnergyGate", "WideTunnel")

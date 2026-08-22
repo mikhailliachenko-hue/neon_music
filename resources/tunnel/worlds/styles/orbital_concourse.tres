@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/orbital_concourse.tres" id="2"]
+[resource]
+script = ExtResource("1")
+world_id = "orbital_concourse"
+display_name = "Orbital Concourse"
+spatial_profile = "Corridor"
+asset_set = ExtResource("2")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.18
+wall_probability = 0.92
+ring_probability = 0.5
+arch_probability = 0.82
+decoration_scale = 0.62
+layout_weight_scale = {"Straight": 1.2, "SidePanels": 1.45, "EnergyGate": 1.0, "WideTunnel": 1.2, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.55}
+show_floor_rails = false
+show_ceiling_rails = false
+safe_lane_half_width = 4.9
+minimum_overhead_y = 4.7
+side_clearance_margin = 0.5
+camera_fov_offset = 1.5
+fog_scale = 0.72
+background_depth = 1.4

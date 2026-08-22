@@ -684,11 +684,16 @@ func prepare_world_style(
 			var entry: TunnelAssetEntry
 			var packed: PackedScene
 			var asset_name := ""
-			if world_style != null and world_style.asset_set != null:
+			var has_explicit_asset_set := world_style != null and world_style.asset_set != null
+			var may_use_registry_fallback := not has_explicit_asset_set or world_style.allow_registry_fallback
+			if has_explicit_asset_set:
 				packed = world_style.asset_set.choose_scene(slot_name, rng)
 				if packed != null:
 					asset_name = packed.resource_path.get_file().get_basename().replace("-", " ").capitalize()
-			if packed == null and _asset_registry != null:
+			# New authored worlds can make their explicit set authoritative: an empty
+			# slot then keeps that part of the corridor open. Existing worlds retain
+			# their registry fallback for backward-compatible visuals.
+			if packed == null and may_use_registry_fallback and _asset_registry != null:
 				for attempt in range(6):
 					entry = _asset_registry.choose_entry(_slot_category(slot_name), rng, theme_name)
 					if entry == null or not used_paths.has(entry.source_path):
@@ -696,7 +701,7 @@ func prepare_world_style(
 				if entry != null:
 					packed = _asset_registry.load_scene(entry)
 					asset_name = entry.display_name()
-			if packed == null and _asset_library != null:
+			if packed == null and may_use_registry_fallback and _asset_library != null:
 				packed = _asset_library.choose_scene(slot_name, rng, theme_name)
 				if packed != null:
 					asset_name = packed.resource_path.get_file().get_basename().replace("-", " ").capitalize()
