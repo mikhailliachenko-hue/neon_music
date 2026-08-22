@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/energy_red.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_circle_frames.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/06_redline_gate.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "REDLINE SURGE"
+description = "Редкие красные halo-кольца и самый быстрый короткий action-импульс серии."
+difficulty = "Hard"
+color_palette = PackedColorArray(1, 0.16, 0.29, 1, 1, 0.55, 0.14, 1, 0.02, 0.002, 0.001, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.10, "amount_scale": 0.10}
+lighting_settings = {"glow_intensity": 0.64, "glow_strength": 0.72, "bloom": 0.05, "frame_rest_glow": 0.22, "frame_rest_emission_scale": 0.98}
+fog_settings = {"density": 0.001}
+camera_settings = {"step_impact": 0.62, "step_duration": 0.18, "fov_pulse": 0.55}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.18, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 78.0, "wave_width": 9.5, "wave_lifetime": 1.85, "wave_near_fade_distance": 25.0, "wave_emission_strength": 0.52}
+preset_name = "REDLINE SURGE"
+style_id = "CircleWave"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 210021
+ring_density = 1.12
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.84
+camera_motion = 0.27
+speed_multiplier = 1.08
+atmosphere_density = 0.1
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "21_redline_surge"
+segment_sequence = PackedStringArray("Ring")

@@ -1,10 +1,12 @@
-# Curated CC0 world packs
+# Archived CC0 world packs
 
-The production tunnel imports only the GLB modules referenced by the explicit
-`TunnelWorldAssetSet` resources. Original filenames are preserved so a pack can
-be refreshed without changing runtime code.
+These packs remain in the repository as a licensed source archive, but they are
+no longer referenced by the production Dance Mode catalog. The active levels
+use the lighter open-frame Quaternius/Kenney modules under `assets/tunnel/` and
+`assets/models/obstacles/`. Keeping the original filenames and licenses makes
+future side/background experiments possible without runtime prewarming.
 
-| Local folder | Official source | Used for |
+| Local folder | Official source | Archived concept |
 | --- | --- | --- |
 | `kenney_space_station/` | https://kenney.nl/assets/space-station-kit | Orbital Concourse, Zero-G Cargo |
 | `kenney_space_kit/` | https://kenney.nl/assets/space-kit | Lunar Crystal Run, Monorail Nexus, Hangar Core |

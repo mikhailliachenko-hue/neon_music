@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cyber_purple.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_square_frames.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/04_synth_violet.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "VIOLET CIRCUIT"
+description = "Чёткие квадратные порталы с violet-pink градиентом и длинным световым хвостом."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.42, 0.26, 1, 1, 1, 0.27, 0.78, 1, 0.008, 0.002, 0.02, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.06, "amount_scale": 0.06}
+lighting_settings = {"glow_intensity": 0.62, "glow_strength": 0.7, "bloom": 0.048, "frame_rest_glow": 0.20, "frame_rest_emission_scale": 0.94}
+fog_settings = {"density": 0.001}
+camera_settings = {"step_impact": 0.54, "step_duration": 0.21, "fov_pulse": 0.45}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.23, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 70.0, "wave_width": 10.5, "wave_lifetime": 2.0, "wave_near_fade_distance": 27.0, "wave_emission_strength": 0.45}
+preset_name = "VIOLET CIRCUIT"
+style_id = "SquareWave"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 170017
+ring_density = 1.42
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.8
+camera_motion = 0.23
+speed_multiplier = 1.03
+atmosphere_density = 0.09
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "17_violet_circuit"
+segment_sequence = PackedStringArray("Ring")

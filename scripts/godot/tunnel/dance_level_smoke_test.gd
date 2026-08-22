@@ -6,8 +6,9 @@ const EXPECTED_NAMES := [
 	"ICE HALO", "REDLINE GATE", "TOXIC PORTAL", "ELECTRIC PINK",
 	"WHITE SIGNAL", "SUNSET DRIVE", "DEEP SPACE RING", "MATRIX FRAME",
 	"FINAL SPECTRUM", "LIGHT GRID RUNNER", "VIOLET GRID RUNNER",
-	"ORBITAL CONCOURSE", "ZERO-G CARGO", "LUNAR CRYSTAL RUN", "MONORAIL NEXUS",
-	"HANGAR CORE", "RETRO ROOFTOPS", "SCAFFOLD RUSH", "ASTEROID TEMPLE",
+	"CYAN APEX", "VIOLET CIRCUIT", "DEEP ORBIT", "GOLDEN STARLINE",
+	"ICE PORTAL", "REDLINE SURGE", "TOXIC HALO", "SUNSET APEX",
+	"WHITE WAVELINE", "SPECTRUM HALO",
 ]
 
 
@@ -54,6 +55,16 @@ func _run() -> void:
 			world_styles[preset.world_style.cache_key()] = true
 			for world_error in preset.world_style.validation_errors():
 				failures.append("%s: %s" % [preset.display_name(), world_error])
+			if index >= 15:
+				if preset.world_style.spatial_profile != "RhythmFrames":
+					failures.append("new minimalist level is not RhythmFrames: %s" % preset.display_name())
+				var asset_set := preset.world_style.asset_set
+				if asset_set == null or not asset_set.gameplay_clearance_verified:
+					failures.append("new frame set is not clearance verified: %s" % preset.display_name())
+				elif not asset_set.wall_assets.is_empty() or not asset_set.ceiling_assets.is_empty() or not asset_set.panel_assets.is_empty() or not asset_set.prop_assets.is_empty():
+					failures.append("new frame level contains architectural clutter: %s" % preset.display_name())
+				if float(preset.music_reaction_settings.get("beat_strength", -1.0)) != 0.0:
+					failures.append("new frame level flashes from beat instead of actions: %s" % preset.display_name())
 		if preset.color_palette.size() < 3 or preset.effective_segment_sequence().is_empty():
 			failures.append("missing preview/spatial data: %s" % preset.display_name())
 		if preset.display_name() == "LIGHT GRID RUNNER" and preset.light_grid_mode != 1:
@@ -94,7 +105,7 @@ func _run() -> void:
 			failures.append("runtime background did not switch: %s" % preset.display_name())
 	if themes.size() < 12:
 		failures.append("themes are not visually diverse: %d unique" % themes.size())
-	if world_styles.size() < 14:
+	if world_styles.size() < 7:
 		failures.append("world architecture is not diverse: %d unique styles" % world_styles.size())
 	if backgrounds.size() < 3:
 		failures.append("expected at least 3 background families, got %d" % backgrounds.size())

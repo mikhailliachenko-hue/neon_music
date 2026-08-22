@@ -2,8 +2,8 @@ extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const EXCLUSIVE_NEW_WORLDS := [
-	"orbital_concourse", "zero_g_cargo", "lunar_crystal_run", "monorail_nexus",
-	"hangar_core", "retro_rooftops", "scaffold_rush", "asteroid_temple",
+	"rhythm_frames", "rhythm_square_frames", "rhythm_circle_frames",
+	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -14,14 +14,16 @@ const WORLD_CASES := [
 	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
 	{"level": "LIGHT GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
 	{"level": "VIOLET GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
-	{"level": "ORBITAL CONCOURSE", "world": "orbital_concourse", "asset_terms": ["Floor Panel", "Wall", "Door Double", "Display"]},
-	{"level": "ZERO-G CARGO", "world": "zero_g_cargo", "asset_terms": ["Floor Detail", "Structure", "Container", "Pipe"]},
-	{"level": "LUNAR CRYSTAL RUN", "world": "lunar_crystal_run", "asset_terms": ["Platform", "Crystal", "Meteor", "Gate"]},
-	{"level": "MONORAIL NEXUS", "world": "monorail_nexus", "asset_terms": ["Monorail", "Support", "Gate"]},
-	{"level": "HANGAR CORE", "world": "hangar_core", "asset_terms": ["Hangar", "Gate", "Generator", "Platform"]},
-	{"level": "RETRO ROOFTOPS", "world": "retro_rooftops", "asset_terms": ["Road Asphalt", "Wall", "Roof", "Light"]},
-	{"level": "SCAFFOLD RUSH", "world": "scaffold_rush", "asset_terms": ["Scaffolding", "Beam", "Cable", "Road"]},
-	{"level": "ASTEROID TEMPLE", "world": "asteroid_temple", "asset_terms": ["Cliff", "Crystal", "Gate", "Platform"]},
+	{"level": "CYAN APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
+	{"level": "VIOLET CIRCUIT", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
+	{"level": "DEEP ORBIT", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
+	{"level": "GOLDEN STARLINE", "world": "rhythm_star_frames", "asset_terms": ["Rhythm Star", "Road"]},
+	{"level": "ICE PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
+	{"level": "REDLINE SURGE", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
+	{"level": "TOXIC HALO", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
+	{"level": "SUNSET APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
+	{"level": "WHITE WAVELINE", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
+	{"level": "SPECTRUM HALO", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
 ]
 
 

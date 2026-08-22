@@ -9,6 +9,7 @@ world_id = "rhythm_circle_frames"
 display_name = "Rhythm Circle Frames"
 spatial_profile = "RhythmFrames"
 asset_set = ExtResource("2_assets")
+allow_registry_fallback = false
 floor_probability = 1.0
 ceiling_probability = 0.0
 wall_probability = 0.0

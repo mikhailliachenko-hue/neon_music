@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/toxic_green.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_circle_frames.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/07_toxic_portal.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "TOXIC HALO"
+description = "Плотная цепочка зелёных колец с lime-cyan волной и свободной дорожкой."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.22, 0.97, 0.46, 1, 0.77, 1, 0.16, 1, 0.002, 0.014, 0.004, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.07, "amount_scale": 0.07}
+lighting_settings = {"glow_intensity": 0.58, "glow_strength": 0.64, "bloom": 0.04, "frame_rest_glow": 0.17, "frame_rest_emission_scale": 0.91}
+fog_settings = {"density": 0.00095}
+camera_settings = {"step_impact": 0.53, "step_duration": 0.22, "fov_pulse": 0.43}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.24, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 62.0, "wave_width": 13.0, "wave_lifetime": 2.2, "wave_near_fade_distance": 29.0, "wave_emission_strength": 0.40}
+preset_name = "TOXIC HALO"
+style_id = "CircleWave"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 220022
+ring_density = 1.45
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.74
+camera_motion = 0.22
+speed_multiplier = 1.01
+atmosphere_density = 0.08
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "22_toxic_halo"
+segment_sequence = PackedStringArray("Ring")

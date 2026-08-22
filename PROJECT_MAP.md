@@ -102,10 +102,10 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 23 Dance Mode levels. The first 15 keep the sparse
-  reference-frame family; levels 16-23 add eight distinct CC0 modular worlds
-  (orbital station, cargo deck, crystal moon, monorail, hangar, rooftops,
-  scaffolding and asteroid temple). The existing Track tuning GUI
+  data-driven library of 25 Dance Mode levels. All production worlds now follow
+  the sparse reference-frame grammar; levels 16-25 add ten action-wave variants
+  built from open A, square, tall, circle, star and open-gate silhouettes.
+  The existing Track tuning GUI
   selects/reseeds/previews these Resources at runtime; all of them share the
   generator, segment scenes, resource cache and fixed eight-segment pool. Each
   preset also calibrates steady GLB-frame readability independently from bloom
@@ -113,7 +113,7 @@ Runtime renderer scripts.
   consistent exposure without one global brightness multiplier.
 - `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
   `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
-  GLB sets. The user-facing library uses six minimal rhythm-frame silhouettes
+  GLB sets. The user-facing library uses seven minimal rhythm-frame silhouettes
   (open A-frame, square, tall square, open gate, circle and star) plus the
   separate LIGHT GRID RUNNER and VIOLET GRID RUNNER panel tunnels. They share
   one pooled module but keep the large, dense Quaternius light-housing banks in

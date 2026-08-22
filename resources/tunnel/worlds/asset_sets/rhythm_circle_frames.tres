@@ -17,3 +17,6 @@ frame_instances_per_segment = 2
 frame_inner_half_width = 4.35
 frame_opening_bottom_y = -2.05
 frame_opening_top_y = 4.4
+frame_target_width = 17.0
+frame_target_height = 11.0
+frame_target_center_y = 2.6

@@ -36,18 +36,19 @@ godot --path . -- --preview-level "--tunnel-preset=FINAL DROP" --tunnel-seed=777
 
 ## Dance Mode level library
 
-The 23 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
+The 25 Resources in `resources/tunnel/dance_levels/` are CYBER AWAKENING,
 GOLDEN STAR, PULSE CIRCLE, SYNTH VIOLET, ICE HALO, REDLINE GATE,
 TOXIC PORTAL, ELECTRIC PINK, WHITE SIGNAL, SUNSET DRIVE, DEEP SPACE RING,
 MATRIX FRAME, FINAL SPECTRUM, LIGHT GRID RUNNER, VIOLET GRID RUNNER,
-ORBITAL CONCOURSE, ZERO-G CARGO, LUNAR CRYSTAL RUN, MONORAIL NEXUS,
-HANGAR CORE, RETRO ROOFTOPS, SCAFFOLD RUSH and ASTEROID TEMPLE. They use the same generator, fixed pool,
+CYAN APEX, VIOLET CIRCUIT, DEEP ORBIT, GOLDEN STARLINE, ICE PORTAL,
+REDLINE SURGE, TOXIC HALO, SUNSET APEX, WHITE WAVELINE and SPECTRUM HALO.
+They use the same generator, fixed pool,
 asset cache and shared segment scenes. Each resource owns identity, palette,
 frame silhouette, densities and particle/light/fog/camera/music reaction
 settings; selecting one reapplies those settings to the existing pool without
 restarting gameplay.
 
-The two grid presets are intentionally separate from the thirteen authored arch
+The two grid presets are intentionally separate from the twenty-three authored frame
 levels. `LIGHT GRID RUNNER` owns the red/yellow/green Quaternius light housings;
 `VIOLET GRID RUNNER` owns the volumetric violet/gold dot housings. Both use large
 dense 5x11 side banks batched with `MultiMeshInstance3D`, keep the gameplay
@@ -55,12 +56,12 @@ aperture empty, leave the audio spectrum disabled and react only to the distant
 action wave. Their clean GLB floor uses a restrained burgundy or violet tint;
 procedural guide rails and floor-line patterns stay disabled.
 
-Levels 16-23 are eight separate modular worlds rather than recolors. Their
-explicit `TunnelWorldAssetSet` resources use curated CC0 GLB modules from the
-Kenney Space Station, Space Kit, Retro Urban and Nature Kit packs. Missing
-slots intentionally stay empty, so old registry geometry cannot leak into a new
-world. Buildings, trains, rocks and machinery are fitted in mirrored side
-volumes outside the gameplay envelope; the segment count remains eight.
+Levels 16-25 deliberately use the same restrained `RhythmFrames` grammar as the
+reference: one large open modular GLB/GLTF silhouette repeated into depth, a
+dark road and sparse dust. Walls, ceilings, panels and props stay empty, so no
+architecture can leak into the gameplay aperture. Their steady color is dim;
+the travelling gradient is triggered by STEP, HAND, JUMP or DUCK actions rather
+than by an automatic beat flash. The segment count remains eight.
 
 `lighting_settings.frame_rest_glow` and
 `lighting_settings.frame_rest_emission_scale` calibrate the steady readability

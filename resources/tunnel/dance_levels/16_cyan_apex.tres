@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cyber_blue.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_frames.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/01_cyber_awakening.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "CYAN APEX"
+description = "Крупные открытые A-рамы и мягкая cyan-magenta волна от движений игрока."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.02, 0.81, 0.95, 1, 1, 0.18, 0.67, 1, 0.003, 0.006, 0.02, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.06, "amount_scale": 0.06}
+lighting_settings = {"glow_intensity": 0.62, "glow_strength": 0.68, "bloom": 0.045, "frame_rest_glow": 0.18, "frame_rest_emission_scale": 0.92}
+fog_settings = {"density": 0.0009}
+camera_settings = {"step_impact": 0.52, "step_duration": 0.22, "fov_pulse": 0.42}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.24, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 64.0, "wave_width": 11.5, "wave_lifetime": 2.15, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.42}
+preset_name = "CYAN APEX"
+style_id = "ApexWave"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 160016
+ring_density = 1.35
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.78
+camera_motion = 0.22
+speed_multiplier = 1.0
+atmosphere_density = 0.08
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "16_cyan_apex"
+segment_sequence = PackedStringArray("Ring")

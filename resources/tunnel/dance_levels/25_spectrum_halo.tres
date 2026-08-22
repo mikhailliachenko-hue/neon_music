@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/rainbow_dance.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_circle_frames.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/13_final_spectrum.png" id="4"]
+[resource]
+script = ExtResource("1")
+level_name = "SPECTRUM HALO"
+description = "Большие открытые rainbow-кольца; цвет меняется только волной действия и секцией."
+difficulty = "Expert"
+color_palette = PackedColorArray(0.08, 0.9, 1, 1, 1, 0.08, 0.72, 1, 0.008, 0.002, 0.018, 1)
+preview_texture = ExtResource("4")
+background_texture = ExtResource("4")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.09, "amount_scale": 0.09}
+lighting_settings = {"glow_intensity": 0.66, "glow_strength": 0.74, "bloom": 0.052, "frame_rest_glow": 0.20, "frame_rest_emission_scale": 0.96}
+fog_settings = {"density": 0.001}
+camera_settings = {"step_impact": 0.61, "step_duration": 0.18, "fov_pulse": 0.56}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.19, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 76.0, "wave_width": 10.5, "wave_lifetime": 1.9, "wave_near_fade_distance": 26.0, "wave_emission_strength": 0.50}
+preset_name = "SPECTRUM HALO"
+style_id = "CircleWave"
+world_style = ExtResource("3")
+theme = ExtResource("2")
+seed_offset = 250025
+ring_density = 1.4
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+glow_strength = 0.88
+camera_motion = 0.28
+speed_multiplier = 1.1
+atmosphere_density = 0.1
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "25_spectrum_halo"
+segment_sequence = PackedStringArray("Ring")

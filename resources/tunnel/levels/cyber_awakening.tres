@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=33 format=3]
+[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=35 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_config.gd" id="1_config"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/entrance_segment.tscn" id="2_entrance"]
@@ -24,14 +24,16 @@
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/13_final_spectrum.tres" id="22_level_13"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/14_light_grid_runner.tres" id="23_level_14"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/15_violet_grid_runner.tres" id="24_level_15"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/16_orbital_concourse.tres" id="25_level_16"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/17_zero_g_cargo.tres" id="26_level_17"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/18_lunar_crystal_run.tres" id="27_level_18"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/19_monorail_nexus.tres" id="28_level_19"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/20_hangar_core.tres" id="29_level_20"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/21_retro_rooftops.tres" id="30_level_21"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/22_scaffold_rush.tres" id="31_level_22"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/23_asteroid_temple.tres" id="32_level_23"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/16_cyan_apex.tres" id="25_level_16"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/17_violet_circuit.tres" id="26_level_17"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/18_deep_orbit.tres" id="27_level_18"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/19_golden_starline.tres" id="28_level_19"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/20_ice_portal.tres" id="29_level_20"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/21_redline_surge.tres" id="30_level_21"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/22_toxic_halo.tres" id="31_level_22"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/23_sunset_apex.tres" id="32_level_23"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/24_white_waveline.tres" id="33_level_24"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/25_spectrum_halo.tres" id="34_level_25"]
 
 [resource]
 script = ExtResource("1_config")
@@ -74,4 +76,4 @@ step_camera_duration = 0.24
 initial_theme = "CyberBlue"
 themes = Array[TunnelTheme]([ExtResource("9_theme")])
 initial_preset = "CYBER AWAKENING"
-presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14"), ExtResource("24_level_15"), ExtResource("25_level_16"), ExtResource("26_level_17"), ExtResource("27_level_18"), ExtResource("28_level_19"), ExtResource("29_level_20"), ExtResource("30_level_21"), ExtResource("31_level_22"), ExtResource("32_level_23")])
+presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14"), ExtResource("24_level_15"), ExtResource("25_level_16"), ExtResource("26_level_17"), ExtResource("27_level_18"), ExtResource("28_level_19"), ExtResource("29_level_20"), ExtResource("30_level_21"), ExtResource("31_level_22"), ExtResource("32_level_23"), ExtResource("33_level_24"), ExtResource("34_level_25")])
