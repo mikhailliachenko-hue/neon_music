@@ -24,12 +24,14 @@ func _run() -> void:
 		var asset_set := preset.world_style.asset_set
 		if not asset_set.gameplay_clearance_verified:
 			failures.append("%s has unverified frame clearance" % preset.display_name())
-		if asset_set.frame_inner_half_width < GAMEPLAY_HALF_WIDTH:
-			failures.append("%s is narrower than gameplay hands" % preset.display_name())
-		if asset_set.frame_opening_bottom_y > -1.90:
-			failures.append("%s threshold is above the safe step line" % preset.display_name())
-		if asset_set.frame_opening_top_y < GAMEPLAY_HAND_TOP:
-			failures.append("%s is lower than the hand envelope" % preset.display_name())
+		var has_center_frames := not asset_set.ring_assets.is_empty() or not asset_set.arch_assets.is_empty()
+		if has_center_frames:
+			if asset_set.frame_inner_half_width < GAMEPLAY_HALF_WIDTH:
+				failures.append("%s is narrower than gameplay hands" % preset.display_name())
+			if asset_set.frame_opening_bottom_y > -1.90:
+				failures.append("%s threshold is above the safe step line" % preset.display_name())
+			if asset_set.frame_opening_top_y < GAMEPLAY_HAND_TOP:
+				failures.append("%s is lower than the hand envelope" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
 			and asset_set.frame_instances_per_segment != 1:
 			failures.append("%s must keep one star crown per segment" % preset.display_name())

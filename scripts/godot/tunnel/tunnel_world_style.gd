@@ -21,6 +21,12 @@ class_name TunnelWorldStyle
 @export var show_floor_rails := true
 @export var show_ceiling_rails := true
 
+@export_group("Authored GLB Material")
+@export_range(0.0, 1.0, 0.01) var authored_color_mix := 0.46
+@export_range(0.0, 1.0, 0.01) var floor_authored_color_mix := 0.08
+@export_range(0.0, 2.0, 0.01) var architecture_emission_scale := 1.0
+@export_range(0.0, 1.0, 0.01) var architecture_body_glow := 0.0
+
 @export_group("Safe Dance Lane")
 @export_range(4.0, 7.0, 0.05) var safe_lane_half_width := 4.75
 @export_range(3.5, 7.0, 0.05) var minimum_overhead_y := 4.35

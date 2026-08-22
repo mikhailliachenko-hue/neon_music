@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/road-asphalt-damaged.glb" id="2"]
@@ -8,7 +8,6 @@
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-beam.glb" id="6"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-cables-type-a.glb" id="7"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-cables-type-b.glb" id="8"]
-[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/wall-a-roof-slant-detailed.glb" id="9"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_retro_urban/detail-light-double.glb" id="10"]
 
 [resource]
@@ -16,7 +15,7 @@ script = ExtResource("1")
 asset_set_id = "kenney_scaffold_rush"
 display_name = "Kenney Scaffold Rush"
 floor_assets = Array[PackedScene]([ExtResource("2")])
-wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("9")])
-arch_assets = Array[PackedScene]([ExtResource("5")])
-panel_assets = Array[PackedScene]([ExtResource("6"), ExtResource("10")])
+wall_assets = Array[PackedScene]([ExtResource("3")])
+panel_assets = Array[PackedScene]([ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("10")])
 pipe_assets = Array[PackedScene]([ExtResource("7"), ExtResource("8")])
+gameplay_clearance_verified = true

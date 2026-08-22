@@ -3,7 +3,7 @@ class_name NeonTunnelConfig
 
 @export var enabled := true
 @export var replace_background_video := true
-@export var debug_enabled := true
+@export var debug_enabled := false
 @export var diagnostics_enabled := false
 
 @export_group("Streaming")

@@ -350,7 +350,8 @@ func apply_visual_state(
 		var surface_tint := graphite.lerp(Color(primary.r, primary.g, primary.b, 1.0), 0.04)
 		# Structural GLB surfaces keep steady luminance. Pulsing a large textured
 		# wall reads as flicker even when its transform is continuous.
-		var architecture_emission := (0.42 + emission_energy * 0.09) * profile_energy
+		var world_emission_scale := _active_world_style.architecture_emission_scale if _active_world_style != null else 1.0
+		var architecture_emission := (0.42 + emission_energy * 0.09) * profile_energy * world_emission_scale
 		var active_external_materials: Array[Material] = []
 		for stored_material in _external_materials_by_world.get(_active_world_key, []):
 			active_external_materials.append(stored_material as Material)
@@ -362,8 +363,8 @@ func apply_visual_state(
 			var material_primary := primary
 			var material_accent := accent
 			var material_emission := architecture_emission
-			var authored_mix := 0.46
-			var body_glow := 0.0
+			var authored_mix := _active_world_style.authored_color_mix if _active_world_style != null else 0.46
+			var body_glow := _active_world_style.architecture_body_glow if _active_world_style != null else 0.0
 			if slot_name == "Floor":
 				if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
 					material_surface = Color(0.028, 0.003, 0.004, 1.0) if _light_grid_mode == 1 \
@@ -377,7 +378,7 @@ func apply_visual_state(
 					material_primary = material_surface.lerp(primary, 0.08)
 					material_accent = primary
 					material_emission *= 0.28
-					authored_mix = 0.08
+					authored_mix = _active_world_style.floor_authored_color_mix if _active_world_style != null else 0.08
 			elif _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames" \
 				and slot_name in ["Rings", "Arches"]:
 				material_surface = Color(0.012, 0.016, 0.024, 1.0)
@@ -760,30 +761,37 @@ func validate_active_safe_lane() -> PackedStringArray:
 					errors.append("%s left %s enters safe lane" % [_active_world_key, slot_name])
 				elif module_index == 1 and placed_bounds.position.x < safe_half_width:
 					errors.append("%s right %s enters safe lane" % [_active_world_key, slot_name])
+	var active_asset_set := _active_world_style.asset_set if _active_world_style != null else null
+	var has_center_frames := active_asset_set != null and (
+		not active_asset_set.ring_assets.is_empty() or not active_asset_set.arch_assets.is_empty()
+	)
+	if has_center_frames:
+		if not active_asset_set.gameplay_clearance_verified:
+			errors.append("%s centered opening has no verified gameplay clearance" % _active_world_key)
+		else:
+			if active_asset_set.frame_inner_half_width < 4.15:
+				errors.append("%s centered opening is narrower than hand envelope" % _active_world_key)
+			if active_asset_set.frame_opening_bottom_y > -1.90:
+				errors.append("%s centered threshold overlaps step envelope" % _active_world_key)
+			if active_asset_set.frame_opening_top_y < 3.25:
+				errors.append("%s centered opening is too low for hand cues" % _active_world_key)
 	if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
-		var asset_set := _active_world_style.asset_set
+		var asset_set := active_asset_set
 		if asset_set == null or not asset_set.gameplay_clearance_verified:
 			errors.append("%s frame set has no verified gameplay opening" % _active_world_key)
-		else:
-			if asset_set.frame_inner_half_width < 4.15:
-				errors.append("%s frame opening is narrower than hand envelope" % _active_world_key)
-			if asset_set.frame_opening_bottom_y > -1.90:
-				errors.append("%s frame threshold overlaps step envelope" % _active_world_key)
-			if asset_set.frame_opening_top_y < 3.25:
-				errors.append("%s frame top overlaps hand envelope" % _active_world_key)
-		var floor_slot := $ExternalAssets.get_node_or_null("Floor") as Node3D
-		if floor_slot != null:
-			for floor_group_node in floor_slot.get_children():
-				var floor_group := floor_group_node as Node3D
-				if floor_group == null or not floor_group.visible or String(floor_group.get_meta("world_style", "")) != _active_world_key:
+	var floor_slot := $ExternalAssets.get_node_or_null("Floor") as Node3D
+	if floor_slot != null:
+		for floor_group_node in floor_slot.get_children():
+			var floor_group := floor_group_node as Node3D
+			if floor_group == null or not floor_group.visible or String(floor_group.get_meta("world_style", "")) != _active_world_key:
+				continue
+			for floor_module_node in floor_group.get_children():
+				var floor_module := floor_module_node as Node3D
+				if floor_module == null:
 					continue
-				for floor_module_node in floor_group.get_children():
-					var floor_module := floor_module_node as Node3D
-					if floor_module == null:
-						continue
-					var floor_bounds := floor_module.transform * _combined_bounds(floor_module)
-					if floor_bounds.end.y > -1.88:
-						errors.append("%s imported floor rises into step envelope" % _active_world_key)
+				var floor_bounds := floor_module.transform * _combined_bounds(floor_module)
+				if floor_bounds.end.y > -1.88:
+					errors.append("%s imported floor rises into step envelope" % _active_world_key)
 	return errors
 
 
@@ -828,13 +836,13 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 	var spatial_profile := world_style.spatial_profile if world_style != null else "Corridor"
 	match slot_name:
 		"Floor":
-			target_size = Vector3(11.6, 0.18, 18.4)
+			target_size = Vector3(11.6, 0.18, 18.02)
 			target_center = Vector3(0.0, -2.02, 0.0)
 		"Ceiling":
-			target_size = Vector3(11.8, 0.65, 18.4)
+			target_size = Vector3(11.8, 0.65, 18.02)
 			target_center = Vector3(0.0, 6.35, 0.0)
 		"Walls":
-			target_size = Vector3(0.65, 8.1, 18.4)
+			target_size = Vector3(0.65, 8.1, 18.02)
 			target_center = Vector3(-5.85 if placement_index == 0 else 5.85, 2.25, 0.0)
 		"Rings":
 			target_size = Vector3(11.4, 7.7, 2.0)
@@ -890,7 +898,7 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 	elif spatial_profile == "RhythmFrames":
 		match slot_name:
 			"Floor":
-				target_size = Vector3(11.6, 0.16, 18.4)
+				target_size = Vector3(11.6, 0.16, 18.02)
 				target_center = Vector3(0.0, -2.02, 0.0)
 			"Rings", "Arches":
 				var asset_set := world_style.asset_set if world_style != null else null
@@ -1093,12 +1101,19 @@ func apply_floor_reaction(pulse: float, drop_pulse: float, song_time: float) -> 
 
 func get_active_object_count() -> int:
 	var count := 0
-	for mesh in find_children("*", "MeshInstance3D", true, false):
-		if mesh is MeshInstance3D and (mesh as MeshInstance3D).is_visible_in_tree():
+	# Debug accounting must not walk every hidden, prewarmed world. Only visible
+	# branches can contribute draw objects, so prune hidden subtrees first.
+	var pending: Array[Node] = [self]
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		if node is Node3D and node != self and not (node as Node3D).visible:
+			continue
+		if node is CanvasItem and not (node as CanvasItem).visible:
+			continue
+		if node is MeshInstance3D or node is GPUParticles3D:
 			count += 1
-	for particle in find_children("*", "GPUParticles3D", true, false):
-		if particle is GPUParticles3D and (particle as GPUParticles3D).is_visible_in_tree():
-			count += 1
+		for child in node.get_children():
+			pending.append(child)
 	return count
 
 

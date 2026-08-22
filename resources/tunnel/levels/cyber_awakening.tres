@@ -37,7 +37,7 @@
 script = ExtResource("1_config")
 enabled = true
 replace_background_video = true
-debug_enabled = true
+debug_enabled = false
 diagnostics_enabled = false
 segment_count = 8
 segment_length = 18.0

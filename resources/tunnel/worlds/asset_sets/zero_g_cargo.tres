@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/floor-detail.glb" id="2"]
@@ -9,7 +9,6 @@
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/computer-screen.glb" id="7"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/pipe.glb" id="8"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/pipe-bend.glb" id="9"]
-[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/door-double-half.glb" id="10"]
 
 [resource]
 script = ExtResource("1")
@@ -17,7 +16,7 @@ asset_set_id = "kenney_zero_g_cargo"
 display_name = "Kenney Zero-G Cargo"
 floor_assets = Array[PackedScene]([ExtResource("2")])
 wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4")])
-arch_assets = Array[PackedScene]([ExtResource("10")])
 panel_assets = Array[PackedScene]([ExtResource("7")])
 pipe_assets = Array[PackedScene]([ExtResource("8"), ExtResource("9")])
 prop_assets = Array[PackedScene]([ExtResource("5"), ExtResource("6")])
+gameplay_clearance_verified = true

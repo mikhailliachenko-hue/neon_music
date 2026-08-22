@@ -1,10 +1,9 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/floor-panel-straight.glb" id="2"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/wall-window.glb" id="3"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/wall-pillar.glb" id="4"]
-[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/door-double-half.glb" id="5"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/display-wall-wide.glb" id="6"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/pipe-ring-colored.glb" id="7"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_space_station/table-display-planet.glb" id="8"]
@@ -17,8 +16,8 @@ script = ExtResource("1")
 asset_set_id = "kenney_orbital_concourse"
 display_name = "Kenney Orbital Concourse"
 floor_assets = Array[PackedScene]([ExtResource("2")])
-wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4"), ExtResource("10")])
-arch_assets = Array[PackedScene]([ExtResource("5")])
-panel_assets = Array[PackedScene]([ExtResource("6"), ExtResource("11")])
+wall_assets = Array[PackedScene]([ExtResource("3"), ExtResource("4")])
+panel_assets = Array[PackedScene]([ExtResource("6"), ExtResource("10"), ExtResource("11")])
 pipe_assets = Array[PackedScene]([ExtResource("7")])
 prop_assets = Array[PackedScene]([ExtResource("8"), ExtResource("9")])
+gameplay_clearance_verified = true
