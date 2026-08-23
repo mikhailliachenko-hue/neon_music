@@ -490,10 +490,11 @@ func _build_icon_glyph(_panel: MeshInstance3D) -> void:
 	mesh.size = Vector2.ONE * HAND_ICON_SIZE
 	glyph.mesh = mesh
 
-	var icon_texture := _load_runtime_texture(PUNCH_LEFT_ICON if lane < 2 else PUNCH_RIGHT_ICON)
+	var is_left_hand := _is_left_hand_cue()
+	var icon_texture := _load_runtime_texture(PUNCH_LEFT_ICON if is_left_hand else PUNCH_RIGHT_ICON)
 	# Preserve the authored glove shading and navy outline. Treating the entire
 	# alpha mask as one emissive color turned every fist into a white blob.
-	var icon_energy := 1.25 if lane < 2 else 0.92
+	var icon_energy := 1.25 if is_left_hand else 0.92
 	var material := _create_icon_mask_material(icon_texture, Color.WHITE, icon_energy, true)
 	glyph.material_override = material
 	add_child(glyph)
@@ -537,48 +538,19 @@ func _build_vertical_action_glyph(icon_path: String, local_position: Vector3, gl
 
 
 func _build_hand_container_model() -> void:
-	var container := GAMEPLAY_CUE_KIT.create_punch(emission_color, lane < 2)
+	var container := GAMEPLAY_CUE_KIT.create_punch(emission_color, _is_left_hand_cue())
 	container.position = Vector3(0.0, _hand_visual_center_y(), 0.0)
 	add_child(container)
 
 
 func _build_hand_hold_prism() -> void:
-	var hold := Node3D.new()
-	hold.name = "HandHoldPrism"
 	# Negative Z is the approach side. The body connects the first punch cap to
 	# the explicit terminal punch exported by the analyzer.
-	hold.position = Vector3(0.0, _hand_visual_center_y(), -HAND_CONTAINER_DEPTH * 0.5)
 	var length := maxf(HAND_HOLD_MIN_LENGTH, _hand_hold_length)
 	var span := maxf(0.5, length - HAND_CONTAINER_DEPTH)
-	var body := MeshInstance3D.new()
-	body.name = "HoldBody"
-	body.position.z = -span * 0.5
-	var body_mesh := BoxMesh.new()
-	body_mesh.size = Vector3(HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE, span)
-	body.mesh = body_mesh
-	var body_material := StandardMaterial3D.new()
-	body_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	# The long hit is a translucent guide ribbon with a bright target cap. A
-	# fully emissive solid prism dominated the frame and read as an obstacle.
-	body_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	body_material.albedo_color = Color(emission_color.r, emission_color.g, emission_color.b, 0.075)
-	body_material.emission_enabled = true
-	body_material.emission = emission_color
-	body_material.emission_energy_multiplier = 0.14
-	body_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	body.material_override = body_material
-	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	hold.add_child(body)
-	var rail_material := _emissive_material(emission_color, 2.8)
-	var half := HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE * 0.5
-	var rail_z := -span * 0.5
-	for rail_data in [
-		["TopLeftRail", Vector3(-half, half, rail_z)],
-		["TopRightRail", Vector3(half, half, rail_z)],
-		["BottomLeftRail", Vector3(-half, -half, rail_z)],
-		["BottomRightRail", Vector3(half, -half, rail_z)],
-	]:
-		GAMEPLAY_CUE_KIT.add_edge(hold, String(rail_data[0]), rail_data[1] as Vector3, Vector3(0.065, 0.065, span), rail_material)
+	var diameter := HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE
+	var hold := GAMEPLAY_CUE_KIT.create_hand_hold_capsule(emission_color, span, diameter)
+	hold.position = Vector3(0.0, _hand_visual_center_y(), -HAND_CONTAINER_DEPTH * 0.5)
 	add_child(hold)
 
 
@@ -595,15 +567,25 @@ func _sync_hand_hold_geometry(speed: float) -> void:
 	var remaining_length := maxf(HAND_CONTAINER_DEPTH + 0.5, _hand_hold_length - passed_length)
 	var span := maxf(0.5, remaining_length - HAND_CONTAINER_DEPTH)
 	hold.position.z = -HAND_CONTAINER_DEPTH * 0.5 - passed_length
-	var body := hold.get_node_or_null("HoldBody") as MeshInstance3D
-	if body != null and body.mesh is BoxMesh:
-		(body.mesh as BoxMesh).size.z = span
-		body.position.z = -span * 0.5
-	for rail_name in ["TopLeftRail", "TopRightRail", "BottomLeftRail", "BottomRightRail"]:
-		var rail := hold.get_node_or_null(rail_name) as MeshInstance3D
-		if rail != null and rail.mesh is BoxMesh:
-			(rail.mesh as BoxMesh).size.z = span
-			rail.position.z = -span * 0.5
+	for mesh_name in ["HoldBody", "HoldCore"]:
+		var mesh_instance := hold.get_node_or_null(mesh_name) as MeshInstance3D
+		if mesh_instance != null and mesh_instance.mesh is CylinderMesh:
+			(mesh_instance.mesh as CylinderMesh).height = span
+			mesh_instance.position.z = -span * 0.5
+	var end_collar := hold.get_node_or_null("HoldEndCollar") as MeshInstance3D
+	if end_collar != null:
+		end_collar.position.z = -span
+
+
+func _is_left_hand_cue() -> bool:
+	var normalized := cue_archetype.to_upper()
+	if normalized.ends_with("_LEFT"):
+		return true
+	if normalized.ends_with("_RIGHT"):
+		return false
+	# Удалить когда станет неактуально: старые neon_track.json не содержат
+	# сторону руки в cue_archetype, поэтому сохраняем их lane-based поведение.
+	return lane < 2
 
 
 func _build_step_platform() -> void:

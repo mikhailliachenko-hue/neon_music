@@ -148,12 +148,23 @@ func _test_hand_hold(stage: Node3D, failures: Array[String]) -> void:
 	var target := note.get_node_or_null("HandContainerModel") as Node3D
 	var icon := note.get_node_or_null("IconGlyph") as MeshInstance3D
 	var body := note.get_node_or_null("HandHoldPrism/HoldBody") as MeshInstance3D
-	if target == null or icon == null or body == null:
+	var core := note.get_node_or_null("HandHoldPrism/HoldCore") as MeshInstance3D
+	var start_collar := note.get_node_or_null("HandHoldPrism/HoldStartCollar") as MeshInstance3D
+	var end_collar := note.get_node_or_null("HandHoldPrism/HoldEndCollar") as MeshInstance3D
+	if target == null or icon == null or body == null or core == null or start_collar == null or end_collar == null:
 		failures.append("hand hold is missing target, front icon or sustained body")
 		return
-	var body_size := (body.mesh as BoxMesh).size
-	if body_size.x < 1.40 or body_size.y < 1.40:
-		failures.append("hand hold body is not at least 105 percent of its target cap")
+	if not body.mesh is CylinderMesh:
+		failures.append("hand hold body is not a unified cylindrical capsule")
+		return
+	var body_mesh := body.mesh as CylinderMesh
+	if body_mesh.top_radius * 2.0 < 1.40 or body_mesh.height < 7.0:
+		failures.append("hand hold capsule does not match the target cap or sustained length")
+	if not core.mesh is CylinderMesh or (core.mesh as CylinderMesh).height != body_mesh.height:
+		failures.append("hand hold capsule has no aligned emissive core")
+	for legacy_rail in ["TopLeftRail", "TopRightRail", "BottomLeftRail", "BottomRightRail"]:
+		if note.get_node_or_null("HandHoldPrism/%s" % legacy_rail) != null:
+			failures.append("hand hold still contains the old square rail stack")
 	if target.get_node_or_null("ImportedModel") == null or target.get_node_or_null("FrontHalo") == null:
 		failures.append("hand target does not use the unified volumetric cue kit")
 	if not (target.get_node("RightChevron") as Node3D).visible or (target.get_node("LeftChevron") as Node3D).visible:

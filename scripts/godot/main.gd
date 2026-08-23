@@ -2485,9 +2485,11 @@ func _apply_camera_transform(song_time: float) -> void:
 	camera.rotation_degrees.z = dodge_transform.z + duck_shake.x * 5.0
 	camera.position.x = float(tuning_values.get("camera_x", 0.0)) + dodge_transform.x + duck_shake.x
 	camera.position.y = float(tuning_values["camera_y"]) + _camera_duck_y_offset(song_time) + duck_shake.y + double_foot_bob.y
-	camera.position.z = float(tuning_values["camera_z"]) + duck_shake.z + double_foot_bob.z
-	if not _movie_writer_is_active() and frame_sequence_dir.is_empty():
-		camera.set_perspective(float(tuning_values["camera_fov"]), camera.near, camera.far)
+	# A restrained forward drift and FOV opening make a dodge feel like a body
+	# movement instead of a flat viewport slide. Both follow the same smooth
+	# envelope, so capture and realtime playback remain deterministic.
+	camera.position.z = float(tuning_values["camera_z"]) + duck_shake.z + double_foot_bob.z - dodge_transform.w * 0.045
+	camera.fov = float(tuning_values["camera_fov"]) + dodge_transform.w * 0.58
 
 
 func _camera_duck_y_offset(song_time: float) -> float:
@@ -2576,8 +2578,8 @@ func _camera_double_foot_bob(song_time: float) -> Vector3:
 				best_bob = bob
 	return best_bob
 
-func _camera_dodge_transform(song_time: float) -> Vector3:
-	var best_transform := Vector3.ZERO
+func _camera_dodge_transform(song_time: float) -> Vector4:
+	var best_transform := Vector4.ZERO
 	for raw_event in wall_events:
 		var event := raw_event as Dictionary
 		var event_type := String(event.get("type", ""))
@@ -2611,10 +2613,11 @@ func _camera_dodge_transform(song_time: float) -> Vector3:
 		var envelope := clampf(strength, 0.0, 1.0)
 		var tuned_distance_default := maxf(0.05, float(tuning_defaults.get("camera_dodge_distance", DEFAULT_CAMERA_DODGE_DISTANCE)))
 		var distance_scale := _camera_dodge_distance() / tuned_distance_default
-		var candidate := Vector3(
+		var candidate := Vector4(
 			direction * float(profile["distance"]) * distance_scale * envelope,
 			-direction * float(profile["yaw_degrees"]) * envelope,
-			-direction * float(profile["roll_degrees"]) * envelope
+			-direction * float(profile["roll_degrees"]) * envelope,
+			envelope
 		)
 		if absf(candidate.x) > absf(best_transform.x):
 			best_transform = candidate

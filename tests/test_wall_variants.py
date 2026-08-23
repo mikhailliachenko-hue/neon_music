@@ -131,8 +131,10 @@ def test_runtime_wall_dance_reuses_hits_for_both_feet_and_one_hand() -> None:
     patterned = [note for note in adjusted_notes if note.get("wall_dance_pattern") == "two_steps_and_hand"]
     assert len(patterned) == 3
     assert {note["wall_dance_role"] for note in patterned} == {"step_left", "step_right", "hand_hit"}
-    assert {note["cue_archetype"] for note in patterned} == {"FOOT_PAD_LEFT", "FOOT_PAD_RIGHT", "HAND_TARGET"}
+    assert {note["cue_archetype"] for note in patterned} == {"FOOT_PAD_LEFT", "FOOT_PAD_RIGHT", "HAND_TARGET_LEFT"}
     assert all(set(note["lanes"]) <= {2, 3} for note in patterned)
+    assert all(note["wall_limb_lane_decoupled"] for note in patterned)
+    assert sum(bool(note.get("wall_cross_step")) for note in patterned) == 1
     assert diagnostics["wall_dance_pattern_count"] == 1
     assert diagnostics["wall_dance_rewritten_notes"] == 3
     assert accepted[0]["dance_phase"] == "teach"
@@ -143,6 +145,8 @@ def test_runtime_wall_dance_reuses_hits_for_both_feet_and_one_hand() -> None:
         "mirror": 0,
         "payoff": 0,
     }
+    assert diagnostics["wall_dance_cross_steps"] == 1
+    assert diagnostics["wall_dance_hand_sides"] == {"left": 1, "right": 0}
 
 
 def test_runtime_wall_dance_cycles_teach_repeat_mirror_payoff() -> None:
@@ -181,6 +185,12 @@ def test_runtime_wall_dance_cycles_teach_repeat_mirror_payoff() -> None:
     }
     patterned = [note for note in adjusted_notes if note.get("wall_dance_pattern") == "two_steps_and_hand"]
     assert len(patterned) == 12
+    assert {note["cue_archetype"] for note in patterned if note["wall_dance_role"] == "hand_hit"} == {
+        "HAND_TARGET_LEFT",
+        "HAND_TARGET_RIGHT",
+    }
+    assert diagnostics["wall_dance_cross_steps"] == 4
+    assert diagnostics["wall_dance_hand_sides"] == {"left": 2, "right": 2}
 
 
 def test_runtime_wall_dance_keeps_incomplete_chapter_mirrored_with_payoff() -> None:

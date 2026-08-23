@@ -32,6 +32,8 @@ func _run() -> void:
 	_assert_true(first_pooled != null, "prewarmed wall must exist")
 	_assert_true(first_pooled.get_node_or_null("VisualRoot/SolidBody") is MeshInstance3D, "wall must use one cohesive body")
 	_assert_true(first_pooled.get_node_or_null("VisualRoot/ModelModules") == null, "stepped modular fence silhouette must stay removed")
+	var panel_ribs := first_pooled.get_node_or_null("VisualRoot/FrameRoot/PanelRibs") as Node3D
+	_assert_true(panel_ribs != null and panel_ribs.get_child_count() == 9, "wall must expose three readable transparent shield sections")
 	var acquired: Array[Node3D] = []
 	var initial_ids: Array[int] = []
 	for index in range(4):

@@ -36,6 +36,60 @@ static func create_step(color: Color) -> Node3D:
 	return cue
 
 
+static func create_hand_hold_capsule(color: Color, span: float, diameter: float) -> Node3D:
+	var capsule := Node3D.new()
+	capsule.name = "HandHoldPrism"
+
+	var shell := MeshInstance3D.new()
+	shell.name = "HoldBody"
+	shell.position.z = -span * 0.5
+	shell.rotation_degrees.x = 90.0
+	var shell_mesh := CylinderMesh.new()
+	shell_mesh.top_radius = diameter * 0.5
+	shell_mesh.bottom_radius = diameter * 0.5
+	shell_mesh.height = span
+	shell_mesh.radial_segments = 32
+	shell_mesh.rings = 1
+	shell.mesh = shell_mesh
+	shell.material_override = _hold_shell_material(color)
+	shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	capsule.add_child(shell)
+
+	var core := MeshInstance3D.new()
+	core.name = "HoldCore"
+	core.position.z = -span * 0.5
+	core.rotation_degrees.x = 90.0
+	var core_mesh := CylinderMesh.new()
+	core_mesh.top_radius = diameter * 0.075
+	core_mesh.bottom_radius = diameter * 0.075
+	core_mesh.height = span
+	core_mesh.radial_segments = 16
+	core_mesh.rings = 1
+	core.mesh = core_mesh
+	core.material_override = _accent_material(color, "hand_hold_core")
+	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	capsule.add_child(core)
+	_add_hold_collar(capsule, "HoldStartCollar", 0.0, diameter, color)
+	_add_hold_collar(capsule, "HoldEndCollar", -span, diameter, color)
+	return capsule
+
+
+static func _add_hold_collar(parent: Node3D, collar_name: String, z_position: float, diameter: float, color: Color) -> void:
+	var collar := MeshInstance3D.new()
+	collar.name = collar_name
+	collar.position.z = z_position
+	collar.rotation_degrees.x = 90.0
+	var collar_mesh := TorusMesh.new()
+	collar_mesh.inner_radius = diameter * 0.43
+	collar_mesh.outer_radius = diameter * 0.56
+	collar_mesh.rings = 24
+	collar_mesh.ring_segments = 8
+	collar.mesh = collar_mesh
+	collar.material_override = _accent_material(color, "hand_hold_collar")
+	collar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(collar)
+
+
 static func add_edge(parent: Node3D, edge_name: String, edge_position: Vector3, edge_size: Vector3, material: Material) -> void:
 	var edge := MeshInstance3D.new()
 	edge.name = edge_name
@@ -97,6 +151,23 @@ static func _contact_material(color: Color) -> StandardMaterial3D:
 	material.emission = color
 	material.emission_energy_multiplier = 0.12
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_materials[key] = material
+	return material
+
+
+static func _hold_shell_material(color: Color) -> StandardMaterial3D:
+	var key := "hand_hold_shell_%s" % _color_key(color)
+	if _materials.has(key):
+		return _materials[key] as StandardMaterial3D
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(color.r * 0.20, color.g * 0.20, color.b * 0.20, 0.22)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 0.78
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.render_priority = 3
 	_materials[key] = material
 	return material
 

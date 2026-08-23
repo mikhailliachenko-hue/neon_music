@@ -84,3 +84,41 @@ mesh = SubResource("BoxMesh_frame_depth")
 [node name="InnerBottom" type="MeshInstance3D" parent="VisualRoot/FrameRoot"]
 position = Vector3(1.98, 0.02, -0.15)
 mesh = SubResource("BoxMesh_frame_depth")
+
+[node name="PanelRibs" type="Node3D" parent="VisualRoot/FrameRoot"]
+
+[node name="RibNearTop" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 4.40, 6)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibNearBottom" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 0.02, 6)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibNearInner" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(1.98, 2.21, 6)
+mesh = SubResource("BoxMesh_frame_vertical")
+
+[node name="RibCenterTop" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 4.40, 0)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibCenterBottom" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 0.02, 0)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibCenterInner" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(1.98, 2.21, 0)
+mesh = SubResource("BoxMesh_frame_vertical")
+
+[node name="RibFarTop" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 4.40, -6)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibFarBottom" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(0, 0.02, -6)
+mesh = SubResource("BoxMesh_frame_horizontal")
+
+[node name="RibFarInner" type="MeshInstance3D" parent="VisualRoot/FrameRoot/PanelRibs"]
+position = Vector3(1.98, 2.21, -6)
+mesh = SubResource("BoxMesh_frame_vertical")

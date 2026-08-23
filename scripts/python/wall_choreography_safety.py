@@ -137,11 +137,20 @@ def _apply_wall_dance_pattern(
     if len(safe_lanes) < 2:
         safe_lanes = [2, 3] if str(event.get("type")) == "wall_left" else [0, 1]
     safe_lanes = sorted(safe_lanes)[:2]
-    hand_movement = "PUNCH_RIGHT" if str(event.get("type")) == "wall_left" else "PUNCH_LEFT"
+    safe_inner = min(safe_lanes, key=lambda lane: abs(lane - 1.5))
+    safe_outer = next(lane for lane in safe_lanes if lane != safe_inner)
+    alternate_lanes = accepted_event_index % 2 == 1
+    left_foot_lane = safe_outer if alternate_lanes else safe_inner
+    right_foot_lane = safe_inner if alternate_lanes else safe_outer
+    hand_is_left = accepted_event_index % 2 == 0
+    hand_side = "left" if hand_is_left else "right"
+    hand_movement = "PUNCH_LEFT" if hand_is_left else "PUNCH_RIGHT"
+    hand_cue = "HAND_TARGET_LEFT" if hand_is_left else "HAND_TARGET_RIGHT"
+    hand_lane = safe_inner if hand_is_left else safe_outer
     base_roles = [
-        ("step_left", "STEP_TOUCH_LEFT", "FOOT_PAD_LEFT", safe_lanes[0], "left"),
-        ("hand_hit", hand_movement, "HAND_TARGET", safe_lanes[accepted_event_index % 2], "hand"),
-        ("step_right", "STEP_TOUCH_RIGHT", "FOOT_PAD_RIGHT", safe_lanes[1], "right"),
+        ("step_left", "STEP_TOUCH_LEFT", "FOOT_PAD_LEFT", left_foot_lane, "left"),
+        ("hand_hit", hand_movement, hand_cue, hand_lane, hand_side),
+        ("step_right", "STEP_TOUCH_RIGHT", "FOOT_PAD_RIGHT", right_foot_lane, "right"),
     ]
     phase_index = WALL_DANCE_PHASES.index(phase)
     role_orders = {
@@ -167,11 +176,18 @@ def _apply_wall_dance_pattern(
         note["wall_dance_chapter"] = accepted_event_index // len(WALL_DANCE_PHASES)
         note["wall_dance_cell"] = phase_index
         note["wall_event_start"] = round(float(event.get("start", event.get("time", 0.0))), 6)
+        note["wall_limb_lane_decoupled"] = True
+        if role.startswith("step_"):
+            note["wall_cross_step"] = (side == "left" and lane >= 2) or (side == "right" and lane < 2)
     event["dance_pattern"] = "two_steps_and_hand"
     event["dance_phase"] = phase
     event["dance_chapter"] = accepted_event_index // len(WALL_DANCE_PHASES)
     event["dance_cell"] = phase_index
     event["dance_actions"] = [str(role[0]) for role in roles]
+    event["dance_hand_side"] = hand_side
+    event["dance_cross_step_count"] = sum(
+        1 for note in notes if bool(note.get("wall_cross_step", False))
+    )
     return len(roles)
 
 
@@ -212,6 +228,8 @@ def prepare_runtime_wall_events(
         "wall_dance_insufficient_skipped": 0,
         "wall_dance_pattern_count": 0,
         "wall_dance_rewritten_notes": 0,
+        "wall_dance_cross_steps": 0,
+        "wall_dance_hand_sides": {"left": 0, "right": 0},
         "wall_dance_phase_counts": {phase: 0 for phase in WALL_DANCE_PHASES},
     }
     pending_patterns: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
@@ -286,6 +304,10 @@ def prepare_runtime_wall_events(
         )
         diagnostics["wall_dance_pattern_count"] += 1
         diagnostics["wall_dance_phase_counts"][phase] += 1
+        diagnostics["wall_dance_cross_steps"] += int(event.get("dance_cross_step_count", 0))
+        hand_side = str(event.get("dance_hand_side", ""))
+        if hand_side in diagnostics["wall_dance_hand_sides"]:
+            diagnostics["wall_dance_hand_sides"][hand_side] += 1
 
     accepted.sort(key=lambda event: float(event.get("start", event.get("time", 0.0))))
     diagnostics["accepted"] = len(accepted)
