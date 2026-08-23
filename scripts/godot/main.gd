@@ -15,14 +15,8 @@ const DEFAULT_RECORDING_RESOLUTION := "2560x1440"
 const MP4_RENDER_JOB_SCRIPT := "res://scripts/render_mp4_job.ps1"
 const MP4_RENDER_FFMPEG := "res://third_party/ffmpeg/ffmpeg-master-latest-win64-lgpl/bin/ffmpeg.exe"
 const OBS_AUTO_RECORD_SCRIPT := "res://scripts/obs_auto_record.ps1"
-const HUD_BAR_GLOSS_PATH := "res://assets/ui/kenney_sci_fi/bar_round_gloss_large.png"
-const HUD_BAR_OUTLINE_PATH := "res://assets/ui/kenney_sci_fi/bar_shadow_round_outline_large.png"
-const HUD_MARKER_BITMAP_PATH := "res://assets/ui/silhouettes/dancer_marker_glow.png"
-const HUD_READY_BAR_FRAME_PATH := "res://assets/ui/opengameart_progress_bars/bar_empty_frame.png"
-const HUD_READY_BAR_FILL_PATH := "res://assets/ui/opengameart_progress_bars/bar_blue_fill.png"
+const DANCE_PROGRESS_HUD := preload("res://scripts/godot/ui/dance_progress_hud.gd")
 const HUD_FONT_PATH := "res://assets/ui/kenney_sci_fi/Kenney Future Narrow.ttf"
-const HUD_BAR_SIDE_MARGIN := 178.0
-const HUD_BAR_INNER_MARGIN := 192.0
 const BACKGROUND_VIDEO_DISTANCE := 220.0
 const ENABLE_BACKGROUND_VIDEO := true
 const BACKGROUND_VIDEO_BASE_SIZE := Vector2(16.0, 9.0)
@@ -180,14 +174,7 @@ var execution_deck_root: Node3D
 var lane_pad_materials: Array[StandardMaterial3D] = []
 var last_section_profile := ""
 var dance_hud_layer: CanvasLayer
-var dance_hud_progress_material: ShaderMaterial
-var dance_hud_elapsed_label: Label
-var dance_hud_remaining_label: Label
-var dance_hud_frame: TextureRect
-var dance_hud_fill_clip: Control
-var dance_hud_fill_texture: TextureRect
-var dance_hud_marker_shell: TextureRect
-var dance_hud_marker_icon: TextureRect
+var dance_progress_hud: DanceProgressHud
 var hit_feedback_label: Label
 var dance_hud_next_pulse_index := 0
 var combo_trails_root: Node3D
@@ -3760,62 +3747,14 @@ func _build_dance_hud() -> void:
 	hud_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dance_hud_layer.add_child(hud_root)
-
-	var glow_back := ColorRect.new()
-	glow_back.name = "ProgressAssetGlow"
-	glow_back.color = Color(0.0, 0.52, 1.0, 0.16)
-	glow_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud_root.add_child(glow_back)
-
-	dance_hud_frame = TextureRect.new()
-	dance_hud_frame.name = "ProgressReadyAssetFrame"
-	dance_hud_frame.texture = _load_hud_texture(HUD_READY_BAR_FRAME_PATH)
-	dance_hud_frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	dance_hud_frame.stretch_mode = TextureRect.STRETCH_SCALE
-	dance_hud_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_frame.modulate = Color(0.88, 0.94, 1.0, 0.98)
-	hud_root.add_child(dance_hud_frame)
-
-	dance_hud_fill_clip = Control.new()
-	dance_hud_fill_clip.name = "ProgressFillClip"
-	dance_hud_fill_clip.clip_contents = true
-	dance_hud_fill_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud_root.add_child(dance_hud_fill_clip)
-
-	dance_hud_fill_texture = TextureRect.new()
-	dance_hud_fill_texture.name = "ProgressReadyAssetBlueFill"
-	dance_hud_fill_texture.texture = _load_hud_texture(HUD_READY_BAR_FILL_PATH)
-	dance_hud_fill_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	dance_hud_fill_texture.stretch_mode = TextureRect.STRETCH_SCALE
-	dance_hud_fill_texture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_fill_texture.modulate = Color(0.45, 0.88, 1.0, 1.0)
-	dance_hud_fill_clip.add_child(dance_hud_fill_texture)
-
-	var shine := ColorRect.new()
-	shine.name = "ProgressFillShine"
-	shine.color = Color(1.0, 1.0, 1.0, 0.11)
-	shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_fill_clip.add_child(shine)
-
-	dance_hud_marker_shell = TextureRect.new()
-	dance_hud_marker_shell.name = "MusicMarkerShell"
-	dance_hud_marker_shell.texture = _load_hud_texture(HUD_BAR_OUTLINE_PATH)
-	dance_hud_marker_shell.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	dance_hud_marker_shell.stretch_mode = TextureRect.STRETCH_SCALE
-	dance_hud_marker_shell.size = Vector2(50.0, 50.0)
-	dance_hud_marker_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_marker_shell.modulate = Color(0.02, 0.90, 1.0, 0.88)
-	hud_root.add_child(dance_hud_marker_shell)
-
-	dance_hud_marker_icon = TextureRect.new()
-	dance_hud_marker_icon.name = "SilhouetteMarker"
-	dance_hud_marker_icon.texture = _load_hud_texture(HUD_MARKER_BITMAP_PATH)
-	dance_hud_marker_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	dance_hud_marker_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	dance_hud_marker_icon.size = Vector2(30.0, 30.0)
-	dance_hud_marker_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_marker_icon.modulate = Color(0.98, 0.99, 1.0, 0.98)
-	hud_root.add_child(dance_hud_marker_icon)
+	dance_progress_hud = DANCE_PROGRESS_HUD.new()
+	hud_root.add_child(dance_progress_hud)
+	dance_progress_hud.setup(
+		hud_font,
+		music_timeline_adapter.timeline_overview(song_duration),
+		song_duration,
+		_current_hud_palette()
+	)
 
 	var feedback_label := Label.new()
 	feedback_label.name = "HitFeedback"
@@ -3829,112 +3768,47 @@ func _build_dance_hud() -> void:
 	feedback_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
 	feedback_label.add_theme_constant_override("shadow_offset_x", 2)
 	feedback_label.add_theme_constant_override("shadow_offset_y", 2)
-	feedback_label.position = Vector2(0.0, 148.0)
+	feedback_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	feedback_label.offset_left = 0.0
+	feedback_label.offset_top = 112.0
+	feedback_label.offset_right = 0.0
+	feedback_label.offset_bottom = 176.0
 	hud_root.add_child(feedback_label)
 	hit_feedback_label = feedback_label
-
-	var stream_label := Label.new()
-	stream_label.name = "StreamLabel"
-	stream_label.text = "RHYTHM STREAM  //  LIVE"
-	stream_label.position = Vector2(0.0, 7.0)
-	stream_label.size = Vector2(280.0, 18.0)
-	stream_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stream_label.add_theme_font_override("font", hud_font)
-	stream_label.add_theme_font_size_override("font_size", 12)
-	stream_label.add_theme_color_override("font_color", Color(0.70, 0.95, 1.0, 0.92))
-	hud_root.add_child(stream_label)
-
-	dance_hud_elapsed_label = Label.new()
-	dance_hud_elapsed_label.text = "00:00"
-	dance_hud_elapsed_label.size = Vector2(96.0, 22.0)
-	dance_hud_elapsed_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_elapsed_label.add_theme_font_override("font", hud_font)
-	dance_hud_elapsed_label.add_theme_font_size_override("font_size", 13)
-	dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82, 0.98, 1.0, 0.98))
-	dance_hud_elapsed_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.82))
-	dance_hud_elapsed_label.add_theme_constant_override("shadow_offset_x", 1)
-	dance_hud_elapsed_label.add_theme_constant_override("shadow_offset_y", 1)
-	hud_root.add_child(dance_hud_elapsed_label)
-
-	dance_hud_remaining_label = Label.new()
-	dance_hud_remaining_label.text = "-00:00"
-	dance_hud_remaining_label.size = Vector2(96.0, 22.0)
-	dance_hud_remaining_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dance_hud_remaining_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	dance_hud_remaining_label.add_theme_font_override("font", hud_font)
-	dance_hud_remaining_label.add_theme_font_size_override("font_size", 13)
-	dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.92, 0.96))
-	dance_hud_remaining_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.82))
-	dance_hud_remaining_label.add_theme_constant_override("shadow_offset_x", 1)
-	dance_hud_remaining_label.add_theme_constant_override("shadow_offset_y", 1)
-	hud_root.add_child(dance_hud_remaining_label)
 
 	_update_dance_hud(0.0)
 
 
 func _update_dance_hud(song_time: float) -> void:
-	var progress := clampf(song_time / maxf(song_duration, 0.001), 0.0, 1.0)
-	var pulse := _dance_hud_beat_pulse(song_time)
-	var viewport_width := get_viewport().get_visible_rect().size.x
-	var bar_width := clampf(viewport_width * 0.68, 720.0, 1120.0) + pulse * 20.0
-	var bar_height := 72.0 + pulse * 3.0
-	var bar_x := (viewport_width - bar_width) * 0.5
-	var bar_y := 27.0 - pulse * 1.5
-	var fill_left := 49.0
-	var fill_top := 21.0
-	var fill_width := maxf(bar_width - fill_left * 2.0, 1.0)
-	var fill_height := 35.0 + pulse * 1.5
+	if dance_progress_hud == null:
+		return
+	dance_progress_hud.set_palette(_current_hud_palette())
+	dance_progress_hud.update_progress(
+		song_time,
+		song_duration,
+		_dance_hud_beat_pulse(song_time),
+		tunnel_music_state
+	)
 
-	var glow_back: ColorRect = null
-	if dance_hud_layer != null:
-		glow_back = dance_hud_layer.get_node_or_null("ProgressRoot/ProgressAssetGlow") as ColorRect
-	if glow_back != null:
-		glow_back.position = Vector2(bar_x + 8.0 - pulse * 5.0, bar_y + 11.0 - pulse * 2.0)
-		glow_back.size = Vector2(bar_width - 16.0 + pulse * 10.0, 42.0 + pulse * 7.0)
-		glow_back.color = Color(0.0, 0.52 + pulse * 0.18, 1.0, 0.13 + pulse * 0.18)
-	if dance_hud_frame != null:
-		dance_hud_frame.position = Vector2(bar_x, bar_y)
-		dance_hud_frame.size = Vector2(bar_width, bar_height)
-		dance_hud_frame.modulate = Color(0.88 + pulse * 0.08, 0.94 + pulse * 0.04, 1.0, 0.96 + pulse * 0.04)
-	if dance_hud_fill_clip != null:
-		dance_hud_fill_clip.position = Vector2(bar_x + fill_left, bar_y + fill_top)
-		dance_hud_fill_clip.size = Vector2(fill_width * progress, fill_height)
-	if dance_hud_fill_texture != null:
-		dance_hud_fill_texture.position = Vector2.ZERO
-		dance_hud_fill_texture.size = Vector2(fill_width, fill_height)
-		dance_hud_fill_texture.modulate = Color(0.45 + pulse * 0.16, 0.88 + pulse * 0.08, 1.0, 1.0)
-		var shine := dance_hud_fill_clip.get_node_or_null("ProgressFillShine") as ColorRect
-		if shine != null:
-			shine.position = Vector2(0.0, 2.0)
-			shine.size = Vector2(fill_width, 8.0 + pulse * 2.0)
-			shine.color = Color(1.0, 1.0, 1.0, 0.10 + pulse * 0.10)
 
-	var marker_x := bar_x + fill_left + fill_width * progress
-	if dance_hud_marker_shell != null:
-		dance_hud_marker_shell.position = Vector2(marker_x - 25.0, bar_y + 11.0)
-		dance_hud_marker_shell.scale = Vector2.ONE * (1.0 + pulse * 0.08)
-		dance_hud_marker_shell.modulate = Color(0.02 + pulse * 0.10, 0.90, 1.0, 0.82 + pulse * 0.16)
-	if dance_hud_marker_icon != null:
-		dance_hud_marker_icon.position = Vector2(marker_x - 15.0, bar_y + 20.5)
-		dance_hud_marker_icon.scale = Vector2.ONE * (1.0 + pulse * 0.12)
-		dance_hud_marker_icon.modulate = Color(0.98, 0.99, 1.0, 0.92 + pulse * 0.08)
-	if dance_hud_elapsed_label != null:
-		dance_hud_elapsed_label.position = Vector2(bar_x + fill_left, bar_y + bar_height + 2.0)
-		dance_hud_elapsed_label.text = _format_hud_time(song_time)
-		if not _movie_writer_is_active():
-			dance_hud_elapsed_label.add_theme_color_override("font_color", Color(0.82 + pulse * 0.08, 0.98, 1.0, 0.98))
-	if dance_hud_remaining_label != null:
-		dance_hud_remaining_label.position = Vector2(bar_x + bar_width - fill_left - dance_hud_remaining_label.size.x, bar_y + bar_height + 2.0)
-		dance_hud_remaining_label.text = "-" + _format_hud_time(maxf(song_duration - song_time, 0.0))
-		if not _movie_writer_is_active():
-			dance_hud_remaining_label.add_theme_color_override("font_color", Color(1.0, 0.72 + pulse * 0.08, 0.92 + pulse * 0.05, 0.96))
-	var stream_label: Label = null
-	if dance_hud_layer != null:
-		stream_label = dance_hud_layer.get_node_or_null("ProgressRoot/StreamLabel") as Label
-	if stream_label != null:
-		stream_label.position = Vector2(bar_x + fill_left, 7.0)
-		if not _movie_writer_is_active():
-			stream_label.add_theme_color_override("font_color", Color(0.70 + pulse * 0.10, 0.95, 1.0, 0.90 + pulse * 0.08))
+func _current_hud_palette() -> PackedColorArray:
+	if tunnel_generator == null:
+		return PackedColorArray([CYAN, MAGENTA, Color(0.01, 0.02, 0.06)])
+	var preset := tunnel_generator.current_level_preset()
+	if preset == null:
+		return PackedColorArray([CYAN, MAGENTA, Color(0.01, 0.02, 0.06)])
+	if preset.color_palette.size() >= 2:
+		var palette := preset.color_palette.duplicate()
+		if palette.size() < 3:
+			palette.append(preset.theme.background_color if preset.theme != null else Color(0.01, 0.02, 0.06))
+		return palette
+	if preset.theme != null:
+		return PackedColorArray([
+			preset.theme.emission_color,
+			preset.theme.accent_color,
+			preset.theme.background_color,
+		])
+	return PackedColorArray([CYAN, MAGENTA, Color(0.01, 0.02, 0.06)])
 
 
 func _dance_hud_beat_pulse(song_time: float) -> float:
@@ -3973,31 +3847,6 @@ func _dance_hud_beat_pulse(song_time: float) -> float:
 		pulse = maxf(pulse, falloff * strength)
 	return clampf(pulse, 0.0, 1.0)
 
-func _load_hud_texture(path: String) -> Texture2D:
-	if ResourceLoader.exists(path, "Texture2D"):
-		var texture := ResourceLoader.load(path, "Texture2D") as Texture2D
-		if texture != null:
-			return texture
-	var image := Image.load_from_file(path)
-	if image == null or image.is_empty():
-		push_warning("HUD texture unavailable: %s" % path)
-		return null
-	return ImageTexture.create_from_image(image)
-
-
-func _load_hud_svg_texture(path: String, scale: float = 2.0) -> Texture2D:
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		push_warning("HUD SVG unavailable: %s" % path)
-		return null
-	var image := Image.new()
-	var error := image.load_svg_from_string(file.get_as_text(), scale)
-	if error != OK or image.is_empty():
-		push_warning("HUD SVG failed to load: %s" % path)
-		return null
-	return ImageTexture.create_from_image(image)
-
-
 func _load_hud_font() -> Font:
 	var font := FontFile.new()
 	var error := font.load_dynamic_font(HUD_FONT_PATH)
@@ -4005,10 +3854,6 @@ func _load_hud_font() -> Font:
 		push_warning("HUD font unavailable: %s" % HUD_FONT_PATH)
 		return ThemeDB.fallback_font
 	return font
-
-func _format_hud_time(seconds: float) -> String:
-	var total_seconds := maxi(0, int(seconds))
-	return "%02d:%02d" % [total_seconds / 60, total_seconds % 60]
 
 func _build_combo_trail_layer() -> void:
 	combo_trails_root = Node3D.new()

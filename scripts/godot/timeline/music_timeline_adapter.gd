@@ -34,6 +34,48 @@ func configure(track_document: Dictionary) -> Dictionary:
 	return stats
 
 
+func timeline_overview(song_duration: float) -> Dictionary:
+	var duration := maxf(song_duration, 0.001)
+	var count8_markers: Array[float] = []
+	var count32_markers: Array[float] = []
+	var sections: Array[Dictionary] = []
+	var seen_count8 := {}
+	var seen_count32 := {}
+
+	for beat_value in _beats:
+		if not beat_value is Dictionary:
+			continue
+		var beat := beat_value as Dictionary
+		var beat_index := int(beat.get("index", 0))
+		var count8_index := floori(float(maxi(0, beat_index)) / 8.0)
+		var count32_index := int(beat.get("phrase_index", floori(float(maxi(0, beat_index)) / 32.0)))
+		var normalized_time := clampf(float(beat.get("time", 0.0)) / duration, 0.0, 1.0)
+		if not seen_count8.has(count8_index):
+			seen_count8[count8_index] = true
+			count8_markers.append(normalized_time)
+		if not seen_count32.has(count32_index):
+			seen_count32[count32_index] = true
+			count32_markers.append(normalized_time)
+
+	for section_index in range(_sections.size()):
+		var raw_section = _sections[section_index]
+		if not raw_section is Dictionary:
+			continue
+		var section := raw_section as Dictionary
+		sections.append({
+			"index": section_index,
+			"start": clampf(float(section.get("start_time", 0.0)) / duration, 0.0, 1.0),
+			"end": clampf(float(section.get("end_time", song_duration)) / duration, 0.0, 1.0),
+			"role": String(section.get("role", "groove")),
+		})
+
+	return {
+		"count8": count8_markers,
+		"count32": count32_markers,
+		"sections": sections,
+	}
+
+
 func sample(song_time: float) -> Dictionary:
 	if _beats.is_empty():
 		return _fallback_state(song_time)

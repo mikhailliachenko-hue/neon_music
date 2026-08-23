@@ -326,15 +326,14 @@ python scripts/python/timing_diagnostics.py --video "path\to\recording.mp4" --be
 
 ## Progress HUD
 
-- Song progress HUD is built in scripts/godot/main.gd by _build_dance_hud() and updated by _update_dance_hud(song_time).
-- Current design is asset-based: a ready-made OpenGameArt progress bar frame (`assets/ui/opengameart_progress_bars/bar_empty_frame.png`) with a clipped blue fill (`bar_blue_fill.png`), readable elapsed/remaining labels, and a moving dancer-silhouette marker for the current song position.
-- The HUD now pulses on beatmap hit-times: the bar breathes slightly wider/brighter, the fill gets a short cyan lift, and the dancer marker pops for about 0.22s. Strong movement hits and phrase accents get a stronger pulse via _hit_strength_for_time().
-- Runtime HUD font currently uses the stable Kenney Future Narrow asset; Rajdhani/Poppins were downloaded for testing, but Rajdhani caused a Godot movie-maker crash in this project and Poppins is not yet wired into main.gd.
-- Source sheet for the ready-made progress bar is `assets/ui/opengameart_progress_bars/bars_2.png`; source/license notes are in `assets/ui/opengameart_progress_bars/ATTRIBUTION.md`.
-- The marker bitmap is `assets/ui/silhouettes/dancer_marker_glow.png`; notes for the bitmap and the legacy SVG reference are in `assets/ui/silhouettes/ATTRIBUTION.md`.
-- PNG assets are loaded as imported Texture2D resources when available, with an Image.load_from_file() fallback; the bitmap marker uses the same path.
-- The central road and bloom were toned down a bit so the HUD reads cleaner over the scene.
-- Short render evidence: output/renders/progress_hud_beat_pulse_smoke.avi and output/renders/progress_hud_beat_pulse_frame.jpg.
+- `scripts/godot/main.gd` owns the HUD layer and hit-feedback label; the reusable timeline renderer lives in `scripts/godot/ui/dance_progress_hud.gd`.
+- The compact `Music Journey + Portal Line` design is drawn natively at viewport resolution: dark glass track, level-palette fill, 8-count ticks, hollow 32-count portal diamonds, elapsed/remaining time and the current musical section.
+- `MusicTimelineAdapter.timeline_overview()` exposes a read-only normalized overview of phrase-grid beats and sections. The analyzer JSON, beatmap parser and gameplay-note contract are unchanged.
+- The whole bar stays spatially stable. Beat reactions affect only the current-position diamond, while section changes trigger a short 0.35-second light sweep.
+- Colors follow the active `TunnelLevelPreset` immediately when a level is switched; structural markers also differ by shape so musical navigation does not depend on color alone.
+- Marker controls are not spawned during playback: the component uses one custom-drawn canvas plus three persistent text labels.
+- Runtime font remains the stable Kenney Future Narrow asset.
+- Headless contract test: `scripts/godot/ui/dance_progress_hud_smoke_test.gd`. Visual capture evidence: `output/diagnostics/progress_hud_v2/`.
 ## Where To Change What
 
 - Analyzer/contract path: `scripts/python/audio_analyzer.py`, `music_expression.py`, `phrase_grid.py`, `choreography_v4.py`, then update tests. Preserve Track V1 as the one-file envelope and Beat Grid V2/Beatmap V4 as the canonical inner contracts.
