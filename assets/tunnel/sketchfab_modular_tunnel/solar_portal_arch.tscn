@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/sketchfab_modular_tunnel_wrapper.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_modular_tunnel/modular_tunnel_1k.glb" id="2_model"]
+
+[node name="SolarPortalArch" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Model" parent="." instance=ExtResource("2_model")]

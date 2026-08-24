@@ -1,11 +1,9 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-bridge.glb" id="3_bridge"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-structure.glb" id="4_structure"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/rings/rhythm_circle_frame.tscn" id="5_circle"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-window-frame.glb" id="7_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_modular_tunnel/solar_portal_arch.tscn" id="4_portal"]
 [ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="8_particles"]
 
 [resource]
@@ -13,10 +11,8 @@ script = ExtResource("1_script")
 asset_set_id = "solar_skyrail"
 display_name = "Solar Skyrail Modular Set"
 floor_assets = Array[PackedScene]([ExtResource("2_road"), ExtResource("3_bridge")])
-wall_assets = Array[PackedScene]([ExtResource("4_structure")])
-ring_assets = Array[PackedScene]([ExtResource("5_circle")])
-arch_assets = Array[PackedScene]([ExtResource("4_structure")])
-panel_assets = Array[PackedScene]([ExtResource("7_light")])
+ring_assets = Array[PackedScene]([ExtResource("4_portal")])
+arch_assets = Array[PackedScene]([ExtResource("4_portal")])
 particle_assets = Array[PackedScene]([ExtResource("8_particles")])
 gameplay_clearance_verified = true
 frame_instances_per_segment = 1
