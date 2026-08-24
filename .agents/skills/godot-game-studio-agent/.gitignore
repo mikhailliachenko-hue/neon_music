@@ -1,0 +1,26 @@
+dist/
+*.zip
+*.log
+*.tmp
+*.bak
+*.bak-*
+.DS_Store
+Thumbs.db
+
+# Local Codex or editor state
+.codex/
+.vscode/
+.idea/
+
+# Godot project artifacts, if a project is created inside the repo by mistake
+.godot/
+*.import
+export_presets.cfg
+exports/
+audio/
+art/
+assets/
+docs/game-brief.md
+docs/dev-plan.md
+docs/asset-list.md
+docs/polish-checklist.md

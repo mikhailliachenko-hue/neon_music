@@ -1,0 +1,7 @@
+interface:
+  display_name: "Godot Game Studio"
+  short_description: "Evidence-driven Godot 4.x game development workflow."
+  default_prompt: "Use $godot-game-studio-agent to inspect this Godot project, improve one playable behavior, and verify it at the strongest available evidence level."
+
+policy:
+  allow_implicit_invocation: true
