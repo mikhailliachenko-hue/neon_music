@@ -30,6 +30,7 @@ class_name TunnelWorldStyle
 @export_group("Action Wave")
 @export var action_wave_enabled := false
 @export_range(0.0, 1.5, 0.01) var action_wave_body_glow := 0.18
+@export var action_wave_gradient_mid := Color(0.0, 0.0, 0.0, 0.0)
 
 @export_group("Side Floor Treatment")
 @export var side_reflection_enabled := false

@@ -25,6 +25,7 @@ architecture_emission_scale = 1.34
 architecture_body_glow = 0.12
 action_wave_enabled = true
 action_wave_body_glow = 0.22
+action_wave_gradient_mid = Color(1, 0.48, 0.10, 1)
 safe_lane_half_width = 5.0
 minimum_overhead_y = 4.55
 side_clearance_margin = 0.55

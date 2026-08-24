@@ -2,6 +2,21 @@ extends RefCounted
 class_name TunnelArchitectureWaveResponse
 
 
+static func automatic_gradient_mid(start: Color, finish: Color) -> Color:
+	var hue_delta := fposmod(finish.h - start.h + 0.5, 1.0) - 0.5
+	var midpoint_hue := fposmod(start.h + hue_delta * 0.5, 1.0)
+	var midpoint_saturation := clampf(maxf(start.s, finish.s) * 0.94, 0.58, 1.0)
+	var midpoint_value := clampf(maxf(start.v, finish.v), 0.72, 1.0)
+	return Color.from_hsv(midpoint_hue, midpoint_saturation, midpoint_value, 1.0)
+
+
+static func three_color_gradient(start: Color, midpoint: Color, finish: Color, amount: float) -> Color:
+	var cursor := clampf(amount, 0.0, 1.0)
+	if cursor < 0.5:
+		return start.lerp(midpoint, smoothstep(0.0, 1.0, cursor * 2.0))
+	return midpoint.lerp(finish, smoothstep(0.0, 1.0, (cursor - 0.5) * 2.0))
+
+
 static func apply(
 	world_style: TunnelWorldStyle,
 	materials: Array,

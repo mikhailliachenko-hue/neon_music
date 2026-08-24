@@ -426,25 +426,29 @@ func apply_frame_reaction(
 	if _active_world_style == null:
 		return
 	if _active_world_style.spatial_profile != "RhythmFrames":
-		if _active_world_style.action_wave_enabled:
-			ARCHITECTURE_WAVE_RESPONSE.apply(
-				_active_world_style,
-				_external_materials_by_world.get(_active_world_key, []),
-				_side_reflection_material,
-				_frame_primary,
-				_frame_accent,
-				_frame_emission,
-				maxf(0.0, wave_origin_z - global_position.z),
-				wave_ages,
-				wave_strengths,
-				wave_color_phases,
-				wave_speed,
-				wave_width,
-				wave_lifetime,
-				wave_near_fade_distance,
-				wave_emission_strength
-			)
-		return
+		if not _active_world_style.action_wave_enabled:
+			return
+		ARCHITECTURE_WAVE_RESPONSE.apply(
+			_active_world_style,
+			_external_materials_by_world.get(_active_world_key, []),
+			_side_reflection_material,
+			_frame_primary,
+			_frame_accent,
+			_frame_emission,
+			maxf(0.0, wave_origin_z - global_position.z),
+			wave_ages,
+			wave_strengths,
+			wave_color_phases,
+			wave_speed,
+			wave_width,
+			wave_lifetime,
+			wave_near_fade_distance,
+			wave_emission_strength
+		)
+	var gradient_mid := _active_world_style.action_wave_gradient_mid
+	if gradient_mid.a <= 0.001:
+		gradient_mid = ARCHITECTURE_WAVE_RESPONSE.automatic_gradient_mid(_frame_primary, _frame_accent)
+	gradient_mid.a = 1.0
 	for slot_name in ["Rings", "Arches"]:
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -465,7 +469,10 @@ func apply_frame_reaction(
 				# Resting color is spatially stable. Musical beats must not shift every
 				# frame at once; only an action wave changes this gradient over time.
 				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105)
-				var base_color := _frame_primary.lerp(_frame_accent, smoothstep(0.08, 0.92, gradient_phase))
+				var base_color := ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
+					_frame_primary, gradient_mid, _frame_accent,
+					smoothstep(0.08, 0.92, gradient_phase)
+				)
 				var wave_amount := 0.0
 				var wave_color := base_color
 				var wave_count := mini(wave_ages.size(), mini(wave_strengths.size(), wave_color_phases.size()))
@@ -486,12 +493,13 @@ func apply_frame_reaction(
 					var candidate := spatial_visibility * life_mask * strength
 					if candidate > wave_amount:
 						wave_amount = candidate
-						var phase_color := _frame_accent if posmod(wave_color_phases[wave_index], 2) == 1 else _frame_primary
-						var companion_color := _frame_primary if posmod(wave_color_phases[wave_index], 2) == 1 else _frame_accent
 						var signed_gradient := clampf(0.5 + (front_depth - depth) / maxf(1.0, wave_width) * 0.45, 0.0, 1.0)
-						# No white-hot head: the wave stays inside the authored two-color
-						# palette and uses only a restrained amount of color travel.
-						wave_color = phase_color.lerp(companion_color, signed_gradient * 0.34)
+						var reverse_gradient := posmod(wave_color_phases[wave_index], 2) == 1
+						var gradient_cursor := 1.0 - signed_gradient if reverse_gradient else signed_gradient
+						# No white-hot head: adjacent frames form one continuous palette band.
+						wave_color = ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
+							_frame_primary, gradient_mid, _frame_accent, gradient_cursor
+						)
 				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.70
 				var final_color := base_color.lerp(wave_color, visual_amount)
 				var action_emission_gain := 0.24 + wave_emission_strength * 1.15
@@ -771,9 +779,10 @@ func prepare_world_style(
 				instance.name = "Module%02d" % placement_index
 				group.add_child(instance)
 				_fit_external_instance(instance, slot_name, placement_index, world_style)
-				var isolate_frame_material: bool = world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]
+				var isolate_frame_material: bool = world_style != null and slot_name in ["Rings", "Arches"] \
+					and (world_style.spatial_profile == "RhythmFrames" or world_style.action_wave_enabled)
 				var prepared_materials := _prepare_external_materials(instance, world_key, slot_name, isolate_frame_material)
-				if world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]:
+				if isolate_frame_material:
 					instance.set_meta("rhythm_frame_base_scale", instance.scale)
 					instance.set_meta("rhythm_frame_materials", prepared_materials)
 			group.visible = false

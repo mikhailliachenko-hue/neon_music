@@ -1,6 +1,7 @@
 extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
+const ARCHITECTURE_WAVE_RESPONSE := preload("res://scripts/godot/tunnel/tunnel_architecture_wave_response.gd")
 const EXCLUSIVE_NEW_WORLDS := [
 	"rhythm_frames", "rhythm_square_frames", "rhythm_circle_frames",
 	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
@@ -36,6 +37,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var failures := PackedStringArray()
+	_validate_shared_wave_gradient(failures)
 	var generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
 	if generator == null:
 		push_error("TUNNEL_WORLD_SMOKE: generator failed to instantiate")
@@ -95,6 +97,20 @@ func _run() -> void:
 		push_error("TUNNEL_WORLD_SMOKE: %s" % failure)
 	generator.queue_free()
 	quit(0 if failures.is_empty() else 1)
+
+
+func _validate_shared_wave_gradient(failures: PackedStringArray) -> void:
+	var start := Color(0.0, 0.82, 1.0, 1.0)
+	var finish := Color(1.0, 0.0, 0.76, 1.0)
+	var midpoint := ARCHITECTURE_WAVE_RESPONSE.automatic_gradient_mid(start, finish)
+	if midpoint.a < 0.999 or midpoint.s < 0.58 or midpoint.v < 0.72:
+		failures.append("shared action-wave midpoint lost its vivid palette constraints")
+	if not ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(start, midpoint, finish, 0.0).is_equal_approx(start):
+		failures.append("shared action-wave gradient lost its start color")
+	if not ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(start, midpoint, finish, 0.5).is_equal_approx(midpoint):
+		failures.append("shared action-wave gradient does not pass through its midpoint")
+	if not ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(start, midpoint, finish, 1.0).is_equal_approx(finish):
+		failures.append("shared action-wave gradient lost its finish color")
 
 
 func _validate_light_grid_variants(generator: NeonTunnelGenerator, failures: PackedStringArray) -> void:
