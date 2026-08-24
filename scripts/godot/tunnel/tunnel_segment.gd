@@ -762,8 +762,8 @@ func prepare_world_style(
 			group.set_meta("world_style", world_key)
 			slot.add_child(group)
 			var placement_count := 2 if slot_name in ["Walls", "Panels", "Pipes", "Props"] else 1
-			if world_style != null and world_style.spatial_profile == "RhythmFrames" and slot_name in ["Rings", "Arches"]:
-				placement_count = clampi(world_style.asset_set.frame_instances_per_segment if world_style.asset_set != null else 3, 1, 4)
+			if world_style != null and world_style.asset_set != null and slot_name in ["Rings", "Arches"]:
+				placement_count = clampi(world_style.asset_set.frame_instances_per_segment, 1, 4)
 			for placement_index in range(placement_count):
 				var instance := packed.instantiate() as Node3D
 				if instance == null:
@@ -965,6 +965,11 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 			"Particles":
 				target_size = Vector3(10.5, 6.2, 14.0)
 				target_center = Vector3(0.0, 1.5, 0.0)
+	if slot_name in ["Rings", "Arches"] and world_style != null and world_style.asset_set != null:
+		var dense_frame_count := clampi(world_style.asset_set.frame_instances_per_segment, 1, 4)
+		if dense_frame_count > 1 and spatial_profile != "RhythmFrames":
+			var dense_spacing := BASE_LENGTH / float(dense_frame_count)
+			target_center.z = (float(placement_index) - (float(dense_frame_count) - 1.0) * 0.5) * dense_spacing
 	var safe_size := Vector3(maxf(bounds.size.x, 0.001), maxf(bounds.size.y, 0.001), maxf(bounds.size.z, 0.001))
 	instance.scale = target_size / safe_size
 	instance.position = target_center - bounds.get_center() * instance.scale
