@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_portal_gateway/portal_gateway_arch.tscn" id="3_portal"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="4_particles"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "industrial_portal"
+display_name = "Industrial Portal Set"
+floor_assets = Array[PackedScene]([ExtResource("2_road")])
+ring_assets = Array[PackedScene]([ExtResource("3_portal")])
+arch_assets = Array[PackedScene]([ExtResource("3_portal")])
+particle_assets = Array[PackedScene]([ExtResource("4_particles")])
+gameplay_clearance_verified = true
+frame_instances_per_segment = 2
+frame_inner_half_width = 4.4
+frame_opening_bottom_y = -2.0
+frame_opening_top_y = 4.5
+frame_target_width = 16.8
+frame_target_height = 10.4
+frame_target_depth = 1.8
+frame_target_center_y = 2.55

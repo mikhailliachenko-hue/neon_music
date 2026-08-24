@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/sketchfab_portal_wrapper.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_portal_gateway/portal_gateway_1k.glb" id="2_model"]
+
+[node name="PortalGatewayArch" type="Node3D"]
+script = ExtResource("1_script")
+keep_mesh_path_tokens = PackedStringArray("clamps_2", "portal_main_3")
+
+[node name="Model" parent="." instance=ExtResource("2_model")]

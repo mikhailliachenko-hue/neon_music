@@ -2,24 +2,24 @@
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
 [ext_resource type="Resource" path="res://resources/tunnel/themes/future_white.tres" id="2_theme"]
-[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/rhythm_square_frames.tres" id="3_world"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/industrial_portal.tres" id="3_world"]
 [ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/09_white_signal.png" id="4_background"]
 
 [resource]
 script = ExtResource("1_preset")
 level_name = "WHITE SIGNAL"
-description = "Минималистичные white-cyan рамы с самым спокойным glow."
+description = "Крупные white-cyan промышленные порталы с чистой дорожкой и спокойной волной от действий."
 difficulty = "Easy"
 color_palette = PackedColorArray(0.88, 0.97, 1, 1, 0.24, 0.8, 1, 1, 0.003, 0.008, 0.014, 1)
 preview_texture = ExtResource("4_background")
 background_texture = ExtResource("4_background")
-segment_types = PackedStringArray("Ring")
+segment_types = PackedStringArray("Entrance", "Ring", "EnergyGate", "Showcase")
 asset_weights = {"Decoration": 0.0,"Panel": 0.0,"Pipe": 0.0,"Arch": 1.0}
 particle_settings = {"density": 0.06,"amount_scale": 0.06}
 lighting_settings = {"glow_intensity": 0.54,"glow_strength": 0.66,"bloom": 0.04,"frame_rest_glow": 0.18,"frame_rest_emission_scale": 0.90}
 fog_settings = {"density": 0.0011}
 camera_settings = {"step_impact": 0.46,"step_duration": 0.25,"fov_pulse": 0.42}
-music_reaction_settings = {"beat_strength": 0.65,"beat_decay": 0.3,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 56.0,"wave_width": 15.0,"wave_lifetime": 2.55}
+music_reaction_settings = {"beat_strength": 0.0,"beat_decay": 0.3,"speed_boost": 0.0,"downbeat_multiplier": 1.0,"wave_speed": 58.0,"wave_width": 14.0,"wave_lifetime": 2.45,"wave_near_fade_distance": 28.0,"wave_emission_strength": 0.40}
 preset_name = "WHITE SIGNAL"
 style_id = "SquareWave"
 world_style = ExtResource("3_world")
@@ -34,6 +34,6 @@ camera_motion = 0.18
 speed_multiplier = 0.94
 atmosphere_density = 0.06
 floor_pattern = "GlowingLines"
-layout_weight_scale = {"Ring": 3.0}
+layout_weight_scale = {"Ring": 2.0,"EnergyGate": 1.3}
 level_id = "09_white_signal"
-segment_sequence = PackedStringArray("Ring")
+segment_sequence = PackedStringArray("Entrance", "Ring", "EnergyGate", "Showcase")

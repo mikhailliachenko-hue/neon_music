@@ -1,0 +1,9 @@
+{
+  "asset_name": "Portal Gateway Arch",
+  "category": "Arch",
+  "size": [16.8, 10.4, 1.8],
+  "weight": 2.0,
+  "enabled": true,
+  "theme_tags": ["FutureWhite", "CyberBlue", "IceCyber"],
+  "allowed_positions": ["Center"]
+}

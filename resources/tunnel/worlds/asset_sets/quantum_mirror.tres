@@ -1,11 +1,8 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-structure.glb" id="3_structure"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/rings/rhythm_circle_frame.tscn" id="4_circle"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-window-frame.glb" id="6_window"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-side-rail.glb" id="7_rail"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_clean_portal/clean_energy_portal.tscn" id="4_portal"]
 [ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="8_particles"]
 
 [resource]
@@ -13,17 +10,14 @@ script = ExtResource("1_script")
 asset_set_id = "quantum_mirror"
 display_name = "Quantum Mirror Modular Set"
 floor_assets = Array[PackedScene]([ExtResource("2_road")])
-wall_assets = Array[PackedScene]([ExtResource("3_structure")])
-ring_assets = Array[PackedScene]([ExtResource("4_circle")])
-arch_assets = Array[PackedScene]([ExtResource("3_structure")])
-panel_assets = Array[PackedScene]([ExtResource("6_window"), ExtResource("7_rail")])
+ring_assets = Array[PackedScene]([ExtResource("4_portal")])
 particle_assets = Array[PackedScene]([ExtResource("8_particles")])
 gameplay_clearance_verified = true
-frame_instances_per_segment = 1
+frame_instances_per_segment = 3
 frame_inner_half_width = 4.4
 frame_opening_bottom_y = -2.0
 frame_opening_top_y = 4.5
 frame_target_width = 16.4
-frame_target_height = 10.3
-frame_target_depth = 1.25
+frame_target_height = 10.2
+frame_target_depth = 1.1
 frame_target_center_y = 2.55

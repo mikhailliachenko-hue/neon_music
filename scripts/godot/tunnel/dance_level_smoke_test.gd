@@ -79,6 +79,8 @@ func _run() -> void:
 			failures.append("VIOLET GRID RUNNER must stay dot-only")
 		if preset.display_name() == "SOLAR SKYRAIL":
 			_validate_authored_level(preset, "solar_skyrail", "OpenHighway", false, failures)
+		if preset.display_name() == "WHITE SIGNAL":
+			_validate_authored_level(preset, "industrial_portal", "OpenHighway", false, failures)
 		if preset.display_name() == "QUANTUM MIRROR":
 			_validate_authored_level(preset, "quantum_mirror", "OpenHighway", true, failures)
 		if preset.background_texture == null or preset.preview_texture == null:
