@@ -63,6 +63,8 @@ func _run() -> void:
 
 	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
 	generator.sync_to_song_time(song_time + 0.1, {})
+	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:
+		failures.append("action-enabled authored world did not launch a travelling wave")
 	for segment in generator._segments:
 		for slot_name in ["Rings", "Arches"]:
 			var slot := segment.get_node_or_null("ExternalAssets/" + slot_name) as Node3D

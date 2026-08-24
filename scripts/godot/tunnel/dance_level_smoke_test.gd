@@ -8,8 +8,14 @@ const EXPECTED_NAMES := [
 	"FINAL SPECTRUM", "LIGHT GRID RUNNER", "VIOLET GRID RUNNER",
 	"CYAN APEX", "VIOLET CIRCUIT", "DEEP ORBIT", "GOLDEN STARLINE",
 	"ICE PORTAL", "REDLINE SURGE", "TOXIC HALO", "SUNSET APEX",
-	"WHITE WAVELINE", "SPECTRUM HALO",
+	"WHITE WAVELINE", "SPECTRUM HALO", "SOLAR SKYRAIL", "QUANTUM MIRROR",
 ]
+const MINIMAL_FRAME_LEVEL_IDS := {
+	"16_cyan_apex": true, "17_violet_circuit": true, "18_deep_orbit": true,
+	"19_golden_starline": true, "20_ice_portal": true, "21_redline_surge": true,
+	"22_toxic_halo": true, "23_sunset_apex": true, "24_white_waveline": true,
+	"25_spectrum_halo": true,
+}
 
 
 func _initialize() -> void:
@@ -55,7 +61,7 @@ func _run() -> void:
 			world_styles[preset.world_style.cache_key()] = true
 			for world_error in preset.world_style.validation_errors():
 				failures.append("%s: %s" % [preset.display_name(), world_error])
-			if index >= 15:
+			if MINIMAL_FRAME_LEVEL_IDS.has(preset.level_id):
 				if preset.world_style.spatial_profile != "RhythmFrames":
 					failures.append("new minimalist level is not RhythmFrames: %s" % preset.display_name())
 				var asset_set := preset.world_style.asset_set
@@ -71,6 +77,10 @@ func _run() -> void:
 			failures.append("LIGHT GRID RUNNER must stay capsule-only")
 		if preset.display_name() == "VIOLET GRID RUNNER" and preset.light_grid_mode != 2:
 			failures.append("VIOLET GRID RUNNER must stay dot-only")
+		if preset.display_name() == "SOLAR SKYRAIL":
+			_validate_authored_level(preset, "solar_skyrail", "OpenHighway", false, failures)
+		if preset.display_name() == "QUANTUM MIRROR":
+			_validate_authored_level(preset, "quantum_mirror", "OpenHighway", true, failures)
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:
@@ -128,3 +138,24 @@ func _run() -> void:
 		push_error("DANCE_LEVEL_SMOKE: %s" % failure)
 	generator.queue_free()
 	quit(0 if failures.is_empty() else 1)
+
+
+func _validate_authored_level(
+	preset: TunnelLevelPreset,
+	expected_world: String,
+	expected_profile: String,
+	expects_reflections: bool,
+	failures: PackedStringArray
+) -> void:
+	var world := preset.world_style
+	if world == null or world.world_id != expected_world or world.spatial_profile != expected_profile:
+		failures.append("%s has the wrong authored world contract" % preset.display_name())
+		return
+	if world.allow_registry_fallback:
+		failures.append("%s can leak unrelated registry assets" % preset.display_name())
+	if world.asset_set == null or not world.asset_set.gameplay_clearance_verified:
+		failures.append("%s has no verified modular asset set" % preset.display_name())
+	if world.side_reflection_enabled != expects_reflections:
+		failures.append("%s has the wrong side-reflection mode" % preset.display_name())
+	if not world.action_wave_enabled or float(preset.music_reaction_settings.get("beat_strength", -1.0)) != 0.0:
+		failures.append("%s must react through action waves, not beat flashing" % preset.display_name())

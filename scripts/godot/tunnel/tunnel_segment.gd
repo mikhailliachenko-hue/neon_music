@@ -2,6 +2,7 @@ extends Node3D
 class_name TunnelSegment
 
 const ARCHITECTURE_THEME_SHADER := preload("res://assets/tunnel/shaders/tunnel_architecture_theme.gdshader")
+const ARCHITECTURE_WAVE_RESPONSE := preload("res://scripts/godot/tunnel/tunnel_architecture_wave_response.gd")
 const BASE_WIDTH := 12.0
 const BASE_HEIGHT := 8.5
 const BASE_LENGTH := 18.0
@@ -39,6 +40,7 @@ var _floor_rail_material: StandardMaterial3D
 var _ceiling_rail_material: StandardMaterial3D
 var _accent_material: StandardMaterial3D
 var _panel_material: StandardMaterial3D
+var _side_reflection_material: StandardMaterial3D
 var _spectrum_primary := Color.WHITE
 var _spectrum_accent := Color.WHITE
 var _spectrum_emission := 1.0
@@ -95,6 +97,7 @@ func configure_layout(
 	$VisualRoot/NeonElements/RightFloorRail.visible = show_floor_rails
 	$VisualRoot/NeonElements/LeftCeilingRail.visible = show_ceiling_rails
 	$VisualRoot/NeonElements/RightCeilingRail.visible = show_ceiling_rails
+	_configure_world_accents()
 	# A stable low light keeps the authored silhouette readable between actions.
 	# It is preset-controlled because a thin blue ring needs more support than a
 	# broad white or red gate. Action waves are still the only dynamic response.
@@ -324,6 +327,11 @@ func apply_visual_state(
 	_panel_material.albedo_color = Color(0.018 + accent.r * 0.06, 0.02 + accent.g * 0.06, 0.03 + accent.b * 0.06, 1.0)
 	_panel_material.emission = accent
 	_panel_material.emission_energy_multiplier = (0.28 + emission_energy * 0.075 + pulse * 0.12) * profile_energy
+	if _side_reflection_material != null:
+		var reflection_tint := _active_world_style.side_reflection_tint if _active_world_style != null else floor_color
+		_side_reflection_material.albedo_color = reflection_tint
+		_side_reflection_material.emission = reflection_tint.lerp(primary, 0.22)
+		_side_reflection_material.emission_energy_multiplier = 0.08 + emission_energy * 0.018
 
 	for index in range(_ring_materials.size()):
 		var ring_material := _ring_materials[index]
@@ -415,7 +423,27 @@ func apply_frame_reaction(
 	wave_emission_strength: float,
 	wave_origin_z: float
 ) -> void:
-	if _active_world_style == null or _active_world_style.spatial_profile != "RhythmFrames":
+	if _active_world_style == null:
+		return
+	if _active_world_style.spatial_profile != "RhythmFrames":
+		if _active_world_style.action_wave_enabled:
+			ARCHITECTURE_WAVE_RESPONSE.apply(
+				_active_world_style,
+				_external_materials_by_world.get(_active_world_key, []),
+				_side_reflection_material,
+				_frame_primary,
+				_frame_accent,
+				_frame_emission,
+				maxf(0.0, wave_origin_z - global_position.z),
+				wave_ages,
+				wave_strengths,
+				wave_color_phases,
+				wave_speed,
+				wave_width,
+				wave_lifetime,
+				wave_near_fade_distance,
+				wave_emission_strength
+			)
 		return
 	for slot_name in ["Rings", "Arches"]:
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
@@ -569,6 +597,11 @@ func _create_reusable_materials() -> void:
 	_panel_material.roughness = 0.27
 	_panel_material.emission_enabled = true
 
+	_side_reflection_material = StandardMaterial3D.new()
+	_side_reflection_material.metallic = 0.88
+	_side_reflection_material.roughness = 0.12
+	_side_reflection_material.emission_enabled = true
+
 	for pattern_name in ["NeonGrid", "GlowingLines", "EnergyWaves"]:
 		var material := StandardMaterial3D.new()
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -588,6 +621,7 @@ func _bind_placeholder_materials() -> void:
 	_apply_material_recursive($VisualRoot/LayoutElements, _accent_material)
 	_apply_material_recursive($VisualRoot/LayoutElements/SidePanels/Panels, _panel_material)
 	_apply_material_recursive($VisualRoot/Decorations, _accent_material)
+	_apply_material_recursive($VisualRoot/WorldAccents/SideReflections, _side_reflection_material)
 	for pattern_name in _floor_effect_materials:
 		var pattern := $VisualRoot/FloorEffects.get_node(pattern_name)
 		_apply_material_recursive(pattern, _floor_effect_materials[pattern_name])
@@ -600,6 +634,17 @@ func _bind_placeholder_materials() -> void:
 		(ring as MeshInstance3D).material_override = material
 		_ring_materials.append(material)
 		_ring_base_scales.append((ring as Node3D).scale)
+
+
+func _configure_world_accents() -> void:
+	var reflections := $VisualRoot/WorldAccents/SideReflections as Node3D
+	var enabled := _active_world_style != null and _active_world_style.side_reflection_enabled
+	reflections.visible = enabled
+	if not enabled or _side_reflection_material == null:
+		return
+	_side_reflection_material.albedo_color = _active_world_style.side_reflection_tint
+	_side_reflection_material.metallic = _active_world_style.side_reflection_metallic
+	_side_reflection_material.roughness = _active_world_style.side_reflection_roughness
 
 
 func _apply_material_recursive(root: Node, material: Material) -> void:

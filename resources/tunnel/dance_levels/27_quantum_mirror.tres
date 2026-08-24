@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/quantum_mirror.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/quantum_mirror.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/09_white_signal.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "QUANTUM MIRROR"
+description = "Симметричный красно-белый коридор с тёмными зеркальными боковыми полами, порталами и мягкой волной от действий."
+difficulty = "Hard"
+color_palette = PackedColorArray(0.96, 0.985, 1, 1, 1, 0.045, 0.11, 1, 0.004, 0.006, 0.012, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Entrance", "EnergyGate", "Ring", "Showcase")
+asset_weights = {"Floor": 1.0, "Wall": 0.82, "Ring": 0.78, "Arch": 0.88, "Panel": 0.68, "Decoration": 0.0}
+particle_settings = {"density": 0.12, "amount_scale": 0.12}
+lighting_settings = {"glow_intensity": 0.62, "glow_strength": 0.70, "bloom": 0.048, "frame_rest_glow": 0.19, "frame_rest_emission_scale": 0.94}
+fog_settings = {"density": 0.0010}
+camera_settings = {"step_impact": 0.54, "step_duration": 0.20, "fov_pulse": 0.48}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.19, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 70.0, "wave_width": 11.0, "wave_lifetime": 1.95, "wave_near_fade_distance": 27.0, "wave_emission_strength": 0.52}
+preset_name = "QUANTUM MIRROR"
+style_id = "MirrorShift"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 270027
+ring_density = 1.0
+decoration_density = 0.18
+panel_density = 0.68
+pipe_density = 0.0
+glow_strength = 0.84
+camera_motion = 0.27
+speed_multiplier = 1.08
+atmosphere_density = 0.42
+floor_pattern = "GlowingLines"
+layout_weight_scale = {"Straight": 0.9, "Ring": 1.1, "SidePanels": 1.0, "EnergyGate": 1.25, "WideTunnel": 0.7}
+level_id = "27_quantum_mirror"
+segment_sequence = PackedStringArray("Entrance", "EnergyGate", "Ring", "Showcase")

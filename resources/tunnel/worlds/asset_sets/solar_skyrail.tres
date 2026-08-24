@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-bridge.glb" id="3_bridge"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/bridge-pillar.glb" id="4_pillar"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/bridge-pillar-wide.glb" id="5_pillar_wide"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_SquareTall.gltf" id="6_gate"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/light-curved-double.glb" id="7_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="8_particles"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "solar_skyrail"
+display_name = "Solar Skyrail Modular Set"
+floor_assets = Array[PackedScene]([ExtResource("2_road"), ExtResource("3_bridge")])
+wall_assets = Array[PackedScene]([ExtResource("4_pillar"), ExtResource("5_pillar_wide")])
+arch_assets = Array[PackedScene]([ExtResource("6_gate")])
+panel_assets = Array[PackedScene]([ExtResource("7_light")])
+particle_assets = Array[PackedScene]([ExtResource("8_particles")])
+gameplay_clearance_verified = true
+frame_instances_per_segment = 1
+frame_inner_half_width = 4.45
+frame_opening_bottom_y = -2.0
+frame_opening_top_y = 4.55
+frame_target_width = 16.8
+frame_target_height = 10.4
+frame_target_depth = 1.2
+frame_target_center_y = 2.55

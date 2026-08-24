@@ -4,6 +4,7 @@ const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const EXCLUSIVE_NEW_WORLDS := [
 	"rhythm_frames", "rhythm_square_frames", "rhythm_circle_frames",
 	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
+	"solar_skyrail", "quantum_mirror",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -24,6 +25,8 @@ const WORLD_CASES := [
 	{"level": "SUNSET APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
 	{"level": "WHITE WAVELINE", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "SPECTRUM HALO", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
+	{"level": "SOLAR SKYRAIL", "world": "solar_skyrail", "asset_terms": ["Road", "Bridge Pillar", "Door Frame"]},
+	{"level": "QUANTUM MIRROR", "world": "quantum_mirror", "asset_terms": ["Road", "Column", "Rhythm Circle", "Door Frame"]},
 ]
 
 

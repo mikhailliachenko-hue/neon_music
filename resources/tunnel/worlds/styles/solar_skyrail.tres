@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/solar_skyrail.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "solar_skyrail"
+display_name = "Solar Skyrail"
+spatial_profile = "OpenHighway"
+asset_set = ExtResource("2_assets")
+allow_registry_fallback = false
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.72
+ring_probability = 0.0
+arch_probability = 0.78
+decoration_scale = 0.42
+layout_weight_scale = {"Straight": 1.55, "Ring": 0.0, "DoubleRing": 0.0, "SidePanels": 0.85, "NeonGrid": 0.55, "EnergyGate": 1.15, "WideTunnel": 1.25, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.0}
+show_floor_rails = true
+show_ceiling_rails = false
+authored_color_mix = 0.16
+floor_authored_color_mix = 0.10
+architecture_emission_scale = 1.12
+architecture_body_glow = 0.06
+action_wave_enabled = true
+action_wave_body_glow = 0.22
+safe_lane_half_width = 5.0
+minimum_overhead_y = 4.55
+side_clearance_margin = 0.55
+camera_fov_offset = 2.8
+fog_scale = 0.52
+background_depth = 1.45

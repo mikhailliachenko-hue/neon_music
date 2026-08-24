@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_segment.gd" id="1_segment"]
 
@@ -55,6 +55,9 @@ size = Vector3(1.75, 0.07, 0.28)
 
 [sub_resource type="BoxMesh" id="Box_panel_strip"]
 size = Vector3(0.055, 0.12, 1.75)
+
+[sub_resource type="BoxMesh" id="Box_side_reflection"]
+size = Vector3(2.2, 0.08, 18)
 
 [node name="TunnelSegment" type="Node3D"]
 script = ExtResource("1_segment")
@@ -303,6 +306,19 @@ mesh = SubResource("Box_floor_wave")
 [node name="RightWaveC" type="MeshInstance3D" parent="VisualRoot/FloorEffects/EnergyWaves"]
 position = Vector3(5, -1.74, 5.8)
 mesh = SubResource("Box_floor_wave")
+
+[node name="WorldAccents" type="Node3D" parent="VisualRoot"]
+
+[node name="SideReflections" type="Node3D" parent="VisualRoot/WorldAccents"]
+visible = false
+
+[node name="Left" type="MeshInstance3D" parent="VisualRoot/WorldAccents/SideReflections"]
+position = Vector3(-6.55, -1.96, 0)
+mesh = SubResource("Box_side_reflection")
+
+[node name="Right" type="MeshInstance3D" parent="VisualRoot/WorldAccents/SideReflections"]
+position = Vector3(6.55, -1.96, 0)
+mesh = SubResource("Box_side_reflection")
 
 [node name="ExternalAssets" type="Node3D" parent="."]
 

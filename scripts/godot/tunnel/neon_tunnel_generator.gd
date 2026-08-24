@@ -120,7 +120,7 @@ func trigger_step_camera_impact(strength: float, lane_bias: float) -> void:
 
 func trigger_action_camera_impact(action: String, strength: float, lane_bias: float) -> void:
 	if _enabled:
-		if _is_rhythm_frames_active():
+		if _is_action_wave_active():
 			_frame_wave_controller.trigger_action(action, maxf(0.5, strength))
 		camera_motion_controller.trigger_action_impact(action, strength, lane_bias)
 		if _diagnostics:
@@ -130,7 +130,7 @@ func trigger_action_camera_impact(action: String, strength: float, lane_bias: fl
 func trigger_preview_frame_wave(downbeat: bool) -> void:
 	# Only the standalone no-music preview calls this method. Production playback
 	# must receive frame waves exclusively through gameplay action callbacks.
-	if _enabled and _is_rhythm_frames_active():
+	if _enabled and _is_action_wave_active():
 		_frame_wave_controller.trigger_preview_pulse(downbeat)
 
 
@@ -501,7 +501,7 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 
 
 func _update_frame_reaction(delta: float, _state: Dictionary) -> void:
-	if not _is_rhythm_frames_active():
+	if not _is_action_wave_active():
 		_frame_pulse = 0.0
 		_frame_wave_controller.clear()
 		return
@@ -509,10 +509,11 @@ func _update_frame_reaction(delta: float, _state: Dictionary) -> void:
 	_frame_pulse = _frame_wave_controller.peak_strength()
 
 
-func _is_rhythm_frames_active() -> bool:
+func _is_action_wave_active() -> bool:
 	return _current_preset != null \
 		and _current_preset.world_style != null \
-		and _current_preset.world_style.spatial_profile == "RhythmFrames"
+		and (_current_preset.world_style.spatial_profile == "RhythmFrames" \
+			or _current_preset.world_style.action_wave_enabled)
 
 
 func _is_directed_level() -> bool:
