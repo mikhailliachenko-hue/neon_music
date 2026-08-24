@@ -1,12 +1,11 @@
-[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Columns/Column_Hollow.gltf" id="3_hollow"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Columns/Column_MetalSupport.gltf" id="4_support"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/rings/rhythm_circle_frame.tscn" id="5_circle"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_SquareTall.gltf" id="6_gate"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf" id="7_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-structure.glb" id="3_structure"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/rings/rhythm_circle_frame.tscn" id="4_circle"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-window-frame.glb" id="6_window"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space_station/glb/station-side-rail.glb" id="7_rail"]
 [ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="8_particles"]
 
 [resource]
@@ -14,10 +13,10 @@ script = ExtResource("1_script")
 asset_set_id = "quantum_mirror"
 display_name = "Quantum Mirror Modular Set"
 floor_assets = Array[PackedScene]([ExtResource("2_road")])
-wall_assets = Array[PackedScene]([ExtResource("3_hollow"), ExtResource("4_support")])
-ring_assets = Array[PackedScene]([ExtResource("5_circle")])
-arch_assets = Array[PackedScene]([ExtResource("6_gate")])
-panel_assets = Array[PackedScene]([ExtResource("7_light")])
+wall_assets = Array[PackedScene]([ExtResource("3_structure")])
+ring_assets = Array[PackedScene]([ExtResource("4_circle")])
+arch_assets = Array[PackedScene]([ExtResource("3_structure")])
+panel_assets = Array[PackedScene]([ExtResource("6_window"), ExtResource("7_rail")])
 particle_assets = Array[PackedScene]([ExtResource("8_particles")])
 gameplay_clearance_verified = true
 frame_instances_per_segment = 1

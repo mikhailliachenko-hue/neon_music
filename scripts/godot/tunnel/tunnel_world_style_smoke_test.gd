@@ -25,8 +25,8 @@ const WORLD_CASES := [
 	{"level": "SUNSET APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
 	{"level": "WHITE WAVELINE", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "SPECTRUM HALO", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
-	{"level": "SOLAR SKYRAIL", "world": "solar_skyrail", "asset_terms": ["Road", "Bridge Pillar", "Door Frame"]},
-	{"level": "QUANTUM MIRROR", "world": "quantum_mirror", "asset_terms": ["Road", "Column", "Rhythm Circle", "Door Frame"]},
+	{"level": "SOLAR SKYRAIL", "world": "solar_skyrail", "asset_terms": ["Road", "Structure", "Rhythm Circle", "Window Frame"]},
+	{"level": "QUANTUM MIRROR", "world": "quantum_mirror", "asset_terms": ["Road", "Structure", "Rhythm Circle", "Window Frame"]},
 ]
 
 
