@@ -33,8 +33,8 @@ func _run() -> void:
 			if asset_set.frame_opening_top_y < GAMEPLAY_HAND_TOP:
 				failures.append("%s is lower than the hand envelope" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
-			and asset_set.frame_instances_per_segment != 1:
-			failures.append("%s must keep one star crown per segment" % preset.display_name())
+			and asset_set.frame_instances_per_segment != 2:
+			failures.append("%s must keep the dense two-star cadence" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
 			and asset_set.frame_target_depth > 2.0:
 			failures.append("%s star rails are stretched along the gameplay lane" % preset.display_name())
@@ -47,6 +47,15 @@ func _run() -> void:
 		for segment in generator._segments:
 			for lane_error in segment.validate_active_safe_lane():
 				failures.append("%s: %s" % [preset.display_name(), lane_error])
+			if segment.real_asset_only and preset.world_style.asset_set != null:
+				var layout_elements := segment.get_node_or_null("VisualRoot/LayoutElements") as Node3D
+				if layout_elements != null:
+					for layout_element in layout_elements.get_children():
+						var layout_node := layout_element as Node3D
+						if layout_node != null and layout_node.visible:
+							failures.append("%s leaked built-in fallback geometry" % preset.display_name())
+			if asset_set.frame_wraps_below_road:
+				_validate_wrapped_frame_bottom(segment, preset.display_name(), failures)
 			if preset.world_style.world_id == "rhythm_star_frames":
 				_validate_open_star_bottom(segment, failures)
 
@@ -105,6 +114,24 @@ func _validate_open_star_bottom(segment: TunnelSegment, failures: PackedStringAr
 		var star_bounds := _combined_global_bounds(star)
 		if star_bounds.size.z > 2.0:
 			failures.append("star frame is stretched %.2fm along the gameplay lane" % star_bounds.size.z)
+
+
+func _validate_wrapped_frame_bottom(segment: TunnelSegment, level_name: String, failures: PackedStringArray) -> void:
+	for slot_name in ["Rings", "Arches"]:
+		var slot := segment.get_node_or_null("ExternalAssets/" + slot_name) as Node3D
+		if slot == null:
+			continue
+		for group_node in slot.get_children():
+			var group := group_node as Node3D
+			if group == null or not group.visible:
+				continue
+			for module_node in group.get_children():
+				var module := module_node as Node3D
+				if module == null or not module.visible:
+					continue
+				var frame_bounds := _combined_global_bounds(module)
+				if frame_bounds.size != Vector3.ZERO and frame_bounds.position.y > -3.0:
+					failures.append("%s closed frame is not wrapped below road: %.2f" % [level_name, frame_bounds.position.y])
 
 
 func _combined_global_bounds(root_node: Node3D) -> AABB:

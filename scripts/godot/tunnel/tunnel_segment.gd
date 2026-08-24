@@ -132,6 +132,14 @@ func configure_layout(
 	layouts.get_node("SidePanels").visible = layout_name == "SidePanels"
 	layouts.get_node("NeonGrid").visible = layout_name == "NeonGrid"
 	layouts.get_node("EnergyGate").visible = layout_name == "EnergyGate"
+	var authored_assets_only := real_asset_only and _active_world_style != null and _active_world_style.asset_set != null
+	if authored_assets_only:
+		# An empty authored slot is intentional negative space. Never reveal the
+		# built-in layout mesh as a random substitute between pooled GLB frames.
+		for layout_element in layouts.get_children():
+			var layout_node := layout_element as Node3D
+			if layout_node != null:
+				layout_node.visible = false
 
 	var width_scale := 1.0
 	if layout_name == "WideTunnel":
@@ -189,7 +197,7 @@ func configure_layout(
 			# Sparse dust supplies depth; side fixtures are omitted so the repeated
 			# authored silhouette remains the only architectural focal point.
 			_activate_external_slot("Particles", 0.12, rng, theme_name)
-		if profile == "Showcase":
+		if profile == "Showcase" and not authored_assets_only:
 			# The four Showcase layouts alternate big silhouettes. Keeping every
 			# frame active at once reads as a repetitive gate stack in perspective.
 			match layout_name:
@@ -372,6 +380,7 @@ func apply_visual_state(
 			var material_accent := accent
 			var material_emission := architecture_emission
 			var authored_mix := _active_world_style.authored_color_mix if _active_world_style != null else 0.46
+			var authored_accent_influence := _active_world_style.authored_accent_influence if _active_world_style != null else 0.44
 			var body_glow := _active_world_style.architecture_body_glow if _active_world_style != null else 0.0
 			if slot_name == "Floor":
 				if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
@@ -391,8 +400,9 @@ func apply_visual_state(
 				and slot_name in ["Rings", "Arches"]:
 				material_surface = Color(0.012, 0.016, 0.024, 1.0)
 				material_emission *= 1.5
-				authored_mix = 0.16
-				body_glow = 0.46
+				# Rhythm-frame worlds deliberately keep their authored per-style mix
+				# and rest glow. A former hard-coded 0.46 glow flattened red gates
+				# into a solid luminous slab and bypassed the palette contract.
 			if material is ShaderMaterial:
 				var themed := material as ShaderMaterial
 				themed.set_shader_parameter("theme_surface", material_surface)
@@ -400,6 +410,7 @@ func apply_visual_state(
 				themed.set_shader_parameter("theme_accent", material_accent)
 				themed.set_shader_parameter("theme_emission", material_emission)
 				themed.set_shader_parameter("authored_mix", authored_mix)
+				themed.set_shader_parameter("authored_accent_influence", authored_accent_influence)
 				themed.set_shader_parameter("theme_body_glow", body_glow)
 			elif material is StandardMaterial3D:
 				var standard := material as StandardMaterial3D
@@ -975,7 +986,16 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 				target_size = Vector3(10.5, 6.2, 14.0)
 				target_center = Vector3(0.0, 1.5, 0.0)
 	if slot_name in ["Rings", "Arches"] and world_style != null and world_style.asset_set != null:
-		var dense_frame_count := clampi(world_style.asset_set.frame_instances_per_segment, 1, 4)
+		var active_asset_set := world_style.asset_set
+		# The asset set owns frame fit in every spatial profile. Previously OpenHighway
+		# kept its hard-coded 13.2 x 7.8 m fit, which lifted closed portals onto the road.
+		target_size = Vector3(
+			active_asset_set.frame_target_width,
+			active_asset_set.frame_target_height,
+			active_asset_set.frame_target_depth
+		)
+		target_center.y = active_asset_set.resolved_frame_center_y()
+		var dense_frame_count := clampi(active_asset_set.frame_instances_per_segment, 1, 4)
 		if dense_frame_count > 1 and spatial_profile != "RhythmFrames":
 			var dense_spacing := BASE_LENGTH / float(dense_frame_count)
 			target_center.z = (float(placement_index) - (float(dense_frame_count) - 1.0) * 0.5) * dense_spacing

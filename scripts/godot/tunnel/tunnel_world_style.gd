@@ -23,6 +23,7 @@ class_name TunnelWorldStyle
 
 @export_group("Authored GLB Material")
 @export_range(0.0, 1.0, 0.01) var authored_color_mix := 0.46
+@export_range(0.0, 1.0, 0.01) var authored_accent_influence := 0.44
 @export_range(0.0, 1.0, 0.01) var floor_authored_color_mix := 0.08
 @export_range(0.0, 2.0, 0.01) var architecture_emission_scale := 1.0
 @export_range(0.0, 1.0, 0.01) var architecture_body_glow := 0.0

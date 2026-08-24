@@ -26,6 +26,14 @@ class_name TunnelWorldAssetSet
 @export_range(8.0, 16.0, 0.1) var frame_target_height := 10.2
 @export_range(0.5, 20.0, 0.1) var frame_target_depth := 1.25
 @export_range(1.5, 5.0, 0.05) var frame_target_center_y := 2.55
+@export var frame_wraps_below_road := false
+@export_range(-6.0, -2.0, 0.05) var frame_target_outer_bottom_y := -3.25
+
+
+func resolved_frame_center_y() -> float:
+	if frame_wraps_below_road:
+		return frame_target_outer_bottom_y + frame_target_height * 0.5
+	return frame_target_center_y
 
 
 func scenes_for_slot(slot_name: String) -> Array[PackedScene]:
@@ -73,4 +81,6 @@ func validation_errors() -> PackedStringArray:
 			errors.append("%s frame opening is too low for hand cues." % asset_set_id)
 		if frame_target_width < frame_inner_half_width * 2.0 + 1.0:
 			errors.append("%s frame target is too narrow for its declared opening." % asset_set_id)
+		if frame_wraps_below_road and frame_target_outer_bottom_y > -3.0:
+			errors.append("%s closed frame must wrap at least 1 m below the road." % asset_set_id)
 	return errors

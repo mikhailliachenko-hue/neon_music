@@ -102,7 +102,7 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 25 Dance Mode levels. All production worlds now follow
+  data-driven library of 27 Dance Mode levels. All production worlds now follow
   the sparse reference-frame grammar; levels 16-25 add ten action-wave variants
   built from open A, square, tall, circle, star and open-gate silhouettes.
   The existing Track tuning GUI
@@ -120,6 +120,48 @@ Runtime renderer scripts.
   distinct presets, so both architectures never overlap inside one corridor.
   These two presets use a clean modular GLB floor with no procedural guide rails
   or floor-line effects.
+
+#### Ideal Dance Mode level formula
+
+This contract is the acceptance gate for every production world, independent of
+which GLB wrapper or theme it uses:
+
+- Gameplay owns the centre. The road, notes, receptors and action envelope never
+  inherit decorative transforms. A centred frame declares an inner half-width of
+  at least `4.4 m`, an opening bottom at or below `-2.05 m` and an opening top at
+  or above `4.3 m`. Closed rings additionally put their outer bottom at or below
+  `-3.0 m`, so the lower arc wraps underneath the road instead of sitting on it.
+- The asset set owns frame fit for every spatial profile. `frame_target_*` is
+  authoritative for `RhythmFrames`, `OpenHighway` and future profiles; profile
+  hard-codes may provide defaults but must never override a verified GLB fit.
+- Depth rhythm is regular rather than random: thin frames use `4.5-6.0 m`
+  spacing, medium gates about `6.0 m`, and a massive detailed gateway no more than
+  `9.0 m`. Four frames in an `18 m` segment produce the reference-dense `4.5 m`
+  cadence without a discontinuity at pooled segment boundaries.
+- Visual hierarchy follows an approximate `70 / 25 / 5` split: 70% dark neutral
+  world/background, 25% readable low-emission architecture and at most 5% bright
+  accent/action wave. Use no more than two saturated hues plus neutral; cyan and
+  magenta gameplay cues remain the brightest local objects. Palette pairs should
+  be analogous (for example wine -> magenta -> lilac or coral -> amber -> pink),
+  with a near-white crest used briefly instead of filling the whole model with
+  maximum saturation.
+- Architecture is calm between actions. STEP/PUNCH/JUMP/DUCK launch the existing
+  cached depth wave with a `35-55 ms` portal-to-portal delay, `80-140 ms` attack
+  and `320-520 ms` release. The wave changes emission/colour only; it never scales
+  frames, creates lights or drives continuous camera shake. Beat-only flashing
+  stays disabled in production.
+- Composition changes at phrase/section scale, not per frame. A 32-count may move
+  through a controlled `2 -> 3 -> 4 -> 3` density arc or swap one silhouette and
+  palette, while the gameplay corridor and pool size remain fixed.
+- Runtime budget is eight pooled `TunnelSegment` nodes and, for a dense world, at
+  most 32 repeated portal instances. GLB scenes and materials are cached/warmed;
+  there is no runtime instantiate/free loop, per-ring light or per-frame material
+  creation. Acceptance requires calm/action/phrase captures, no road overlap or
+  recycle seam, and a stable 60 FPS after warm-up.
+
+`resources/tunnel/presets/` is the legacy standalone-preview library. It is not
+part of the canonical 27-level production selector and must not be mixed into the
+production visual audit unless that legacy path is explicitly being migrated.
 - `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
   GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and
   lazy PackedScene cache. `tunnel/neon_material_library.gd` owns six shared neon

@@ -24,6 +24,7 @@ uniform vec4 theme_primary : source_color = vec4(0.0, 0.8, 1.0, 1.0);
 uniform vec4 theme_accent : source_color = vec4(0.7, 0.15, 1.0, 1.0);
 uniform float theme_emission = 0.25;
 uniform float authored_mix : hint_range(0.0, 1.0) = 0.46;
+uniform float authored_accent_influence : hint_range(0.0, 1.0) = 0.44;
 uniform float theme_body_glow : hint_range(0.0, 4.0) = 0.0;
 
 void fragment() {
@@ -47,7 +48,7 @@ void fragment() {
 	vec3 authored_neutral = mix(vec3(luminance), authored.rgb, 0.22);
 	vec3 body_color = mix(theme_surface.rgb, authored_neutral, authored_mix);
 	body_color = mix(body_color, theme_primary.rgb * 0.36, authored_highlight * 0.10);
-	body_color = mix(body_color, theme_accent.rgb * 0.52, authored_accent * 0.44);
+	body_color = mix(body_color, theme_accent.rgb * 0.52, authored_accent * authored_accent_influence);
 	ALBEDO = body_color * mix(0.62, 1.34, detail);
 
 	float glow_mask = authored_accent * 0.72 + authored_highlight * 0.075;
