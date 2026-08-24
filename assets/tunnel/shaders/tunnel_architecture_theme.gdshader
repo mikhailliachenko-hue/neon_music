@@ -18,6 +18,9 @@ uniform sampler2D source_orm : hint_default_black, filter_linear_mipmap_anisotro
 uniform bool has_orm_texture = false;
 uniform float source_metallic : hint_range(0.0, 1.0) = 0.35;
 uniform float source_roughness : hint_range(0.0, 1.0) = 0.45;
+uniform float material_override_mix : hint_range(0.0, 1.0) = 0.0;
+uniform float theme_metallic : hint_range(0.0, 1.0) = 0.35;
+uniform float theme_roughness : hint_range(0.0, 1.0) = 0.45;
 
 uniform vec4 theme_surface : source_color = vec4(0.08, 0.10, 0.14, 1.0);
 uniform vec4 theme_primary : source_color = vec4(0.0, 0.8, 1.0, 1.0);
@@ -57,21 +60,22 @@ void fragment() {
 	// Very dark authored GLB materials still need a faint silhouette between
 	// action waves. A small floor keeps the frame readable without flattening
 	// its texture/detail or increasing the scene-wide bloom.
-	float silhouette_detail = mix(0.18, 1.0, detail);
+	float silhouette_detail = mix(0.38, 1.0, detail);
 	EMISSION += theme_primary.rgb * silhouette_detail * theme_body_glow;
 
 	if (has_normal_texture) {
 		NORMAL_MAP = texture(source_normal, themed_uv).rgb;
 		NORMAL_MAP_DEPTH = source_normal_scale;
 	}
+	float authored_roughness = source_roughness;
+	float authored_metallic = source_metallic;
 	if (has_orm_texture) {
 		vec3 orm = texture(source_orm, themed_uv).rgb;
 		AO = orm.r;
-		ROUGHNESS = clamp(orm.g, 0.12, 0.96);
-		METALLIC = clamp(orm.b, 0.0, 1.0);
-	} else {
-		ROUGHNESS = source_roughness;
-		METALLIC = source_metallic;
+		authored_roughness = clamp(orm.g, 0.12, 0.96);
+		authored_metallic = clamp(orm.b, 0.0, 1.0);
 	}
+	ROUGHNESS = mix(authored_roughness, theme_roughness, material_override_mix);
+	METALLIC = mix(authored_metallic, theme_metallic, material_override_mix);
 	SPECULAR = 0.42;
 }

@@ -1,0 +1,76 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Rail_4.gltf" id="1_rail"]
+
+[node name="PinterestPrismFrame" type="Node3D"]
+
+[node name="Edge00" type="Node3D" parent="."]
+position = Vector3(0, 3.597648705, 0)
+rotation_degrees = Vector3(0, 0, 90)
+[node name="Plane" type="Node3D" parent="Edge00"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge00/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge01" type="Node3D" parent="."]
+position = Vector3(2.543921796, 2.543921796, 0)
+rotation_degrees = Vector3(0, 0, 45)
+[node name="Plane" type="Node3D" parent="Edge01"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge01/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge02" type="Node3D" parent="."]
+position = Vector3(3.597648705, 0, 0)
+[node name="Plane" type="Node3D" parent="Edge02"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge02/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge03" type="Node3D" parent="."]
+position = Vector3(2.543921796, -2.543921796, 0)
+rotation_degrees = Vector3(0, 0, -45)
+[node name="Plane" type="Node3D" parent="Edge03"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge03/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge04" type="Node3D" parent="."]
+position = Vector3(0, -3.597648705, 0)
+rotation_degrees = Vector3(0, 0, -90)
+[node name="Plane" type="Node3D" parent="Edge04"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge04/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge05" type="Node3D" parent="."]
+position = Vector3(-2.543921796, -2.543921796, 0)
+rotation_degrees = Vector3(0, 0, -135)
+[node name="Plane" type="Node3D" parent="Edge05"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge05/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge06" type="Node3D" parent="."]
+position = Vector3(-3.597648705, 0, 0)
+rotation_degrees = Vector3(0, 0, 180)
+[node name="Plane" type="Node3D" parent="Edge06"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge06/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)
+
+[node name="Edge07" type="Node3D" parent="."]
+position = Vector3(-2.543921796, 2.543921796, 0)
+rotation_degrees = Vector3(0, 0, 135)
+[node name="Plane" type="Node3D" parent="Edge07"]
+rotation_degrees = Vector3(90, 0, 0)
+[node name="Rail" parent="Edge07/Plane" instance=ExtResource("1_rail")]
+position = Vector3(-0.001011072, 0, 1.5184)
+scale = Vector3(1, 1, 0.7592)

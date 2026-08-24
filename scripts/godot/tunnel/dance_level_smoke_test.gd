@@ -78,11 +78,11 @@ func _run() -> void:
 		if preset.display_name() == "VIOLET GRID RUNNER" and preset.light_grid_mode != 2:
 			failures.append("VIOLET GRID RUNNER must stay dot-only")
 		if preset.display_name() == "SOLAR SKYRAIL":
-			_validate_authored_level(preset, "solar_skyrail", "OpenHighway", false, failures)
+			_validate_authored_level(preset, "pinterest_prism", "RhythmFrames", true, failures)
 		if preset.display_name() == "WHITE SIGNAL":
-			_validate_authored_level(preset, "industrial_portal", "OpenHighway", false, failures)
+			_validate_authored_level(preset, "pinterest_prism", "RhythmFrames", true, failures)
 		if preset.display_name() == "QUANTUM MIRROR":
-			_validate_authored_level(preset, "quantum_mirror", "OpenHighway", true, failures)
+			_validate_authored_level(preset, "pinterest_prism", "RhythmFrames", true, failures)
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:
@@ -113,11 +113,15 @@ func _run() -> void:
 			failures.append("pool changed while selecting: %s" % preset.display_name())
 		var backdrop := generator.get_node_or_null("Atmosphere/Backdrops/LevelBackdrop") as MeshInstance3D
 		var backdrop_material := backdrop.material_override as StandardMaterial3D if backdrop != null else null
-		if backdrop == null or not backdrop.visible or backdrop_material == null or backdrop_material.albedo_texture != preset.background_texture:
-			failures.append("runtime background did not switch: %s" % preset.display_name())
+		var expects_background_plane := preset.world_style == null or preset.world_style.background_planes_enabled
+		if expects_background_plane:
+			if backdrop == null or not backdrop.visible or backdrop_material == null or backdrop_material.albedo_texture != preset.background_texture:
+				failures.append("runtime background did not switch: %s" % preset.display_name())
+		elif backdrop != null and backdrop.visible:
+			failures.append("Pinterest world leaked a pasted backdrop plane: %s" % preset.display_name())
 	if themes.size() < 12:
 		failures.append("themes are not visually diverse: %d unique" % themes.size())
-	if world_styles.size() < 7:
+	if world_styles.size() < 6:
 		failures.append("world architecture is not diverse: %d unique styles" % world_styles.size())
 	if backgrounds.size() < 3:
 		failures.append("expected at least 3 background families, got %d" % backgrounds.size())

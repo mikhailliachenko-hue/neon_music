@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "DeepSpace"
-emission_color = Color(0.08, 0.32, 1, 1)
-accent_color = Color(0.38, 0.08, 0.95, 1)
+emission_color = Color(0.322, 0.655, 1, 1)
+accent_color = Color(0.643, 0.329, 1, 1)
 background_color = Color(0.0005, 0.001, 0.008, 1)
 fog_color = Color(0.008, 0.012, 0.055, 1)
 fog_density = 0.0029

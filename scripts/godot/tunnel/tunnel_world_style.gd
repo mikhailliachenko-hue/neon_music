@@ -20,6 +20,11 @@ class_name TunnelWorldStyle
 @export_group("Built-in Guide Lights")
 @export var show_floor_rails := true
 @export var show_ceiling_rails := true
+@export var floor_effects_enabled := true
+
+@export_group("Composition Contract")
+@export var continuous_frame_rhythm := false
+@export var background_planes_enabled := true
 
 @export_group("Authored GLB Material")
 @export_range(0.0, 1.0, 0.01) var authored_color_mix := 0.46
@@ -27,6 +32,12 @@ class_name TunnelWorldStyle
 @export_range(0.0, 1.0, 0.01) var floor_authored_color_mix := 0.08
 @export_range(0.0, 2.0, 0.01) var architecture_emission_scale := 1.0
 @export_range(0.0, 1.0, 0.01) var architecture_body_glow := 0.0
+@export_range(0.0, 1.0, 0.01) var architecture_material_override_mix := 0.0
+@export_range(0.0, 1.0, 0.01) var architecture_metallic := 0.35
+@export_range(0.0, 1.0, 0.01) var architecture_roughness := 0.45
+@export_range(0.0, 1.0, 0.01) var floor_material_override_mix := 0.0
+@export_range(0.0, 1.0, 0.01) var floor_metallic := 0.35
+@export_range(0.0, 1.0, 0.01) var floor_roughness := 0.45
 
 @export_group("Action Wave")
 @export var action_wave_enabled := false
@@ -73,6 +84,8 @@ func validation_errors() -> PackedStringArray:
 		errors.append("%s safe lane is narrower than the gameplay road." % world_id)
 	if spatial_profile == "RhythmFrames" and (asset_set == null or not asset_set.gameplay_clearance_verified):
 		errors.append("%s has no verified rhythm-frame gameplay clearance." % world_id)
+	if continuous_frame_rhythm and (asset_set == null or asset_set.ring_assets.is_empty()):
+		errors.append("%s continuous frame rhythm has no ring asset." % world_id)
 	if asset_set != null:
 		errors.append_array(asset_set.validation_errors())
 	return errors

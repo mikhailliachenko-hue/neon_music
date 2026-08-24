@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "GoldenFuture"
-emission_color = Color(1, 0.66, 0.08, 1)
-accent_color = Color(1, 0.94, 0.52, 1)
+emission_color = Color(1, 0.722, 0.302, 1)
+accent_color = Color(1, 0.886, 0.659, 1)
 background_color = Color(0.018, 0.008, 0.001, 1)
 fog_color = Color(0.18, 0.09, 0.012, 1)
 fog_density = 0.0041

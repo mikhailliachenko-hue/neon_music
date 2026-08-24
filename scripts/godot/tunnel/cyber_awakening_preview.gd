@@ -150,6 +150,8 @@ func _capture_start_time() -> float:
 
 
 func _capture_preview() -> void:
+	$PreviewUI.visible = false
+	await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	var output_path := _capture_path

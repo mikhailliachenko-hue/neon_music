@@ -40,7 +40,7 @@ environment = SubResource("Environment_preview")
 [node name="Camera3D" type="Camera3D" parent="."]
 position = Vector3(0, 2.3, 7.25)
 current = true
-fov = 75.0
+fov = 65.0
 
 [node name="CyberAwakening" parent="." instance=ExtResource("2_level")]
 

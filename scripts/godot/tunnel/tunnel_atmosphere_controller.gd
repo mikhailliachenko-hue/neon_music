@@ -48,15 +48,16 @@ func _ready() -> void:
 func set_preset(preset: TunnelLevelPreset) -> void:
 	_preset_density = preset.atmosphere_density if preset != null else 1.0
 	particles.amount = clampi(roundi(float(_base_amount) * _preset_density), 24, 128)
-	var has_level_background := preset != null and preset.background_texture != null
+	var background_planes_enabled := preset == null or preset.world_style == null or preset.world_style.background_planes_enabled
+	var has_level_background := background_planes_enabled and preset != null and preset.background_texture != null
 	level_backdrop.visible = has_level_background
 	if has_level_background and _level_backdrop_material != null:
 		_level_backdrop_material.albedo_texture = preset.background_texture
 		_level_backdrop_material.emission_texture = preset.background_texture
 	var theme_name := preset.theme.theme_name if preset != null and preset.theme != null else "CyberBlue"
-	backdrop_navy.visible = not has_level_background and theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
-	backdrop_graphite.visible = not has_level_background and theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
-	backdrop_violet.visible = not has_level_background and not backdrop_navy.visible and not backdrop_graphite.visible
+	backdrop_navy.visible = background_planes_enabled and not has_level_background and theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
+	backdrop_graphite.visible = background_planes_enabled and not has_level_background and theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
+	backdrop_violet.visible = background_planes_enabled and not has_level_background and not backdrop_navy.visible and not backdrop_graphite.visible
 
 
 func trigger_drop() -> void:

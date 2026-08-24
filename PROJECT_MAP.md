@@ -1,6 +1,6 @@
 ﻿# Project Map: Neon Footstep Renderer
 
-Last updated: 2026-08-18
+Last updated: 2026-08-25
 
 Этот файл - быстрая карта проекта для новых диалогов с Codex. Его можно давать как стартовый контекст: здесь описано, что это за проект, где лежат основные части, как идет поток данных, какие файлы трогать для типичных задач и какие команды считать опорными.
 
@@ -93,6 +93,11 @@ Runtime renderer scripts.
 - `tunnel/neon_tunnel_generator.gd` - Forward+ infinite Neon Tunnel streamer.
   It reuses 8 pooled `TunnelSegment` scenes, consumes the existing beat/phrase/
   8-count/32-count adapter and changes only the decorative world root.
+  Production frame worlds keep `continuous_frame_rhythm` enabled, so every
+  recycled cell receives authored architecture instead of occasionally falling
+  back to an empty floor-only layout. PackedScenes, fitted wrappers and shared
+  materials are warmed before playback; streaming only reconfigures and moves
+  the fixed pool.
   The optional wall spectrum remains available but is disabled in production.
   Music beat/drop never moves the tunnel camera;
   `tunnel_camera_motion_controller.gd` responds only to gameplay actions.
@@ -102,10 +107,12 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 27 Dance Mode levels. All production worlds now follow
-  the sparse reference-frame grammar; levels 16-25 add ten action-wave variants
-  built from open A, square, tall, circle, star and open-gate silhouettes.
-  The existing Track tuning GUI
+  data-driven library of 27 Dance Mode levels. Their production mapping resolves
+  to six curated world families: Pinterest Prism, Rhythm Frames, Rhythm Circle
+  Frames, Rhythm Square Frames, Rhythm Tall Frames and Rhythm Star Frames.
+  Pinterest Prism is the primary reference-directed family: a regular octagonal
+  wrapper built from ready-made Quaternius rail modules, fitted around rather
+  than on top of the gameplay road. The existing Track tuning GUI
   selects/reseeds/previews these Resources at runtime; all of them share the
   generator, segment scenes, resource cache and fixed eight-segment pool. Each
   preset also calibrates steady GLB-frame readability independently from bloom
@@ -113,13 +120,12 @@ Runtime renderer scripts.
   consistent exposure without one global brightness multiplier.
 - `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
   `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
-  GLB sets. The user-facing library uses seven minimal rhythm-frame silhouettes
-  (open A-frame, square, tall square, open gate, circle and star) plus the
-  separate LIGHT GRID RUNNER and VIOLET GRID RUNNER panel tunnels. They share
-  one pooled module but keep the large, dense Quaternius light-housing banks in
-  distinct presets, so both architectures never overlap inside one corridor.
-  These two presets use a clean modular GLB floor with no procedural guide rails
-  or floor-line effects.
+  GLB sets. The six production families use thin fitted frame silhouettes, a
+  clean modular GLB floor and a dark glossy shell. Procedural guide rails,
+  floor-line effects and wallpaper/background planes are disabled in these
+  worlds; opaque colour, fog and sparse reflections come from the environment.
+  The former production light-grid, gate, industrial, solar and quantum mappings
+  remain archived resources but are no longer selected by the 27-level library.
 
 #### Ideal Dance Mode level formula
 
@@ -134,29 +140,33 @@ which GLB wrapper or theme it uses:
 - The asset set owns frame fit for every spatial profile. `frame_target_*` is
   authoritative for `RhythmFrames`, `OpenHighway` and future profiles; profile
   hard-codes may provide defaults but must never override a verified GLB fit.
-- Depth rhythm is regular rather than random: thin frames use `4.5-6.0 m`
-  spacing, medium gates about `6.0 m`, and a massive detailed gateway no more than
-  `9.0 m`. Four frames in an `18 m` segment produce the reference-dense `4.5 m`
-  cadence without a discontinuity at pooled segment boundaries.
+- Depth rhythm is regular rather than random: an `18 m` segment carries `6-8`
+  thin frames at a `2.25-3.0 m` cadence. The spacing continues across pooled
+  segment boundaries, creating a dense readable corridor without gaps or a
+  visible recycle seam.
 - Visual hierarchy follows an approximate `70 / 25 / 5` split: 70% dark neutral
-  world/background, 25% readable low-emission architecture and at most 5% bright
-  accent/action wave. Use no more than two saturated hues plus neutral; cyan and
+  glossy shell/floor, 25% readable low-emission architecture and at most 5%
+  bright accent/action wave. The floor stays clean and no wallpaper plane is
+  pasted behind the modular world. Use no more than two saturated hues plus
+  neutral; cyan and
   magenta gameplay cues remain the brightest local objects. Palette pairs should
   be analogous (for example wine -> magenta -> lilac or coral -> amber -> pink),
   with a near-white crest used briefly instead of filling the whole model with
   maximum saturation.
 - Architecture is calm between actions. STEP/PUNCH/JUMP/DUCK launch the existing
   cached depth wave with a `35-55 ms` portal-to-portal delay, `80-140 ms` attack
-  and `320-520 ms` release. The wave changes emission/colour only; it never scales
-  frames, creates lights or drives continuous camera shake. Beat-only flashing
-  stays disabled in production.
+  and `320-520 ms` release. Its colour travels `cyan -> violet -> pink`; only
+  gameplay actions can launch it. The wave changes emission/colour only; it never
+  scales frames, creates lights or drives continuous camera shake. Beat-only
+  flashing stays disabled in production.
 - Composition changes at phrase/section scale, not per frame. A 32-count may move
   through a controlled `2 -> 3 -> 4 -> 3` density arc or swap one silhouette and
   palette, while the gameplay corridor and pool size remain fixed.
-- Runtime budget is eight pooled `TunnelSegment` nodes and, for a dense world, at
-  most 32 repeated portal instances. GLB scenes and materials are cached/warmed;
-  there is no runtime instantiate/free loop, per-ring light or per-frame material
-  creation. Acceptance requires calm/action/phrase captures, no road overlap or
+- Runtime budget is exactly eight pooled `TunnelSegment` nodes and `48-64`
+  repeated frame instances for the `6-8` frame cadence. GLB scenes, fitted
+  wrappers and materials are cached and warmed before playback; there is no
+  runtime instantiate/free loop, per-ring light or per-frame material creation.
+  Acceptance requires calm/action/phrase captures, no road overlap, empty cell or
   recycle seam, and a stable 60 FPS after warm-up.
 
 `resources/tunnel/presets/` is the legacy standalone-preview library. It is not

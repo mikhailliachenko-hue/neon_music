@@ -2,8 +2,9 @@ extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const NOTE_SCENE := preload("res://scenes/note.tscn")
-const GAMEPLAY_HALF_WIDTH := 4.15
+const GAMEPLAY_HALF_WIDTH := 4.4
 const GAMEPLAY_HAND_TOP := 3.25
+const FRAME_OPENING_TOP := 4.3
 
 
 func _initialize() -> void:
@@ -28,13 +29,13 @@ func _run() -> void:
 		if has_center_frames:
 			if asset_set.frame_inner_half_width < GAMEPLAY_HALF_WIDTH:
 				failures.append("%s is narrower than gameplay hands" % preset.display_name())
-			if asset_set.frame_opening_bottom_y > -1.90:
+			if asset_set.frame_opening_bottom_y > -2.05:
 				failures.append("%s threshold is above the safe step line" % preset.display_name())
-			if asset_set.frame_opening_top_y < GAMEPLAY_HAND_TOP:
+			if asset_set.frame_opening_top_y < FRAME_OPENING_TOP:
 				failures.append("%s is lower than the hand envelope" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
-			and asset_set.frame_instances_per_segment != 2:
-			failures.append("%s must keep the dense two-star cadence" % preset.display_name())
+			and asset_set.frame_instances_per_segment != 6:
+			failures.append("%s must keep the Pinterest-dense six-star cadence" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
 			and asset_set.frame_target_depth > 2.0:
 			failures.append("%s star rails are stretched along the gameplay lane" % preset.display_name())

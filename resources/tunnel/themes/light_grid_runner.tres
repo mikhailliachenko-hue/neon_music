@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "LightGridRunner"
-emission_color = Color(1, 0.08, 0.025, 1)
-accent_color = Color(0.12, 1, 0.28, 1)
+emission_color = Color(1, 0.302, 0.353, 1)
+accent_color = Color(1, 0.694, 0.353, 1)
 background_color = Color(0.0015, 0.0015, 0.003, 1)
 fog_color = Color(0.055, 0.018, 0.01, 1)
 fog_density = 0.0022

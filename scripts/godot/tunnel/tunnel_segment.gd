@@ -103,7 +103,7 @@ func configure_layout(
 	# broad white or red gate. Action waves are still the only dynamic response.
 	_frame_rest_glow = clampf(
 		float(preset.lighting_settings.get("frame_rest_glow", 0.22)) if preset != null else 0.22,
-		0.10,
+		0.18,
 		0.36
 	)
 	_frame_rest_emission_scale = clampf(
@@ -180,7 +180,9 @@ func configure_layout(
 		wall_probability = (wall_probability if real_asset_only else 0.48) * _world_slot_probability("Walls", 1.0)
 		_activate_external_slot("Ceiling", ceiling_probability, rng, theme_name)
 		_activate_external_slot("Walls", wall_probability, rng, theme_name)
-		if layout_name in ["SidePanels", "NeonGrid"]:
+		if _active_world_style != null and _active_world_style.continuous_frame_rhythm:
+			_external_ring_active = _activate_external_slot("Rings", (1.0 if real_asset_only else 0.92) * _world_slot_probability("Rings", 1.0), rng, theme_name)
+		elif layout_name in ["SidePanels", "NeonGrid"]:
 			var panel_scale := 0.38 if profile == "Entrance" else profile_density
 			_activate_external_slot("Panels", clampf(panel_probability * (preset.panel_density if preset != null else 1.0) * panel_scale, 0.0, 0.95), rng, theme_name)
 		elif layout_name in ["Ring", "DoubleRing"]:
@@ -382,6 +384,9 @@ func apply_visual_state(
 			var authored_mix := _active_world_style.authored_color_mix if _active_world_style != null else 0.46
 			var authored_accent_influence := _active_world_style.authored_accent_influence if _active_world_style != null else 0.44
 			var body_glow := _active_world_style.architecture_body_glow if _active_world_style != null else 0.0
+			var material_override_mix := _active_world_style.architecture_material_override_mix if _active_world_style != null else 0.0
+			var material_metallic := _active_world_style.architecture_metallic if _active_world_style != null else 0.35
+			var material_roughness := _active_world_style.architecture_roughness if _active_world_style != null else 0.45
 			if slot_name == "Floor":
 				if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
 					material_surface = Color(0.028, 0.003, 0.004, 1.0) if _light_grid_mode == 1 \
@@ -391,11 +396,14 @@ func apply_visual_state(
 					material_emission *= 0.14
 					authored_mix = 0.16
 				else:
-					material_surface = Color(0.008, 0.012, 0.018, 1.0)
+					material_surface = Color(0.020, 0.010, 0.028, 1.0)
 					material_primary = material_surface.lerp(primary, 0.08)
 					material_accent = primary
-					material_emission *= 0.28
+					material_emission *= 0.36
 					authored_mix = _active_world_style.floor_authored_color_mix if _active_world_style != null else 0.08
+					material_override_mix = _active_world_style.floor_material_override_mix if _active_world_style != null else 0.0
+					material_metallic = _active_world_style.floor_metallic if _active_world_style != null else 0.35
+					material_roughness = _active_world_style.floor_roughness if _active_world_style != null else 0.45
 			elif _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames" \
 				and slot_name in ["Rings", "Arches"]:
 				material_surface = Color(0.012, 0.016, 0.024, 1.0)
@@ -412,11 +420,16 @@ func apply_visual_state(
 				themed.set_shader_parameter("authored_mix", authored_mix)
 				themed.set_shader_parameter("authored_accent_influence", authored_accent_influence)
 				themed.set_shader_parameter("theme_body_glow", body_glow)
+				themed.set_shader_parameter("material_override_mix", material_override_mix)
+				themed.set_shader_parameter("theme_metallic", material_metallic)
+				themed.set_shader_parameter("theme_roughness", material_roughness)
 			elif material is StandardMaterial3D:
 				var standard := material as StandardMaterial3D
 				standard.albedo_color = material_surface
 				standard.emission = material_accent
 				standard.emission_energy_multiplier = material_emission * 0.24
+				standard.metallic = lerpf(standard.metallic, material_metallic, material_override_mix)
+				standard.roughness = lerpf(standard.roughness, material_roughness, material_override_mix)
 		_last_external_primary = primary
 		_last_external_accent = accent
 		_last_external_energy = emission_energy
@@ -516,7 +529,7 @@ func apply_frame_reaction(
 				var action_emission_gain := 0.24 + wave_emission_strength * 1.15
 				var emission := (0.50 + _frame_emission * 0.12) * _frame_rest_emission_scale \
 					* (1.0 + wave_amount * action_emission_gain)
-				var body_glow := _frame_rest_glow + visual_amount * 0.30
+				var body_glow := _frame_rest_glow + visual_amount * _active_world_style.action_wave_body_glow
 				if module.has_method("apply_panel_reaction"):
 					# The light-grid module keeps its authored per-instance gradient. The
 					# action wave only nudges that palette in the far field; it is not an
@@ -782,7 +795,7 @@ func prepare_world_style(
 			slot.add_child(group)
 			var placement_count := 2 if slot_name in ["Walls", "Panels", "Pipes", "Props"] else 1
 			if world_style != null and world_style.asset_set != null and slot_name in ["Rings", "Arches"]:
-				placement_count = clampi(world_style.asset_set.frame_instances_per_segment, 1, 4)
+				placement_count = clampi(world_style.asset_set.frame_instances_per_segment, 1, 8)
 			for placement_index in range(placement_count):
 				var instance := packed.instantiate() as Node3D
 				if instance == null:
@@ -834,11 +847,11 @@ func validate_active_safe_lane() -> PackedStringArray:
 		if not active_asset_set.gameplay_clearance_verified:
 			errors.append("%s centered opening has no verified gameplay clearance" % _active_world_key)
 		else:
-			if active_asset_set.frame_inner_half_width < 4.15:
+			if active_asset_set.frame_inner_half_width < 4.4:
 				errors.append("%s centered opening is narrower than hand envelope" % _active_world_key)
-			if active_asset_set.frame_opening_bottom_y > -1.90:
+			if active_asset_set.frame_opening_bottom_y > -2.05:
 				errors.append("%s centered threshold overlaps step envelope" % _active_world_key)
-			if active_asset_set.frame_opening_top_y < 3.25:
+			if active_asset_set.frame_opening_top_y < 4.3:
 				errors.append("%s centered opening is too low for hand cues" % _active_world_key)
 	if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
 		var asset_set := active_asset_set
@@ -967,7 +980,7 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 				target_center = Vector3(0.0, -2.02, 0.0)
 			"Rings", "Arches":
 				var asset_set := world_style.asset_set if world_style != null else null
-				var frame_count := clampi(world_style.asset_set.frame_instances_per_segment if world_style != null and world_style.asset_set != null else 3, 1, 4)
+				var frame_count := clampi(world_style.asset_set.frame_instances_per_segment if world_style != null and world_style.asset_set != null else 3, 1, 8)
 				target_size = Vector3(
 					asset_set.frame_target_width if asset_set != null else 16.2,
 					asset_set.frame_target_height if asset_set != null else 10.2,
@@ -995,7 +1008,7 @@ func _fit_external_instance(instance: Node3D, slot_name: String, placement_index
 			active_asset_set.frame_target_depth
 		)
 		target_center.y = active_asset_set.resolved_frame_center_y()
-		var dense_frame_count := clampi(active_asset_set.frame_instances_per_segment, 1, 4)
+		var dense_frame_count := clampi(active_asset_set.frame_instances_per_segment, 1, 8)
 		if dense_frame_count > 1 and spatial_profile != "RhythmFrames":
 			var dense_spacing := BASE_LENGTH / float(dense_frame_count)
 			target_center.z = (float(placement_index) - (float(dense_frame_count) - 1.0) * 0.5) * dense_spacing
@@ -1164,6 +1177,8 @@ func recommended_floor_pattern(default_pattern: String) -> String:
 
 
 func configure_floor_pattern(pattern_name: String) -> void:
+	if _active_world_style != null and not _active_world_style.floor_effects_enabled:
+		pattern_name = "None"
 	_floor_pattern = pattern_name if pattern_name == "None" or _floor_effect_materials.has(pattern_name) else "GlowingLines"
 	for child in $VisualRoot/FloorEffects.get_children():
 		if child is Node3D:

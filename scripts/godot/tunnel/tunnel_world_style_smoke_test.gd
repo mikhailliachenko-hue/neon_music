@@ -5,18 +5,18 @@ const ARCHITECTURE_WAVE_RESPONSE := preload("res://scripts/godot/tunnel/tunnel_a
 const EXCLUSIVE_NEW_WORLDS := [
 	"rhythm_frames", "rhythm_square_frames", "rhythm_circle_frames",
 	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
-	"solar_skyrail", "quantum_mirror", "industrial_portal",
+	"solar_skyrail", "quantum_mirror", "industrial_portal", "pinterest_prism",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
 	{"level": "GOLDEN STAR", "world": "rhythm_star_frames", "asset_terms": ["Rhythm Star", "Road"]},
 	{"level": "PULSE CIRCLE", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
 	{"level": "ELECTRIC PINK", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
-	{"level": "WHITE SIGNAL", "world": "industrial_portal", "asset_terms": ["Industrial Portal", "Road"]},
+	{"level": "WHITE SIGNAL", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "TOXIC PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
-	{"level": "REDLINE GATE", "world": "rhythm_gate_frames", "asset_terms": ["Gate", "Road"]},
-	{"level": "LIGHT GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
-	{"level": "VIOLET GRID RUNNER", "world": "rhythm_light_grid", "asset_terms": ["Rhythm Light Grid", "Road"]},
+	{"level": "REDLINE GATE", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "LIGHT GRID RUNNER", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "VIOLET GRID RUNNER", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "CYAN APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
 	{"level": "VIOLET CIRCUIT", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
 	{"level": "DEEP ORBIT", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
@@ -27,8 +27,9 @@ const WORLD_CASES := [
 	{"level": "SUNSET APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
 	{"level": "WHITE WAVELINE", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "SPECTRUM HALO", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},
-	{"level": "SOLAR SKYRAIL", "world": "solar_skyrail", "asset_terms": ["Road", "Solar Portal Arch"]},
-	{"level": "QUANTUM MIRROR", "world": "quantum_mirror", "asset_terms": ["Road", "Clean Energy Portal"]},
+	{"level": "FINAL SPECTRUM", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "SOLAR SKYRAIL", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "QUANTUM MIRROR", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 ]
 
 

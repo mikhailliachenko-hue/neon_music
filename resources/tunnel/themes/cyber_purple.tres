@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "CyberPurple"
-emission_color = Color(0.72, 0.12, 1, 1)
-accent_color = Color(1, 0.05, 0.74, 1)
+emission_color = Color(0.643, 0.329, 1, 1)
+accent_color = Color(1, 0.337, 0.812, 1)
 background_color = Color(0.012, 0.002, 0.028, 1)
 fog_color = Color(0.12, 0.015, 0.2, 1)
 fog_density = 0.0052

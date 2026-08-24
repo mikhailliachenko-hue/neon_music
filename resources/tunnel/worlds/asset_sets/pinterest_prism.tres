@@ -2,24 +2,24 @@
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="2_road"]
-[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Door_Frame_SquareTall.gltf" id="3_frame"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/rings/pinterest_prism_frame.tscn" id="3_frame"]
 [ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="4_particles"]
 
 [resource]
 script = ExtResource("1_script")
-asset_set_id = "rhythm_tall_frames"
-display_name = "Rhythm Tall Frames"
+asset_set_id = "pinterest_prism"
+display_name = "Pinterest Prism Modular Set"
 floor_assets = Array[PackedScene]([ExtResource("2_road")])
 ring_assets = Array[PackedScene]([ExtResource("3_frame")])
 particle_assets = Array[PackedScene]([ExtResource("4_particles")])
 gameplay_clearance_verified = true
 frame_instances_per_segment = 6
-frame_inner_half_width = 4.8
+frame_inner_half_width = 5.0
 frame_opening_bottom_y = -2.05
 frame_opening_top_y = 5.8
-frame_target_width = 15.2
-frame_target_height = 11.4
-frame_target_depth = 0.45
-frame_target_center_y = 2.35
+frame_target_width = 15.0
+frame_target_height = 10.8
+frame_target_depth = 0.34
+frame_target_center_y = 2.05
 frame_wraps_below_road = true
 frame_target_outer_bottom_y = -3.35

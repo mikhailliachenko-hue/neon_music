@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
 [ext_resource type="Resource" path="res://resources/tunnel/themes/future_white.tres" id="2_theme"]
-[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/industrial_portal.tres" id="3_world"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/pinterest_prism.tres" id="3_world"]
 [ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/levels/09_white_signal.png" id="4_background"]
 
 [resource]
