@@ -142,6 +142,26 @@ Runtime renderer scripts.
   legacy palette falls back per colour to `TunnelTheme`. Gold Master uses Prism
   Orchid (`#6A2D91`, `#C33DBB`, `#05030C`) with the action-wave gradient
   `#52E9FF -> #A454FF -> #FF56CF`.
+- Gold Master is the first production world using the opt-in environment-sky
+  background contract. `TunnelLevelPreset.background_texture` is wrapped once
+  in a cached `PanoramaSkyMaterial` when `lighting_settings.sky_background_enabled`
+  is true; `sky_background_energy` controls calm exposure and
+  `sky_background_stage_mix` allows only a restrained smooth 32-count lift.
+  `sky_background_yaw_degrees` rotates authored peripheral detail away from the
+  clean gameplay axis without changing the camera or segment transforms.
+  A sky-enabled preset also sets `fog_settings.sky_affect` independently from
+  corridor fog density: fog still provides depth on GLB modules, but it no
+  longer collapses an infinitely distant panorama into the background colour.
+  The texture is never reloaded on beat/action/recycle, and the old far-plane
+  background remains available to legacy worlds. Transparent OBS/external-video
+  mode always wins and restores `BG_CLEAR_COLOR`, so the sky cannot cover the
+  separately composited MP4.
+- `assets/tunnel/backgrounds/prism_orchid_panorama_v1.png` is Gold Master's
+  production 2:1 equirectangular panorama. It keeps the forward gameplay axis
+  dark and moves soft orchid/cyan nebula depth into the peripheral openings of
+  the modular shell. `preview_texture` deliberately remains the separate 16:9
+  selector image; preview art and runtime panorama are no longer required to be
+  the same file for opt-in sky levels.
 - `tunnel_visual_stage_controller.gd` expresses each 32-count as four smooth
   stages: calm, reflected build, second-colour reveal and payoff. A stage may
   blend palette, fog, architectural emission and a camera FOV push of at most

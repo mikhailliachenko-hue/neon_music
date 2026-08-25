@@ -23,6 +23,9 @@ var _visual_stage_state := {
 	"accent_reveal": 1.0,
 	"fog_scale": 1.0,
 }
+var _background_sky_cache: Dictionary = {}
+var _active_background_sky: Sky
+var _active_background_path := ""
 
 
 func configure(environment: Environment, config: NeonTunnelConfig, theme: TunnelTheme, preset: TunnelLevelPreset) -> void:
@@ -37,6 +40,7 @@ func configure(environment: Environment, config: NeonTunnelConfig, theme: Tunnel
 	_previous_background = _current_background
 	_previous_floor = _current_floor
 	_transition = 1.0
+	_prepare_background_sky()
 	_apply_environment(0.0)
 
 
@@ -47,6 +51,7 @@ func set_preset(preset: TunnelLevelPreset) -> void:
 	var blended_floor := _blended_color(_previous_floor, _current_floor)
 	var prior_theme := _current_theme
 	_preset = preset
+	_prepare_background_sky()
 	if preset != null and preset.theme != null:
 		_current_theme = preset.theme
 	if _current_theme == null:
@@ -58,6 +63,7 @@ func set_preset(preset: TunnelLevelPreset) -> void:
 		or not blended_floor.is_equal_approx(_current_floor)
 	var theme_changed := prior_theme != _current_theme
 	if not palette_changed and not theme_changed:
+		_apply_environment(0.0)
 		return
 	_previous_primary = blended_primary
 	_previous_accent = blended_accent
@@ -169,6 +175,14 @@ func drop_strength() -> float:
 	return _drop_pulse
 
 
+func background_sky_cache_size() -> int:
+	return _background_sky_cache.size()
+
+
+func active_background_path() -> String:
+	return _active_background_path
+
+
 func _apply_environment(reaction: float) -> void:
 	if _environment == null or _current_theme == null or _config == null:
 		return
@@ -182,8 +196,20 @@ func _apply_environment(reaction: float) -> void:
 	var stage_emission_scale := float(_visual_stage_state.get("emission_scale", 1.0)) if stage_enabled else 1.0
 	if get_viewport().transparent_bg:
 		_environment.background_mode = Environment.BG_CLEAR_COLOR
+		_environment.sky = null
+	elif _sky_background_enabled():
+		_environment.background_mode = Environment.BG_SKY
+		_environment.sky = _active_background_sky
+		var base_sky_energy := clampf(float(_preset.lighting_settings.get("sky_background_energy", 0.78)), 0.05, 2.0)
+		var stage_mix := clampf(float(_preset.lighting_settings.get("sky_background_stage_mix", 0.12)), 0.0, 0.35)
+		var sky_yaw_degrees := float(_preset.lighting_settings.get("sky_background_yaw_degrees", 0.0))
+		_environment.sky_rotation = Vector3(0.0, deg_to_rad(sky_yaw_degrees), 0.0)
+		_environment.background_energy_multiplier = base_sky_energy * lerpf(1.0, stage_emission_scale, stage_mix)
 	else:
 		_environment.background_mode = Environment.BG_COLOR
+		_environment.sky = null
+		_environment.sky_rotation = Vector3.ZERO
+		_environment.background_energy_multiplier = 1.0
 		var themed_background := _previous_background.lerp(_current_background, blend)
 		var atmosphere_tint := source.ambient_color.lerp(_current_theme.ambient_color, blend)
 		# Keep the tunnel dark, but never let an opaque launch read as missing or
@@ -203,6 +229,11 @@ func _apply_environment(reaction: float) -> void:
 	_environment.fog_enabled = _config.fog_density > 0.0
 	_environment.fog_light_color = source.fog_color.lerp(_current_theme.fog_color, blend)
 	_environment.fog_density = lerpf(source.fog_density, _current_theme.fog_density, blend) * fog_scale * stage_fog_scale
+	_environment.fog_sky_affect = clampf(
+		float(_preset.fog_settings.get("sky_affect", 1.0)) if _preset != null else 1.0,
+		0.0,
+		1.0
+	)
 	_environment.glow_enabled = true
 	_environment.glow_bloom = _config.glow_bloom
 	_environment.glow_strength = _config.glow_strength * preset_glow * lerpf(0.96, stage_emission_scale, 0.42)
@@ -215,6 +246,39 @@ func _apply_environment(reaction: float) -> void:
 		1.45,
 		theme_glow * (_config.glow_intensity / 0.72) * preset_glow * stage_emission_scale + reaction * 0.075
 	)
+
+
+func _prepare_background_sky() -> void:
+	_active_background_sky = null
+	_active_background_path = ""
+	if _preset == null or _preset.background_texture == null:
+		return
+	if not bool(_preset.lighting_settings.get("sky_background_enabled", false)):
+		return
+	var texture := _preset.background_texture
+	var cache_key := texture.resource_path
+	if cache_key.is_empty():
+		cache_key = "instance://%d" % texture.get_instance_id()
+	_active_background_path = cache_key
+	if _background_sky_cache.has(cache_key):
+		_active_background_sky = _background_sky_cache[cache_key] as Sky
+		return
+	var sky_material := PanoramaSkyMaterial.new()
+	sky_material.panorama = texture
+	sky_material.filter = true
+	var sky := Sky.new()
+	# Panorama textures are static. QUALITY builds the radiance map once; the
+	# default AUTOMATIC mode can leave a runtime-created sky black on D3D12.
+	sky.process_mode = Sky.PROCESS_MODE_QUALITY
+	sky.sky_material = sky_material
+	_background_sky_cache[cache_key] = sky
+	_active_background_sky = sky
+
+
+func _sky_background_enabled() -> bool:
+	return _preset != null \
+		and bool(_preset.lighting_settings.get("sky_background_enabled", false)) \
+		and _active_background_sky != null
 
 
 func _resolve_current_palette() -> void:

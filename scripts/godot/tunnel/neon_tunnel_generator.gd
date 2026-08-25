@@ -329,6 +329,8 @@ func get_runtime_stats() -> Dictionary:
 		"visual_stage_enabled": bool(_visual_stage_state.get("enabled", false)),
 		"visual_stage": int(_visual_stage_state.get("index", -1)),
 		"visual_stage_emission": float(_visual_stage_state.get("emission_scale", 1.0)),
+		"background_path": neon_material_controller.active_background_path(),
+		"background_sky_cache": neon_material_controller.background_sky_cache_size(),
 	}
 
 

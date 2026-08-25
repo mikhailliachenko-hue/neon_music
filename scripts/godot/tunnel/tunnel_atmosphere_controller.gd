@@ -55,7 +55,8 @@ func set_preset(preset: TunnelLevelPreset) -> void:
 	_preset_density = preset.atmosphere_density if preset != null else 1.0
 	particles.amount = clampi(roundi(float(_base_amount) * _preset_density), 24, 128)
 	var background_planes_enabled := preset == null or preset.world_style == null or preset.world_style.background_planes_enabled
-	var has_level_background := background_planes_enabled and preset != null and preset.background_texture != null
+	var uses_environment_sky := preset != null and bool(preset.lighting_settings.get("sky_background_enabled", false))
+	var has_level_background := background_planes_enabled and not uses_environment_sky and preset != null and preset.background_texture != null
 	level_backdrop.visible = has_level_background
 	if has_level_background and _level_backdrop_material != null:
 		_level_backdrop_material.albedo_texture = preset.background_texture

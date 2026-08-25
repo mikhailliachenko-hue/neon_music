@@ -88,8 +88,11 @@ func _run() -> void:
 		else:
 			var background_path := preset.background_texture.resource_path
 			backgrounds[background_path] = true
-			if preset.preview_texture.resource_path != background_path:
+			var uses_environment_sky := bool(preset.lighting_settings.get("sky_background_enabled", false))
+			if not uses_environment_sky and preset.preview_texture.resource_path != background_path:
 				failures.append("preview/background mismatch: %s" % preset.display_name())
+			if uses_environment_sky and not background_path.get_extension().to_lower() in ["png", "jpg", "jpeg", "hdr", "exr"]:
+				failures.append("unsupported sky panorama format: %s" % preset.display_name())
 		for settings in [preset.asset_weights, preset.particle_settings, preset.lighting_settings, preset.fog_settings, preset.camera_settings, preset.music_reaction_settings]:
 			if settings.is_empty():
 				failures.append("missing runtime settings: %s" % preset.display_name())

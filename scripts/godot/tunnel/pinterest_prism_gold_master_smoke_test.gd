@@ -136,6 +136,28 @@ func _validate_runtime_contract(
 		failures.append("preset background palette did not reach the renderer")
 	if not environment.ssr_enabled:
 		failures.append("Gold Master did not enable SSR")
+	if environment.background_mode != Environment.BG_SKY or environment.sky == null:
+		failures.append("Gold Master background texture did not reach WorldEnvironment sky")
+	elif generator.neon_material_controller.background_sky_cache_size() != 1:
+		failures.append("Gold Master background sky was not cached exactly once")
+	else:
+		var sky_id := environment.sky.get_instance_id()
+		if environment.sky.process_mode != Sky.PROCESS_MODE_QUALITY:
+			failures.append("Gold Master static panorama does not use one-shot QUALITY processing")
+		generator.neon_material_controller.set_preset(preset)
+		generator.neon_material_controller.update(0.0, 160.0)
+		if environment.sky == null or environment.sky.get_instance_id() != sky_id:
+			failures.append("re-selecting Gold Master replaced its cached sky")
+		root.transparent_bg = true
+		generator.neon_material_controller.update(0.0, 160.0)
+		if environment.background_mode != Environment.BG_CLEAR_COLOR or environment.sky != null:
+			failures.append("transparent OBS mode did not suppress the internal sky")
+		root.transparent_bg = false
+		generator.neon_material_controller.update(0.0, 160.0)
+		if environment.background_mode != Environment.BG_SKY or environment.sky == null or environment.sky.get_instance_id() != sky_id:
+			failures.append("opaque mode did not restore the cached internal sky")
+	if generator.atmosphere_controller.level_backdrop.visible:
+		failures.append("Gold Master rendered both the sky and the legacy backdrop plane")
 	var first_segment := generator._segments[0]
 	var left_apron := first_segment.get_node("VisualRoot/WorldAccents/SideReflections/Left") as MeshInstance3D
 	var apron_half_width := left_apron.mesh.get_aabb().size.x * left_apron.scale.x * 0.5
