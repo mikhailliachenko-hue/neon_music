@@ -322,6 +322,8 @@ mesh = SubResource("Box_side_reflection")
 
 [node name="ExternalAssets" type="Node3D" parent="."]
 
+[node name="Shell" type="Node3D" parent="ExternalAssets"]
+
 [node name="Floor" type="Node3D" parent="ExternalAssets"]
 
 [node name="Ceiling" type="Node3D" parent="ExternalAssets"]

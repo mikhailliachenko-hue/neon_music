@@ -4,6 +4,17 @@ class_name CyberAwakeningPreview
 const LEVEL_CONFIG := preload("res://resources/tunnel/levels/cyber_awakening.tres")
 const DEFAULT_CONFIG := preload("res://resources/tunnel/neon_tunnel_default.tres")
 const BEAT_INTERVAL := 0.5
+const PREVIEW_ACTION_PERIOD_BEATS := 16
+const PREVIEW_ACTION_SEQUENCE := [
+	{"beat": 0, "action": "STEP", "strength": 1.0, "lane_bias": -0.65},
+	{"beat": 2, "action": "PUNCH", "strength": 1.0, "lane_bias": 0.65},
+	{"beat": 4, "action": "STEP", "strength": 0.94, "lane_bias": 0.65},
+	{"beat": 6, "action": "HOLD", "strength": 0.92, "lane_bias": -0.35},
+	{"beat": 8, "action": "JUMP", "strength": 1.0, "lane_bias": 0.0},
+	{"beat": 10, "action": "STEP", "strength": 0.96, "lane_bias": -0.65},
+	{"beat": 12, "action": "DUCK", "strength": 0.96, "lane_bias": 0.0},
+	{"beat": 14, "action": "PUNCH", "strength": 0.92, "lane_bias": -0.65},
+]
 
 @onready var generator: NeonTunnelGenerator = $CyberAwakening
 @onready var camera: Camera3D = $Camera3D
@@ -23,9 +34,11 @@ var _speed := 14.0
 var _info_elapsed := 0.0
 var _capture_path := ""
 var _capture_after := 1.5
+var _capture_origin_time := 0.0
 var _capture_started := false
 var _manual_action_at := -1.0
 var _manual_action_fired := false
+var _current_preview_action := "WAIT"
 
 
 func _enter_tree() -> void:
@@ -34,6 +47,7 @@ func _enter_tree() -> void:
 		return
 	var preview_config := LEVEL_CONFIG.duplicate(true) as NeonTunnelConfig
 	_parse_preview_args()
+	_capture_origin_time = _preview_time
 	preview_config.tunnel_speed = _speed
 	preview_config.deterministic_seed = _seed
 	preview_config.decoration_probability = clampf(_density * 0.7, 0.0, 1.0)
@@ -75,8 +89,8 @@ func _process(delta: float) -> void:
 	var beat_changed := beat != _last_beat
 	var count8_changed := count8 != _last_count8
 	var count32_changed := count32 != _last_count32
-	var phase := posmod(count32, 4)
-	var roles := ["intro", "groove", "build", "drop"]
+	var roles := ["intro", "groove", "build", "drop", "breakdown", "finale"]
+	var phase := posmod(count32, roles.size())
 	var state := {
 		"song_time": _preview_time,
 		"beat_index": beat,
@@ -93,20 +107,20 @@ func _process(delta: float) -> void:
 		"count32_changed": count32_changed,
 		"section_index": count32,
 		"section_role": roles[phase],
-		"energy_role": "drop_peak" if phase == 3 else "stable_groove",
+		"energy_role": "drop_peak" if roles[phase] in ["drop", "finale"] else "stable_groove",
 		"section_changed": count32_changed,
 	}
 	if beat_changed and _manual_action_at < 0.0:
-		generator.trigger_preview_frame_wave(bool(state["downbeat_changed"]))
+		_trigger_scheduled_action(beat)
 	if not _manual_action_fired and _manual_action_at >= 0.0 and _preview_time >= _manual_action_at:
 		_manual_action_fired = true
-		generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
+		_trigger_action("STEP", 1.0, 0.0)
 	generator.sync_to_song_time(_preview_time, state)
 	_last_beat = beat
 	_last_count8 = count8
 	_last_count32 = count32
 	_update_info(delta, beat, count32)
-	if not _capture_started and not _capture_path.is_empty() and _preview_time >= _capture_start_time() + _capture_after:
+	if not _capture_started and not _capture_path.is_empty() and _preview_time >= _capture_origin_time + _capture_after:
 		_capture_started = true
 		_capture_preview()
 
@@ -137,6 +151,8 @@ func _parse_preview_args() -> void:
 			var phase_index := phase_names.find(normalized)
 			if phase_index >= 0:
 				_preview_time = float(phase_index) * 16.0
+		elif arg.begins_with("--start-time="):
+			_preview_time = maxf(0.0, float(arg.trim_prefix("--start-time=")))
 		elif arg.begins_with("--capture="):
 			_capture_path = arg.trim_prefix("--capture=")
 		elif arg.begins_with("--capture-after="):
@@ -145,8 +161,23 @@ func _parse_preview_args() -> void:
 			_manual_action_at = maxf(0.0, float(arg.trim_prefix("--action-at=")))
 
 
-func _capture_start_time() -> float:
-	return floorf(_preview_time / 16.0) * 16.0
+func _trigger_scheduled_action(beat: int) -> void:
+	var beat_in_cycle := posmod(beat, PREVIEW_ACTION_PERIOD_BEATS)
+	for action_data in PREVIEW_ACTION_SEQUENCE:
+		if int(action_data.get("beat", -1)) != beat_in_cycle:
+			continue
+		_trigger_action(
+			String(action_data.get("action", "STEP")),
+			float(action_data.get("strength", 1.0)),
+			float(action_data.get("lane_bias", 0.0))
+		)
+		return
+	_current_preview_action = "WAIT"
+
+
+func _trigger_action(action: String, strength: float, lane_bias: float) -> void:
+	_current_preview_action = action.to_upper()
+	generator.trigger_action_camera_impact(_current_preview_action, strength, lane_bias)
 
 
 func _capture_preview() -> void:
@@ -188,7 +219,7 @@ func _update_info(delta: float, beat: int, count32: int) -> void:
 		return
 	_info_elapsed = 0.0
 	var stats := generator.get_runtime_stats()
-	info_label.text = "PREVIEW LEVEL — NO MUSIC\nSpeed: %.2f\nTheme: %s\nSeed: %d\nDensity: %.2f\nPhase: %s\nBeat: %d\n32-count: %d\nFPS: %.1f" % [
+	info_label.text = "PREVIEW LEVEL — NO MUSIC\nSpeed: %.2f\nTheme: %s\nSeed: %d\nDensity: %.2f\nPhase: %s\nAction: %s\nBeat: %d\n32-count: %d\nFPS: %.1f" % [
 		_speed, _theme_name, _seed, _density, String(stats.get("level_phase", "Entrance")),
-		beat, count32, float(Performance.get_monitor(Performance.TIME_FPS)),
+		_current_preview_action, beat, count32, float(Performance.get_monitor(Performance.TIME_FPS)),
 	]

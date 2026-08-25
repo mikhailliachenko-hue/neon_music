@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/pinterest_prism_gold_master.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "pinterest_prism_gold_master"
+display_name = "Pinterest Prism Gold Master"
+spatial_profile = "RhythmFrames"
+asset_set = ExtResource("2_assets")
+allow_registry_fallback = false
+shell_probability = 1.0
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.0
+ring_probability = 1.0
+arch_probability = 0.0
+panel_probability = 0.0
+pipe_probability = 0.0
+prop_probability = 0.0
+particle_probability = 1.0
+decoration_scale = 0.05
+layout_weight_scale = {"Straight": 0.0, "Ring": 3.0, "DoubleRing": 0.0, "SidePanels": 0.0, "NeonGrid": 0.0, "EnergyGate": 0.0, "WideTunnel": 0.0, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.0}
+show_floor_rails = false
+show_ceiling_rails = false
+floor_effects_enabled = false
+continuous_frame_rhythm = true
+background_planes_enabled = false
+architecture_surface_color = Color(0.090196, 0.062745, 0.133333, 1)
+authored_color_mix = 0.24
+authored_accent_influence = 0.34
+floor_authored_color_mix = 0.08
+architecture_emission_scale = 0.78
+architecture_body_glow = 0.18
+architecture_material_override_mix = 0.72
+architecture_metallic = 0.82
+architecture_roughness = 0.24
+floor_material_override_mix = 0.88
+floor_metallic = 0.78
+floor_roughness = 0.20
+action_wave_enabled = true
+action_wave_body_glow = 0.36
+action_wave_gradient_start = Color(0.321569, 0.913725, 1, 1)
+action_wave_gradient_mid = Color(0.643137, 0.329412, 1, 1)
+action_wave_gradient_end = Color(1, 0.337255, 0.811765, 1)
+side_reflection_enabled = true
+side_reflection_tint = Color(0.035294, 0.015686, 0.062745, 1)
+side_reflection_roughness = 0.18
+side_reflection_metallic = 0.86
+side_reflection_inner_edge = 4.45
+side_reflection_outer_edge = 5.0
+safe_lane_half_width = 5.0
+minimum_overhead_y = 5.8
+side_clearance_margin = 0.55
+camera_fov_offset = 0.0
+fog_scale = 0.76
+background_depth = 1.25

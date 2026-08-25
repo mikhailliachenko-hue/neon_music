@@ -6,6 +6,7 @@ const EXCLUSIVE_NEW_WORLDS := [
 	"rhythm_frames", "rhythm_square_frames", "rhythm_circle_frames",
 	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
 	"solar_skyrail", "quantum_mirror", "industrial_portal", "pinterest_prism",
+	"pinterest_prism_gold_master",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -16,7 +17,7 @@ const WORLD_CASES := [
 	{"level": "TOXIC PORTAL", "world": "rhythm_tall_frames", "asset_terms": ["Door Frame Square Tall", "Road"]},
 	{"level": "REDLINE GATE", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "LIGHT GRID RUNNER", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
-	{"level": "VIOLET GRID RUNNER", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "VIOLET GRID RUNNER", "world": "pinterest_prism_gold_master", "asset_terms": ["GoldMaster", "Road"]},
 	{"level": "CYAN APEX", "world": "rhythm_frames", "asset_terms": ["Door Frame A", "Road"]},
 	{"level": "VIOLET CIRCUIT", "world": "rhythm_square_frames", "asset_terms": ["Door Frame Square", "Road"]},
 	{"level": "DEEP ORBIT", "world": "rhythm_circle_frames", "asset_terms": ["Rhythm Circle", "Road"]},

@@ -156,6 +156,10 @@ func configure_layout(
 
 	_hide_external_assets()
 	if _asset_registry != null or _asset_library != null or (_active_world_style != null and _active_world_style.asset_set != null):
+		# A full authored corridor shell is one pooled scene per segment. It owns
+		# walls, shoulders and ceiling as a continuous 18 m module, avoiding both
+		# runtime construction and duplicate left/right shell instances.
+		_activate_external_slot("Shell", _world_slot_probability("Shell", 0.0), rng, theme_name)
 		var floor_probability := 1.0 if real_asset_only else 0.34
 		floor_probability *= _world_slot_probability("Floor", 1.0)
 		_activate_external_slot("Floor", floor_probability, rng, theme_name)
@@ -289,7 +293,8 @@ func apply_visual_state(
 	floor_color: Color,
 	emission_energy: float,
 	floor_emission: float,
-	reaction: float
+	reaction: float,
+	reflection_scale := 1.0
 ) -> void:
 	if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid" \
 		and _light_grid_mode == 2:
@@ -341,7 +346,7 @@ func apply_visual_state(
 		var reflection_tint := _active_world_style.side_reflection_tint if _active_world_style != null else floor_color
 		_side_reflection_material.albedo_color = reflection_tint
 		_side_reflection_material.emission = reflection_tint.lerp(primary, 0.22)
-		_side_reflection_material.emission_energy_multiplier = 0.08 + emission_energy * 0.018
+		_side_reflection_material.emission_energy_multiplier = (0.08 + emission_energy * 0.018) * clampf(reflection_scale, 0.0, 1.2)
 
 	for index in range(_ring_materials.size()):
 		var ring_material := _ring_materials[index]
@@ -361,7 +366,8 @@ func apply_visual_state(
 		or absf(emission_energy - _last_external_energy) > 0.025 \
 		or absf(pulse - _last_external_pulse) > 0.025
 	if external_state_changed:
-		var graphite := Color(0.072, 0.082, 0.105, 1.0)
+		var graphite := _active_world_style.architecture_surface_color \
+			if _active_world_style != null else Color(0.072, 0.082, 0.105, 1.0)
 		# Keep large architectural planes premium graphite; the Theme owns trims,
 		# authored bright details, fog and neon. This avoids cheap flat red/green
 		# slabs while still removing the previous baked-blue appearance.
@@ -469,10 +475,19 @@ func apply_frame_reaction(
 			wave_near_fade_distance,
 			wave_emission_strength
 		)
+	var resting_mid := ARCHITECTURE_WAVE_RESPONSE.automatic_gradient_mid(_frame_primary, _frame_accent)
+	var gradient_start := _active_world_style.action_wave_gradient_start
+	if gradient_start.a <= 0.001:
+		gradient_start = _frame_primary
 	var gradient_mid := _active_world_style.action_wave_gradient_mid
 	if gradient_mid.a <= 0.001:
-		gradient_mid = ARCHITECTURE_WAVE_RESPONSE.automatic_gradient_mid(_frame_primary, _frame_accent)
+		gradient_mid = ARCHITECTURE_WAVE_RESPONSE.automatic_gradient_mid(gradient_start, _frame_accent)
+	var gradient_end := _active_world_style.action_wave_gradient_end
+	if gradient_end.a <= 0.001:
+		gradient_end = _frame_accent
+	gradient_start.a = 1.0
 	gradient_mid.a = 1.0
+	gradient_end.a = 1.0
 	for slot_name in ["Rings", "Arches"]:
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -494,7 +509,7 @@ func apply_frame_reaction(
 				# frame at once; only an action wave changes this gradient over time.
 				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105)
 				var base_color := ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
-					_frame_primary, gradient_mid, _frame_accent,
+					_frame_primary, resting_mid, _frame_accent,
 					smoothstep(0.08, 0.92, gradient_phase)
 				)
 				var wave_amount := 0.0
@@ -522,7 +537,7 @@ func apply_frame_reaction(
 						var gradient_cursor := 1.0 - signed_gradient if reverse_gradient else signed_gradient
 						# No white-hot head: adjacent frames form one continuous palette band.
 						wave_color = ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
-							_frame_primary, gradient_mid, _frame_accent, gradient_cursor
+							gradient_start, gradient_mid, gradient_end, gradient_cursor
 						)
 				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.70
 				var final_color := base_color.lerp(wave_color, visual_amount)
@@ -670,10 +685,25 @@ func _bind_placeholder_materials() -> void:
 
 func _configure_world_accents() -> void:
 	var reflections := $VisualRoot/WorldAccents/SideReflections as Node3D
+	var left_apron := $VisualRoot/WorldAccents/SideReflections/Left as MeshInstance3D
+	var right_apron := $VisualRoot/WorldAccents/SideReflections/Right as MeshInstance3D
+	left_apron.position.x = -6.55
+	right_apron.position.x = 6.55
+	left_apron.scale.x = 1.0
+	right_apron.scale.x = 1.0
 	var enabled := _active_world_style != null and _active_world_style.side_reflection_enabled
 	reflections.visible = enabled
 	if not enabled or _side_reflection_material == null:
 		return
+	var apron_inner := _active_world_style.side_reflection_inner_edge
+	var apron_outer := _active_world_style.side_reflection_outer_edge
+	if apron_inner >= 4.4 and apron_outer > apron_inner:
+		var apron_center := (apron_inner + apron_outer) * 0.5
+		var apron_scale := (apron_outer - apron_inner) / 2.2
+		left_apron.position.x = -apron_center
+		right_apron.position.x = apron_center
+		left_apron.scale.x = apron_scale
+		right_apron.scale.x = apron_scale
 	_side_reflection_material.albedo_color = _active_world_style.side_reflection_tint
 	_side_reflection_material.metallic = _active_world_style.side_reflection_metallic
 	_side_reflection_material.roughness = _active_world_style.side_reflection_roughness
@@ -747,12 +777,12 @@ func prepare_world_style(
 	if _warmed_world_styles.has(world_key):
 		return
 	var pool_sizes := {
-		"Floor": 1, "Ceiling": 1, "Walls": 1, "Rings": 1, "Arches": 1,
+		"Shell": 1, "Floor": 1, "Ceiling": 1, "Walls": 1, "Rings": 1, "Arches": 1,
 		"Panels": 1, "Pipes": 1, "Props": 1, "Particles": 1,
 	}
 	for slot_name in pool_sizes:
 		if world_style != null and world_style.spatial_profile == "RhythmFrames" \
-			and slot_name not in ["Floor", "Rings", "Particles"]:
+			and slot_name not in ["Shell", "Floor", "Rings", "Particles"]:
 			continue
 		var slot := $ExternalAssets.get_node_or_null(slot_name) as Node3D
 		if slot == null:
@@ -840,6 +870,15 @@ func validate_active_safe_lane() -> PackedStringArray:
 				elif module_index == 1 and placed_bounds.position.x < safe_half_width:
 					errors.append("%s right %s enters safe lane" % [_active_world_key, slot_name])
 	var active_asset_set := _active_world_style.asset_set if _active_world_style != null else null
+	if active_asset_set != null and not active_asset_set.shell_assets.is_empty():
+		if not active_asset_set.shell_clearance_verified:
+			errors.append("%s full shell has no verified gameplay clearance" % _active_world_key)
+		if active_asset_set.shell_inner_half_width < 4.4:
+			errors.append("%s full shell enters the horizontal gameplay envelope" % _active_world_key)
+		if active_asset_set.shell_floor_top_y > -2.05:
+			errors.append("%s full shell floor enters the step envelope" % _active_world_key)
+		if active_asset_set.shell_ceiling_bottom_y < 4.3:
+			errors.append("%s full shell ceiling enters the hand envelope" % _active_world_key)
 	var has_center_frames := active_asset_set != null and (
 		not active_asset_set.ring_assets.is_empty() or not active_asset_set.arch_assets.is_empty()
 	)
@@ -883,7 +922,9 @@ func _world_slot_probability(slot_name: String, fallback: float) -> float:
 
 func _world_style_has_architecture(world_style: TunnelWorldStyle, theme_name: String) -> bool:
 	if world_style != null and world_style.asset_set != null:
-		if not world_style.asset_set.wall_assets.is_empty() or not world_style.asset_set.floor_assets.is_empty():
+		if not world_style.asset_set.shell_assets.is_empty() \
+			or not world_style.asset_set.wall_assets.is_empty() \
+			or not world_style.asset_set.floor_assets.is_empty():
 			return true
 	return _asset_registry != null and (
 		not _asset_registry.entries_for_category("Wall", theme_name, false).is_empty()
@@ -893,6 +934,7 @@ func _world_style_has_architecture(world_style: TunnelWorldStyle, theme_name: St
 
 func _slot_category(slot_name: String) -> String:
 	match slot_name:
+		"Shell": return "Wall"
 		"Floor": return "Floor"
 		"Ceiling": return "Ceiling"
 		"Walls": return "Wall"
@@ -906,6 +948,12 @@ func _slot_category(slot_name: String) -> String:
 
 
 func _fit_external_instance(instance: Node3D, slot_name: String, placement_index: int, world_style: TunnelWorldStyle = null) -> void:
+	# Full-shell wrappers are authored in the canonical 12 x 8.5 x 18 segment
+	# space and inherit the segment's one-time dimension scaling. Re-fitting their
+	# combined AABB would squash the floor, shoulders and ceiling as one box.
+	if slot_name == "Shell":
+		instance.transform = Transform3D.IDENTITY
+		return
 	var bounds := _combined_bounds(instance)
 	if bounds.size.length_squared() < 0.0001:
 		return

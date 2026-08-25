@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_clean_portal/clean_energy_portal.tscn" id="1_frame"]
+
+[node name="GoldMasterCleanPortal" type="Node3D"]
+
+[node name="Frame" parent="." instance=ExtResource("1_frame")]
+position = Vector3(-0.044949, -3.78537, -0.023301)
+scale = Vector3(3.60335, 3.64852, 3.72066)

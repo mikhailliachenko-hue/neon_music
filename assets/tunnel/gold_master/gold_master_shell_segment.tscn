@@ -1,0 +1,223 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Walls/WallBand_Straight.gltf" id="1_wall"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Walls/TopSimple_Straight.gltf" id="2_top"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space/glb/template-floor-big.glb" id="3_floor"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf" id="4_wide_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Corner.gltf" id="5_corner_light"]
+
+[node name="GoldMasterShellSegment" type="Node3D"]
+
+[node name="Foundation" type="Node3D" parent="."]
+
+[node name="FloorRear" parent="Foundation" instance=ExtResource("3_floor")]
+position = Vector3(0, -6.4, -4.5)
+scale = Vector3(1.45, 1, 1.125)
+
+[node name="FloorFront" parent="Foundation" instance=ExtResource("3_floor")]
+position = Vector3(0, -6.4, 4.5)
+scale = Vector3(1.45, 1, 1.125)
+
+[node name="LeftWall" type="Node3D" parent="."]
+
+[node name="Bay00" parent="LeftWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.05, -2.15, -7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay01" parent="LeftWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.05, -2.15, -3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay02" parent="LeftWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.05, -2.15, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay03" parent="LeftWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.05, -2.15, 3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay04" parent="LeftWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.05, -2.15, 7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper00" parent="LeftWall" instance=ExtResource("2_top")]
+position = Vector3(-3.05, -2.15, -7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper01" parent="LeftWall" instance=ExtResource("2_top")]
+position = Vector3(-3.05, -2.15, -3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper02" parent="LeftWall" instance=ExtResource("2_top")]
+position = Vector3(-3.05, -2.15, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper03" parent="LeftWall" instance=ExtResource("2_top")]
+position = Vector3(-3.05, -2.15, 3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper04" parent="LeftWall" instance=ExtResource("2_top")]
+position = Vector3(-3.05, -2.15, 7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="RightWall" type="Node3D" parent="."]
+
+[node name="Bay00" parent="RightWall" instance=ExtResource("1_wall")]
+position = Vector3(3.05, -2.15, -7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay01" parent="RightWall" instance=ExtResource("1_wall")]
+position = Vector3(3.05, -2.15, -3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay02" parent="RightWall" instance=ExtResource("1_wall")]
+position = Vector3(3.05, -2.15, 0)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay03" parent="RightWall" instance=ExtResource("1_wall")]
+position = Vector3(3.05, -2.15, 3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay04" parent="RightWall" instance=ExtResource("1_wall")]
+position = Vector3(3.05, -2.15, 7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper00" parent="RightWall" instance=ExtResource("2_top")]
+position = Vector3(3.05, -2.15, -7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper01" parent="RightWall" instance=ExtResource("2_top")]
+position = Vector3(3.05, -2.15, -3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper02" parent="RightWall" instance=ExtResource("2_top")]
+position = Vector3(3.05, -2.15, 0)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper03" parent="RightWall" instance=ExtResource("2_top")]
+position = Vector3(3.05, -2.15, 3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Upper04" parent="RightWall" instance=ExtResource("2_top")]
+position = Vector3(3.05, -2.15, 7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="LeftShoulder" type="Node3D" parent="."]
+position = Vector3(-4.925, 4.125, 0)
+rotation_degrees = Vector3(0, 0, -20.43)
+
+[node name="Panel00" parent="LeftShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, -7.2)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel01" parent="LeftShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, -3.6)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel02" parent="LeftShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 0)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel03" parent="LeftShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 3.6)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel04" parent="LeftShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 7.2)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="RightShoulder" type="Node3D" parent="."]
+position = Vector3(4.925, 4.125, 0)
+rotation_degrees = Vector3(0, 0, 20.43)
+
+[node name="Panel00" parent="RightShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, -7.2)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel01" parent="RightShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, -3.6)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel02" parent="RightShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 0)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel03" parent="RightShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 3.6)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Panel04" parent="RightShoulder" instance=ExtResource("2_top")]
+position = Vector3(2, -5.442, 7.2)
+scale = Vector3(1, 1.3605, 0.9)
+
+[node name="Ceiling" type="Node3D" parent="."]
+
+[node name="Panel00" parent="Ceiling" instance=ExtResource("2_top")]
+position = Vector3(-20, 3.4, -7.2)
+rotation_degrees = Vector3(0, 0, -90)
+scale = Vector3(1, 5, 0.9)
+
+[node name="Panel01" parent="Ceiling" instance=ExtResource("2_top")]
+position = Vector3(-20, 3.4, -3.6)
+rotation_degrees = Vector3(0, 0, -90)
+scale = Vector3(1, 5, 0.9)
+
+[node name="Panel02" parent="Ceiling" instance=ExtResource("2_top")]
+position = Vector3(-20, 3.4, 0)
+rotation_degrees = Vector3(0, 0, -90)
+scale = Vector3(1, 5, 0.9)
+
+[node name="Panel03" parent="Ceiling" instance=ExtResource("2_top")]
+position = Vector3(-20, 3.4, 3.6)
+rotation_degrees = Vector3(0, 0, -90)
+scale = Vector3(1, 5, 0.9)
+
+[node name="Panel04" parent="Ceiling" instance=ExtResource("2_top")]
+position = Vector3(-20, 3.4, 7.2)
+rotation_degrees = Vector3(0, 0, -90)
+scale = Vector3(1, 5, 0.9)
+
+[node name="EdgeLights" type="Node3D" parent="."]
+
+[node name="LeftRear" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(-4.95, 0.14, -6)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="LeftCenter" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(-4.95, 0.14, 0)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="LeftFront" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(-4.95, 0.14, 6)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="RightRear" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(4.95, 1.66, -6)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="RightCenter" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(4.95, 1.66, 0)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="RightFront" parent="EdgeLights" instance=ExtResource("4_wide_light")]
+position = Vector3(4.95, 1.66, 6)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="CeilingRear" parent="EdgeLights" instance=ExtResource("5_corner_light")]
+position = Vector3(2.158445, 5.40673, -3.890849)
+
+[node name="CeilingCenter" parent="EdgeLights" instance=ExtResource("5_corner_light")]
+position = Vector3(2.158445, 5.40673, 2.109151)
+
+[node name="CeilingFront" parent="EdgeLights" instance=ExtResource("5_corner_light")]
+position = Vector3(2.158445, 5.40673, 8.109151)

@@ -2,24 +2,24 @@
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
 [ext_resource type="Resource" path="res://resources/tunnel/themes/light_grid_violet.tres" id="2_theme"]
-[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/pinterest_prism.tres" id="3_world"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/pinterest_prism_gold_master.tres" id="3_world"]
 [ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_violet_cosmic.png" id="4_background"]
 
 [resource]
 script = ExtResource("1_preset")
 level_name = "VIOLET GRID RUNNER"
-description = "Отдельный объёмный коридор из фиолетово-золотых световых точек с мягкой action-волной."
+description = "Pinterest Prism Gold Master: цельный graphite-коридор, три hero-портала и мягкая action-волна."
 difficulty = "Medium"
-color_palette = PackedColorArray(0.74, 0.10, 1, 1, 1, 0.64, 0.08, 1, 0.003, 0.0015, 0.008, 1)
+color_palette = PackedColorArray(0.415686, 0.176471, 0.568627, 1, 0.764706, 0.239216, 0.733333, 1, 0.019608, 0.011765, 0.047059, 1)
 preview_texture = ExtResource("4_background")
 background_texture = ExtResource("4_background")
 segment_types = PackedStringArray("Ring")
 asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
-particle_settings = {"density": 0.04, "amount_scale": 0.04}
-lighting_settings = {"glow_intensity": 0.54, "glow_strength": 0.6, "bloom": 0.034, "frame_rest_glow": 0.12, "frame_rest_emission_scale": 0.8}
-fog_settings = {"density": 0.00105}
-camera_settings = {"step_impact": 0.48, "step_duration": 0.18, "fov_pulse": 0.34}
-music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "wave_speed": 68.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.34}
+particle_settings = {"density": 0.05, "amount_scale": 0.05}
+lighting_settings = {"glow_intensity": 0.56, "glow_strength": 0.68, "bloom": 0.03, "frame_rest_glow": 0.34, "frame_rest_emission_scale": 0.86, "ambient_energy": 0.82, "ambient_palette_mix": 0.30, "ambient_lift": 0.30, "key_energy": 0.62, "ssr_enabled": true}
+fog_settings = {"density": 0.00125}
+camera_settings = {"step_impact": 0.48, "step_duration": 0.18, "fov_pulse": 0.34, "section_fov_push": 0.9, "section_transition_seconds": 0.85}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "visual_stage_enabled": true, "visual_stage_transition_seconds": 0.85, "wave_speed": 68.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.38}
 preset_name = "VIOLET GRID RUNNER"
 style_id = "ReferenceVioletGrid"
 world_style = ExtResource("3_world")

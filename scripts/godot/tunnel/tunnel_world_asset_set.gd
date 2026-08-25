@@ -6,6 +6,7 @@ class_name TunnelWorldAssetSet
 @export var display_name := "Legacy Registry"
 
 @export_group("Modular Scenes")
+@export var shell_assets: Array[PackedScene] = []
 @export var floor_assets: Array[PackedScene] = []
 @export var ceiling_assets: Array[PackedScene] = []
 @export var wall_assets: Array[PackedScene] = []
@@ -15,6 +16,12 @@ class_name TunnelWorldAssetSet
 @export var pipe_assets: Array[PackedScene] = []
 @export var prop_assets: Array[PackedScene] = []
 @export var particle_assets: Array[PackedScene] = []
+
+@export_group("Full Shell Contract")
+@export var shell_clearance_verified := false
+@export_range(4.0, 7.0, 0.05) var shell_inner_half_width := 4.4
+@export_range(-4.0, -1.5, 0.05) var shell_floor_top_y := -2.05
+@export_range(3.5, 7.0, 0.05) var shell_ceiling_bottom_y := 4.3
 
 @export_group("Rhythm Frame Contract")
 @export var gameplay_clearance_verified := false
@@ -38,6 +45,7 @@ func resolved_frame_center_y() -> float:
 
 func scenes_for_slot(slot_name: String) -> Array[PackedScene]:
 	match slot_name:
+		"Shell": return shell_assets
 		"Floor": return floor_assets
 		"Ceiling": return ceiling_assets
 		"Walls": return wall_assets
@@ -58,7 +66,7 @@ func choose_scene(slot_name: String, rng: RandomNumberGenerator) -> PackedScene:
 
 func scene_count() -> int:
 	return (
-		floor_assets.size() + ceiling_assets.size() + wall_assets.size()
+		shell_assets.size() + floor_assets.size() + ceiling_assets.size() + wall_assets.size()
 		+ ring_assets.size() + arch_assets.size() + panel_assets.size()
 		+ pipe_assets.size() + prop_assets.size() + particle_assets.size()
 	)
@@ -68,10 +76,19 @@ func validation_errors() -> PackedStringArray:
 	var errors := PackedStringArray()
 	if asset_set_id.is_empty():
 		errors.append("World asset set has an empty id.")
-	for slot_name in ["Floor", "Ceiling", "Walls", "Rings", "Arches", "Panels", "Pipes", "Props", "Particles"]:
+	for slot_name in ["Shell", "Floor", "Ceiling", "Walls", "Rings", "Arches", "Panels", "Pipes", "Props", "Particles"]:
 		for scene in scenes_for_slot(slot_name):
 			if scene == null:
 				errors.append("%s contains a null %s scene." % [asset_set_id, slot_name])
+	if not shell_assets.is_empty():
+		if not shell_clearance_verified:
+			errors.append("%s full shell has no verified gameplay clearance." % asset_set_id)
+		if shell_inner_half_width < 4.4:
+			errors.append("%s full shell is too narrow for the gameplay envelope." % asset_set_id)
+		if shell_floor_top_y > -2.05:
+			errors.append("%s full shell floor enters the step envelope." % asset_set_id)
+		if shell_ceiling_bottom_y < 4.3:
+			errors.append("%s full shell ceiling enters the hand envelope." % asset_set_id)
 	if gameplay_clearance_verified:
 		if frame_inner_half_width < 4.4:
 			errors.append("%s frame opening is too narrow for outer-lane hands." % asset_set_id)

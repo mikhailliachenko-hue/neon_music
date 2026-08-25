@@ -13,6 +13,12 @@ var _glow_material: StandardMaterial3D
 var _level_backdrop_material: StandardMaterial3D
 var _base_amount := 72
 var _preset_density := 1.0
+var _visual_stage_state := {
+	"enabled": false,
+	"emission_scale": 1.0,
+	"particle_ratio": 1.0,
+	"reflection_scale": 1.0,
+}
 
 
 func _ready() -> void:
@@ -64,6 +70,10 @@ func trigger_drop() -> void:
 	particles.restart()
 
 
+func set_visual_stage(stage_state: Dictionary) -> void:
+	_visual_stage_state = stage_state
+
+
 func apply_visual_state(primary: Color, accent: Color, pulse: float, drop_pulse: float, song_time: float) -> void:
 	if _particle_material == null or _glow_material == null:
 		return
@@ -71,9 +81,19 @@ func apply_visual_state(primary: Color, accent: Color, pulse: float, drop_pulse:
 	_particle_material.albedo_color = Color(particle_color.r, particle_color.g, particle_color.b, 0.45 + minf(0.35, pulse * 0.08))
 	_particle_material.emission = particle_color
 	_particle_material.emission_energy_multiplier = 2.2 + pulse * 0.65
-	particles.amount_ratio = clampf(0.42 + _preset_density * 0.42 + drop_pulse * 0.08, 0.0, 1.0)
-	var glow_color := primary.lerp(accent, 0.5 + sin(song_time * 0.22) * 0.12)
+	var stage_enabled := bool(_visual_stage_state.get("enabled", false))
+	var stage_particle_ratio := float(_visual_stage_state.get("particle_ratio", 1.0)) if stage_enabled else 1.0
+	var stage_emission_scale := float(_visual_stage_state.get("emission_scale", 1.0)) if stage_enabled else 1.0
+	var stage_reflection_scale := float(_visual_stage_state.get("reflection_scale", 1.0)) if stage_enabled else 1.0
+	particles.amount_ratio = clampf(
+		(0.42 + _preset_density * 0.42 + drop_pulse * 0.08) * stage_particle_ratio,
+		0.0,
+		1.0
+	)
+	var glow_mix := 0.50 if stage_enabled else 0.5 + sin(song_time * 0.22) * 0.12
+	var glow_color := primary.lerp(accent, glow_mix)
 	_glow_material.albedo_color = Color(glow_color.r, glow_color.g, glow_color.b, 0.12 + minf(0.16, pulse * 0.03))
 	_glow_material.emission = glow_color
-	_glow_material.emission_energy_multiplier = 2.8 + pulse * 0.55 + drop_pulse * 0.7
-	distant_glow.scale = Vector3.ONE * (1.0 + pulse * 0.018 + sin(song_time * 0.5) * 0.012)
+	_glow_material.emission_energy_multiplier = (2.8 + pulse * 0.55 + drop_pulse * 0.7) * stage_emission_scale
+	var ambient_breath := 0.0 if stage_enabled else sin(song_time * 0.5) * 0.012
+	distant_glow.scale = Vector3.ONE * (1.0 + pulse * 0.018 + ambient_breath + stage_reflection_scale * 0.008)

@@ -9,6 +9,7 @@ class_name TunnelWorldStyle
 @export var allow_registry_fallback := true
 
 @export_group("Architecture Density")
+@export_range(0.0, 1.0, 0.01) var shell_probability := 0.0
 @export_range(0.0, 1.0, 0.01) var floor_probability := 1.0
 @export_range(0.0, 1.0, 0.01) var ceiling_probability := 0.82
 @export_range(0.0, 1.0, 0.01) var wall_probability := 1.0
@@ -27,6 +28,7 @@ class_name TunnelWorldStyle
 @export var background_planes_enabled := true
 
 @export_group("Authored GLB Material")
+@export var architecture_surface_color := Color(0.072, 0.082, 0.105, 1.0)
 @export_range(0.0, 1.0, 0.01) var authored_color_mix := 0.46
 @export_range(0.0, 1.0, 0.01) var authored_accent_influence := 0.44
 @export_range(0.0, 1.0, 0.01) var floor_authored_color_mix := 0.08
@@ -42,13 +44,17 @@ class_name TunnelWorldStyle
 @export_group("Action Wave")
 @export var action_wave_enabled := false
 @export_range(0.0, 1.5, 0.01) var action_wave_body_glow := 0.18
+@export var action_wave_gradient_start := Color(0.0, 0.0, 0.0, 0.0)
 @export var action_wave_gradient_mid := Color(0.0, 0.0, 0.0, 0.0)
+@export var action_wave_gradient_end := Color(0.0, 0.0, 0.0, 0.0)
 
 @export_group("Side Floor Treatment")
 @export var side_reflection_enabled := false
 @export var side_reflection_tint := Color(0.018, 0.022, 0.032, 1.0)
 @export_range(0.0, 1.0, 0.01) var side_reflection_roughness := 0.12
 @export_range(0.0, 1.0, 0.01) var side_reflection_metallic := 0.88
+@export_range(0.0, 7.0, 0.05) var side_reflection_inner_edge := 0.0
+@export_range(0.0, 7.0, 0.05) var side_reflection_outer_edge := 0.0
 
 @export_group("Safe Dance Lane")
 @export_range(4.0, 7.0, 0.05) var safe_lane_half_width := 4.75
@@ -68,6 +74,7 @@ func cache_key() -> String:
 
 func slot_probability(slot_name: String, fallback: float) -> float:
 	match slot_name:
+		"Shell": return shell_probability
 		"Floor": return floor_probability
 		"Ceiling": return ceiling_probability
 		"Walls": return wall_probability

@@ -31,8 +31,18 @@ func configure(camera: Camera3D) -> void:
 func set_preset(preset: TunnelLevelPreset, config_strength: float) -> void:
 	_motion_strength = config_strength * (preset.camera_motion if preset != null else 1.0)
 	if preset != null:
-		_section_fov_strength = clampf(preset.setting(preset.camera_settings, "fov_pulse", 0.9), 0.0, 2.0)
-		_section_duration = clampf(preset.setting(preset.camera_settings, "section_transition_duration", 0.58), 0.3, 1.2)
+		var legacy_fov := preset.setting(preset.camera_settings, "fov_pulse", 0.9)
+		var legacy_duration := preset.setting(preset.camera_settings, "section_transition_duration", 0.58)
+		_section_fov_strength = clampf(
+			preset.setting(preset.camera_settings, "section_fov_push", legacy_fov),
+			0.0,
+			0.9
+		)
+		_section_duration = clampf(
+			preset.setting(preset.camera_settings, "section_transition_seconds", legacy_duration),
+			0.3,
+			1.2
+		)
 
 
 func set_base_transform(position: Vector3, rotation_degrees: Vector3, fov: float) -> void:

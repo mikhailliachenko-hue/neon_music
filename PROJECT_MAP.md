@@ -127,6 +127,37 @@ Runtime renderer scripts.
   The former production light-grid, gate, industrial, solar and quantum mappings
   remain archived resources but are no longer selected by the 27-level library.
 
+#### Pinterest Prism Gold Master
+
+- `VIOLET GRID RUNNER` is the reference Gold Master. It resolves to the dedicated
+  `pinterest_prism_gold_master` style and asset set; it does not modify the other
+  production worlds. Its pooled `Shell` slot composes the existing
+  `WallBand_Straight`, `TopSimple_Straight`, `template-floor-big` and
+  `Prop_Light_Wide/Corner` GLB/GLTF modules outside a verified `4.4 m` gameplay
+  half-clearance. Three cached portal wrappers provide prism, circle and clean
+  energy silhouettes without procedural complex geometry.
+- A complete preset `color_palette` is authoritative for the environment:
+  index `0` is primary, `1` is accent and `2` is background. Shadow, crest and
+  floor tones are derived once by the shared material controller; an incomplete
+  legacy palette falls back per colour to `TunnelTheme`. Gold Master uses Prism
+  Orchid (`#6A2D91`, `#C33DBB`, `#05030C`) with the action-wave gradient
+  `#52E9FF -> #A454FF -> #FF56CF`.
+- `tunnel_visual_stage_controller.gd` expresses each 32-count as four smooth
+  stages: calm, reflected build, second-colour reveal and payoff. A stage may
+  blend palette, fog, architectural emission and a camera FOV push of at most
+  `0.9 degrees`; it never launches a wave and never changes segment geometry
+  before normal pool recycling.
+- Production waves are action-only. `STEP`, `PUNCH/HAND`, `JUMP`, `DUCK` and
+  `HOLD` enter through the existing action API and trigger one travelling wave;
+  beat/downbeat alone changes neither wave, glow nor camera. The standalone
+  preview uses a deterministic sequence of those same action calls instead of a
+  beat shortcut.
+- Gold Master acceptance is covered by
+  `pinterest_prism_gold_master_smoke_test.gd`, palette, interaction, world-style
+  and gameplay-clearance smokes. Runtime evidence belongs under
+  `output/diagnostics/gold_master_prism/`; these generated captures and movies
+  are not source assets and are not committed.
+
 #### Ideal Dance Mode level formula
 
 This contract is the acceptance gate for every production world, independent of

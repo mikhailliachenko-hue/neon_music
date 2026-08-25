@@ -1,6 +1,8 @@
 extends Node3D
 class_name NeonTunnelGenerator
 
+const VISUAL_STAGE_CONTROLLER := preload("res://scripts/godot/tunnel/tunnel_visual_stage_controller.gd")
+
 @export var config: NeonTunnelConfig
 
 @onready var segment_pool: Node3D = $SegmentPool
@@ -25,6 +27,16 @@ var _last_song_time := -1.0
 var _beat_pulse := 0.0
 var _frame_pulse := 0.0
 var _frame_wave_controller := TunnelFrameWaveController.new()
+var _visual_stage_controller: RefCounted = VISUAL_STAGE_CONTROLLER.new()
+var _visual_stage_state := {
+	"enabled": false,
+	"index": -1,
+	"emission_scale": 1.0,
+	"accent_reveal": 1.0,
+	"particle_ratio": 1.0,
+	"fog_scale": 1.0,
+	"reflection_scale": 1.0,
+}
 var _generation_phrase := 0
 var _variation_epoch := 0
 var _current_theme: TunnelTheme
@@ -241,6 +253,9 @@ func sync_to_song_time(song_time: float, music_state: Dictionary) -> void:
 
 	_update_music_reaction(delta, music_state)
 	_update_frame_reaction(delta, music_state)
+	_visual_stage_state = _visual_stage_controller.update(delta, music_state, _current_preset)
+	neon_material_controller.set_visual_stage(_visual_stage_state)
+	atmosphere_controller.set_visual_stage(_visual_stage_state)
 	var visual_state := neon_material_controller.update(delta, song_time)
 	_beat_pulse = float(visual_state.get("pulse", 0.0))
 	_update_segment_ring()
@@ -311,6 +326,9 @@ func get_runtime_stats() -> Dictionary:
 		"frame_wave_width": _frame_wave_controller.wave_width,
 		"frame_wave_near_fade_distance": _frame_wave_controller.wave_near_fade_distance,
 		"frame_wave_emission_strength": _frame_wave_controller.wave_emission_strength,
+		"visual_stage_enabled": bool(_visual_stage_state.get("enabled", false)),
+		"visual_stage": int(_visual_stage_state.get("index", -1)),
+		"visual_stage_emission": float(_visual_stage_state.get("emission_scale", 1.0)),
 	}
 
 
@@ -450,7 +468,8 @@ func _weighted_pick(weights: Dictionary, rng: RandomNumberGenerator) -> String:
 
 func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 	var has_started_beats := int(state.get("beat_index", -1)) >= 0
-	if config.audio_reactive_visuals_enabled and has_started_beats and bool(state.get("beat_changed", false)):
+	var action_only := _is_action_only_visuals()
+	if config.audio_reactive_visuals_enabled and not action_only and has_started_beats and bool(state.get("beat_changed", false)):
 		neon_material_controller.trigger_beat(config.beat_reaction_strength, bool(state.get("downbeat_changed", false)))
 		if _diagnostics:
 			print("TUNNEL_BEAT beat=%d downbeat=%s phrase=%d count8=%d count32=%d" % [
@@ -477,6 +496,9 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 				print("TUNNEL_PHRASE phrase=%d layout_epoch=%d" % [phrase_index, _generation_phrase])
 
 	if bool(state.get("count32_changed", false)) or bool(state.get("section_changed", false)):
+		if _visual_stage_enabled():
+			var section_direction := -1.0 if posmod(int(state.get("count32_index", 0)), 2) == 0 else 1.0
+			camera_motion_controller.trigger_section_transition(section_direction)
 		if _is_directed_level():
 			_set_level_phase(int(state.get("count32_index", 0)))
 		else:
@@ -494,7 +516,7 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 	var section_role := String(state.get("section_role", "groove")).to_lower()
 	var energy_role := String(state.get("energy_role", "stable_groove")).to_lower()
 	var drop_boundary := bool(state.get("section_changed", false)) and (section_role in ["drop", "chorus", "peak", "signature", "finale"] or "peak" in energy_role or "drop" in energy_role)
-	if config.audio_reactive_visuals_enabled and drop_boundary:
+	if config.audio_reactive_visuals_enabled and not action_only and drop_boundary:
 		neon_material_controller.trigger_drop(2.9 if _is_directed_level() else 2.6)
 		atmosphere_controller.trigger_drop()
 		print("TUNNEL_DROP section=%s energy=%s beat=%d" % [section_role, energy_role, int(state.get("beat_index", -1))])
@@ -514,6 +536,16 @@ func _is_action_wave_active() -> bool:
 		and _current_preset.world_style != null \
 		and (_current_preset.world_style.spatial_profile == "RhythmFrames" \
 			or _current_preset.world_style.action_wave_enabled)
+
+
+func _is_action_only_visuals() -> bool:
+	return _current_preset != null \
+		and bool(_current_preset.music_reaction_settings.get("action_only_visuals", false))
+
+
+func _visual_stage_enabled() -> bool:
+	return _current_preset != null \
+		and bool(_current_preset.music_reaction_settings.get("visual_stage_enabled", false))
 
 
 func _is_directed_level() -> bool:
@@ -590,6 +622,7 @@ func _activate_preset(preset: TunnelLevelPreset, reconfigure_segments: bool) -> 
 	_level_phase_name = String(sequence[0]) if not sequence.is_empty() else preset.style_id
 	_apply_preset_runtime_settings(preset)
 	_frame_wave_controller.configure(preset)
+	_visual_stage_controller.reset()
 	neon_material_controller.set_preset(preset)
 	atmosphere_controller.set_preset(preset)
 	spectrum_controller.set_preset(preset)
@@ -715,7 +748,8 @@ func _apply_segments_visual_state(visual_state: Dictionary) -> void:
 			visual_state.get("floor_color", Color.BLACK),
 			float(visual_state.get("emission", 1.0)),
 			float(visual_state.get("floor_emission", 1.0)),
-			float(visual_state.get("pulse", 0.0))
+			float(visual_state.get("pulse", 0.0)),
+			float(visual_state.get("stage_reflection_scale", 1.0))
 		)
 	if level_key_light != null:
 		var primary := visual_state.get("primary", Color.WHITE) as Color
@@ -724,7 +758,9 @@ func _apply_segments_visual_state(visual_state: Dictionary) -> void:
 			level_key_light.light_color = key_color
 		var base_energy := 0.44 + (_current_theme.ambient_energy * 0.62 if _current_theme != null else 0.14)
 		var requested_energy := float(_current_preset.lighting_settings.get("key_energy", base_energy)) if _current_preset != null else base_energy
-		level_key_light.light_energy = clampf(requested_energy, 0.24, 0.82)
+		var stage_emission_scale := float(_visual_stage_state.get("emission_scale", 1.0)) \
+			if bool(_visual_stage_state.get("enabled", false)) else 1.0
+		level_key_light.light_energy = clampf(requested_energy * stage_emission_scale, 0.24, 0.82)
 
 
 func _refresh_active_object_count() -> void:

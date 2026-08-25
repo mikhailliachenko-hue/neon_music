@@ -16,7 +16,6 @@ var _strengths := PackedFloat32Array()
 var _color_phases := PackedInt32Array()
 var _cursor := 0
 var _trigger_serial := 0
-var _seconds_since_action := 999.0
 
 
 func _init() -> void:
@@ -52,12 +51,10 @@ func clear() -> void:
 		_strengths[index] = 0.0
 		_color_phases[index] = index
 	_cursor = 0
-	_seconds_since_action = 999.0
 
 
 func advance(delta: float) -> void:
 	var safe_delta := maxf(0.0, delta)
-	_seconds_since_action += safe_delta
 	for index in range(SLOT_COUNT):
 		_ages[index] += safe_delta
 		if _ages[index] > wave_lifetime:
@@ -73,15 +70,13 @@ func trigger_action(action: String, requested_strength: float) -> void:
 		"HAND", "PUNCH": action_scale = 0.76
 		"HOLD": action_scale = 0.84
 	_trigger(clampf(requested_strength * action_scale, 0.42, 1.35))
-	_seconds_since_action = 0.0
 
 
-func trigger_preview_pulse(downbeat: bool) -> void:
-	# This is an explicit standalone-preview hook, never a production fallback.
-	# If an interactive preview later supplies an action, the action keeps priority.
-	if _seconds_since_action < 0.34:
-		return
-	_trigger(0.92 if downbeat else 0.62)
+func trigger_preview_pulse(_downbeat: bool) -> void:
+	# Удалить когда станет неактуально: compatibility hook for old preview callers.
+	# A beat/downbeat must never create a travelling wave. Standalone previews
+	# now invoke trigger_action() through the same public action path as gameplay.
+	pass
 
 
 func _trigger(strength: float) -> void:
