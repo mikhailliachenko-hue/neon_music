@@ -23,7 +23,7 @@ size = Vector3(0.085, 0.34, 0.10)
 [node name="PunchTarget3D" type="Node3D"]
 
 [node name="ImportedModel" parent="." instance=ExtResource("1_mine")]
-scale = Vector3(1.72, 1.72, 0.82)
+scale = Vector3(1.38, 1.38, 0.68)
 
 [node name="IconBed" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0, 0.385)

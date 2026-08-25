@@ -26,6 +26,7 @@ class_name TunnelWorldAssetSet
 @export_group("Rhythm Frame Contract")
 @export var gameplay_clearance_verified := false
 @export_range(1, 8, 1) var frame_instances_per_segment := 3
+@export_range(1, 3, 1) var frame_variant_pool_size := 1
 @export_range(3.5, 6.5, 0.05) var frame_inner_half_width := 4.25
 @export_range(-3.0, -1.0, 0.05) var frame_opening_bottom_y := -1.95
 @export_range(2.5, 6.5, 0.05) var frame_opening_top_y := 4.25

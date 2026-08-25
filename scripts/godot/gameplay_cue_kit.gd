@@ -28,15 +28,16 @@ static func create_punch(color: Color, is_left: bool) -> Node3D:
 	return cue
 
 
-static func create_step(color: Color) -> Node3D:
+static func create_step(color: Color, is_left: bool) -> Node3D:
 	var cue := STEP_TARGET.instantiate() as Node3D
 	cue.name = "StepPlatform3D"
 	_apply_imported_material(cue.get_node("ImportedModel"), _body_material(color, "step"))
 	(cue.get_node("ContactBed") as MeshInstance3D).material_override = _contact_material(color)
+	_add_step_side_key(cue, color, is_left)
 	return cue
 
 
-static func create_hand_hold_capsule(color: Color, span: float, diameter: float) -> Node3D:
+static func create_hand_hold_capsule(color: Color, span: float, diameter: float, is_left: bool) -> Node3D:
 	var capsule := Node3D.new()
 	capsule.name = "HandHoldPrism"
 
@@ -71,7 +72,32 @@ static func create_hand_hold_capsule(color: Color, span: float, diameter: float)
 	capsule.add_child(core)
 	_add_hold_collar(capsule, "HoldStartCollar", 0.0, diameter, color)
 	_add_hold_collar(capsule, "HoldEndCollar", -span, diameter, color)
+	_add_hold_direction_key(capsule, span, diameter, color, is_left)
 	return capsule
+
+
+static func _add_step_side_key(parent: Node3D, color: Color, is_left: bool) -> void:
+	var key := MeshInstance3D.new()
+	key.name = "StepSideKey"
+	key.position = Vector3((-1.0 if is_left else 1.0) * 0.91, 0.17, 0.0)
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.22, 0.09, 0.78)
+	key.mesh = mesh
+	key.material_override = _accent_material(color, "step_side_key")
+	key.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(key)
+
+
+static func _add_hold_direction_key(parent: Node3D, span: float, diameter: float, color: Color, is_left: bool) -> void:
+	var key := MeshInstance3D.new()
+	key.name = "HoldDirectionKey"
+	key.position = Vector3((-1.0 if is_left else 1.0) * diameter * 0.52, 0.0, -span * 0.5)
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(diameter * 0.13, diameter * 0.22, span)
+	key.mesh = mesh
+	key.material_override = _accent_material(color, "hand_hold_direction")
+	key.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(key)
 
 
 static func _add_hold_collar(parent: Node3D, collar_name: String, z_position: float, diameter: float, color: Color) -> void:
@@ -162,10 +188,10 @@ static func _hold_shell_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.albedo_color = Color(color.r * 0.20, color.g * 0.20, color.b * 0.20, 0.22)
+	material.albedo_color = Color(color.r * 0.24, color.g * 0.24, color.b * 0.24, 0.32)
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 0.78
+	material.emission_energy_multiplier = 1.12
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material.render_priority = 3
 	_materials[key] = material

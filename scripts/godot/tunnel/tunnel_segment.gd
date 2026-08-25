@@ -794,6 +794,15 @@ func prepare_world_style(
 		"Shell": 1, "Floor": 1, "Ceiling": 1, "Walls": 1, "Rings": 1, "Arches": 1,
 		"Panels": 1, "Pipes": 1, "Props": 1, "Particles": 1,
 	}
+	if world_style != null and world_style.asset_set != null:
+		pool_sizes["Rings"] = mini(
+			world_style.asset_set.frame_variant_pool_size,
+			maxi(1, world_style.asset_set.ring_assets.size())
+		)
+		pool_sizes["Arches"] = mini(
+			world_style.asset_set.frame_variant_pool_size,
+			maxi(1, world_style.asset_set.arch_assets.size())
+		)
 	for slot_name in pool_sizes:
 		if world_style != null and world_style.spatial_profile == "RhythmFrames" \
 			and slot_name not in ["Shell", "Floor", "Rings", "Particles"]:
@@ -809,7 +818,13 @@ func prepare_world_style(
 			var has_explicit_asset_set := world_style != null and world_style.asset_set != null
 			var may_use_registry_fallback := not has_explicit_asset_set or world_style.allow_registry_fallback
 			if has_explicit_asset_set:
-				packed = world_style.asset_set.choose_scene(slot_name, rng)
+				var explicit_candidates := world_style.asset_set.scenes_for_slot(slot_name)
+				if slot_name in ["Rings", "Arches"] and variant_index < explicit_candidates.size():
+					# Frame variants are warmed in a stable order. Runtime selection then
+					# alternates cached groups without reloading either PackedScene.
+					packed = explicit_candidates[variant_index]
+				else:
+					packed = world_style.asset_set.choose_scene(slot_name, rng)
 				if packed != null:
 					asset_name = packed.resource_path.get_file().get_basename().replace("-", " ").capitalize()
 			# New authored worlds can make their explicit set authoritative: an empty

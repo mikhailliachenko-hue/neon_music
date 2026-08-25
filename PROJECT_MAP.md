@@ -203,6 +203,9 @@ Runtime renderer scripts.
   glass keeps its authored alpha instead of being flattened to an opaque surface.
   Architecture deliberately avoids gameplay cyan: left/right cues retain pure
   cyan/magenta and remain the brightest objects over a dark road backdrop.
+  Seven frames fill each 18 m segment; prism and circle groups are both warmed
+  once and selected from the cache, producing dense variation without runtime
+  PackedScene loads or objects entering the gameplay corridor.
   Beat and downbeat do not illuminate the shell. A gameplay action launches one
   distant `cyan -> violet -> rose` travelling wave; 32-count staging changes only
   palette balance, fog and a sub-degree FOV envelope.
@@ -277,6 +280,9 @@ production visual audit unless that legacy path is explicitly being migrated.
 
 - `main.tscn` - production scene.
 - `note.tscn`, `receptor.tscn`, `hit_effect.tscn`, `hit_particle.tscn` - reusable runtime objects.
+  Step platforms and cylindrical hand holds use asymmetric side keys in addition
+  to cyan/magenta. Long holds retain explicit start/end collars, so action and
+  side remain readable without relying on colour alone.
 - `vfx_preview.tscn` - preview scene.
 - `tunnel/neon_tunnel.tscn`, `tunnel/tunnel_segment.tscn` - production generator
   and fallback-compatible base module. `tunnel/segments/` contains CyberRing,

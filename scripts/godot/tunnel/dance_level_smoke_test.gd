@@ -93,6 +93,10 @@ func _run() -> void:
 			var architecture_accent := preset.color_palette[1]
 			if architecture_accent.b > 0.68 or architecture_accent.g < architecture_accent.b:
 				failures.append("GLASS BLOCK CHAMBER architecture accent is no longer gameplay-safe turquoise")
+			if preset.world_style.asset_set.frame_instances_per_segment < 7:
+				failures.append("GLASS BLOCK CHAMBER lost its dense seven-frame cadence")
+			if preset.world_style.asset_set.frame_variant_pool_size < 2:
+				failures.append("GLASS BLOCK CHAMBER must keep prism/circle portal variation")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:

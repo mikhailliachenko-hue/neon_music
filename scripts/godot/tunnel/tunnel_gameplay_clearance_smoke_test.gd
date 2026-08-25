@@ -74,6 +74,32 @@ func _run() -> void:
 		note.queue_free()
 		await process_frame
 
+	for lane in [0, 3]:
+		var step := NOTE_SCENE.instantiate() as RhythmNote
+		step.setup(lane, 1.0, -20.0, "FOOT_PAD_LEFT" if lane == 0 else "FOOT_PAD_RIGHT")
+		root.add_child(step)
+		await process_frame
+		var step_key := step.get_node_or_null("StepPlatform3D/StepSideKey") as MeshInstance3D
+		if step_key == null or signf(step_key.position.x) != (-1.0 if lane == 0 else 1.0):
+			failures.append("step cue lost its left/right silhouette key")
+		step.queue_free()
+		await process_frame
+
+	for lane in [0, 3]:
+		var hold := NOTE_SCENE.instantiate() as RhythmNote
+		hold.setup(lane, 2.0, -40.0, "HAND_HOLD_TARGET_LEFT" if lane == 0 else "HAND_HOLD_TARGET_RIGHT", 0.8)
+		root.add_child(hold)
+		await process_frame
+		var hold_key := hold.get_node_or_null("HandHoldPrism/HoldDirectionKey") as MeshInstance3D
+		var start_collar := hold.get_node_or_null("HandHoldPrism/HoldStartCollar") as MeshInstance3D
+		var end_collar := hold.get_node_or_null("HandHoldPrism/HoldEndCollar") as MeshInstance3D
+		if hold_key == null or signf(hold_key.position.x) != (-1.0 if lane == 0 else 1.0):
+			failures.append("hand hold lost its left/right silhouette key")
+		if start_collar == null or end_collar == null:
+			failures.append("hand hold must keep explicit start and end collars")
+		hold.queue_free()
+		await process_frame
+
 	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
 	generator.sync_to_song_time(song_time + 0.1, {})
 	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:

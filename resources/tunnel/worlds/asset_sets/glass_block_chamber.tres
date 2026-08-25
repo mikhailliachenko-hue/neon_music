@@ -20,7 +20,8 @@ shell_inner_half_width = 4.55
 shell_floor_top_y = -2.16
 shell_ceiling_bottom_y = 5.45
 gameplay_clearance_verified = true
-frame_instances_per_segment = 5
+frame_instances_per_segment = 7
+frame_variant_pool_size = 2
 frame_inner_half_width = 5.0
 frame_opening_bottom_y = -2.05
 frame_opening_top_y = 5.8
@@ -29,4 +30,3 @@ frame_target_height = 10.8
 frame_target_depth = 0.34
 frame_target_center_y = 3.35
 frame_wraps_below_road = false
-

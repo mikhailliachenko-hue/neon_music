@@ -340,11 +340,11 @@ func _configure_double_foot_rail(panel: MeshInstance3D, footprint: MeshInstance3
 
 
 func _build_rail_step_platforms() -> void:
-	var end_platform := GAMEPLAY_CUE_KIT.create_step(emission_color)
+	var end_platform := GAMEPLAY_CUE_KIT.create_step(emission_color, lane < 2)
 	end_platform.name = "RailEndPlatform"
 	end_platform.position.y = -0.12
 	add_child(end_platform)
-	var start_platform := GAMEPLAY_CUE_KIT.create_step(emission_color)
+	var start_platform := GAMEPLAY_CUE_KIT.create_step(emission_color, _rail_start_lane < 2)
 	start_platform.name = "RailStartPlatform"
 	start_platform.position.y = -0.12
 	add_child(start_platform)
@@ -549,7 +549,7 @@ func _build_hand_hold_prism() -> void:
 	var length := maxf(HAND_HOLD_MIN_LENGTH, _hand_hold_length)
 	var span := maxf(0.5, length - HAND_CONTAINER_DEPTH)
 	var diameter := HAND_TARGET_SIZE * HAND_HOLD_BODY_SCALE
-	var hold := GAMEPLAY_CUE_KIT.create_hand_hold_capsule(emission_color, span, diameter)
+	var hold := GAMEPLAY_CUE_KIT.create_hand_hold_capsule(emission_color, span, diameter, _is_left_hand_cue())
 	hold.position = Vector3(0.0, _hand_visual_center_y(), -HAND_CONTAINER_DEPTH * 0.5)
 	add_child(hold)
 
@@ -575,6 +575,10 @@ func _sync_hand_hold_geometry(speed: float) -> void:
 	var end_collar := hold.get_node_or_null("HoldEndCollar") as MeshInstance3D
 	if end_collar != null:
 		end_collar.position.z = -span
+	var direction_key := hold.get_node_or_null("HoldDirectionKey") as MeshInstance3D
+	if direction_key != null and direction_key.mesh is BoxMesh:
+		(direction_key.mesh as BoxMesh).size.z = span
+		direction_key.position.z = -span * 0.5
 
 
 func _is_left_hand_cue() -> bool:
@@ -594,7 +598,7 @@ func _build_step_platform() -> void:
 		footprint_mesh = footprint_mesh.duplicate() as QuadMesh
 		footprint_mesh.size = Vector2(0.92, 1.48)
 		$Footprint.mesh = footprint_mesh
-	var platform := GAMEPLAY_CUE_KIT.create_step(emission_color)
+	var platform := GAMEPLAY_CUE_KIT.create_step(emission_color, lane < 2)
 	platform.position.y = -0.12
 	add_child(platform)
 

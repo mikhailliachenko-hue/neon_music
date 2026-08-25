@@ -179,16 +179,16 @@ func _build_gameplay_cue_preview() -> void:
 	add_child(preview_root)
 	_add_preview_cue(preview_root, 0, -1.8, "FOOT_PAD_LEFT")
 	_add_preview_cue(preview_root, 3, -4.8, "FOOT_PAD_RIGHT")
-	_add_preview_cue(preview_root, 0, -8.4, "HAND_TARGET_LEFT")
-	_add_preview_cue(preview_root, 3, -11.2, "HAND_TARGET_RIGHT")
+	_add_preview_cue(preview_root, 0, -8.4, "HAND_HOLD_TARGET_LEFT", 0.72)
+	_add_preview_cue(preview_root, 3, -15.4, "HAND_HOLD_TARGET_RIGHT", 0.72)
 
 
-func _add_preview_cue(parent: Node3D, lane: int, z_position: float, cue: String) -> void:
+func _add_preview_cue(parent: Node3D, lane: int, z_position: float, cue: String, duration := 0.0) -> void:
 	var note := NOTE_SCENE.instantiate() as RhythmNote
 	if note == null:
 		push_error("Preview cue scene did not instantiate as RhythmNote")
 		return
-	note.setup(lane, 0.0, z_position, cue)
+	note.setup(lane, 0.0, z_position, cue, duration)
 	parent.add_child(note)
 
 
