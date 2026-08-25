@@ -29,6 +29,8 @@ uniform float theme_emission = 0.25;
 uniform float authored_mix : hint_range(0.0, 1.0) = 0.46;
 uniform float authored_accent_influence : hint_range(0.0, 1.0) = 0.44;
 uniform float theme_body_glow : hint_range(0.0, 4.0) = 0.0;
+uniform float theme_rim_strength : hint_range(0.0, 1.0) = 0.0;
+uniform float theme_rim_power : hint_range(0.5, 8.0) = 3.0;
 
 void fragment() {
 	vec2 themed_uv = UV * uv_scale + uv_offset;
@@ -62,6 +64,10 @@ void fragment() {
 	// its texture/detail or increasing the scene-wide bloom.
 	float silhouette_detail = mix(0.38, 1.0, detail);
 	EMISSION += theme_primary.rgb * silhouette_detail * theme_body_glow;
+	// Optional premium edge response for glass/metal worlds. It is view based,
+	// uses no extra texture fetch and stays disabled for legacy styles.
+	float rim = pow(clamp(1.0 - abs(dot(normalize(NORMAL), normalize(VIEW))), 0.0, 1.0), theme_rim_power);
+	EMISSION += mix(theme_primary.rgb, theme_accent.rgb, 0.32) * rim * theme_rim_strength;
 
 	if (has_normal_texture) {
 		NORMAL_MAP = texture(source_normal, themed_uv).rgb;

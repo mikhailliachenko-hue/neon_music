@@ -88,6 +88,11 @@ func _run() -> void:
 			_validate_authored_level(preset, "glass_block_chamber", "RhythmFrames", true, failures)
 			if not bool(preset.music_reaction_settings.get("action_only_visuals", false)):
 				failures.append("GLASS BLOCK CHAMBER must keep action-only visuals")
+			if preset.world_style.architecture_rim_strength < 0.08 or preset.world_style.architecture_roughness > 0.16:
+				failures.append("GLASS BLOCK CHAMBER lost its reflective rim material")
+			var architecture_accent := preset.color_palette[1]
+			if architecture_accent.b > 0.68 or architecture_accent.g < architecture_accent.b:
+				failures.append("GLASS BLOCK CHAMBER architecture accent is no longer gameplay-safe turquoise")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:

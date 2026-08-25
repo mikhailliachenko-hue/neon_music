@@ -37,6 +37,8 @@ class_name TunnelWorldStyle
 @export_range(0.0, 1.0, 0.01) var architecture_material_override_mix := 0.0
 @export_range(0.0, 1.0, 0.01) var architecture_metallic := 0.35
 @export_range(0.0, 1.0, 0.01) var architecture_roughness := 0.45
+@export_range(0.0, 1.0, 0.01) var architecture_rim_strength := 0.0
+@export_range(0.5, 8.0, 0.1) var architecture_rim_power := 3.0
 @export_range(0.0, 1.0, 0.01) var floor_material_override_mix := 0.0
 @export_range(0.0, 1.0, 0.01) var floor_metallic := 0.35
 @export_range(0.0, 1.0, 0.01) var floor_roughness := 0.45

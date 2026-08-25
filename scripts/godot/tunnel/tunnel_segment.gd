@@ -393,6 +393,8 @@ func apply_visual_state(
 			var material_override_mix := _active_world_style.architecture_material_override_mix if _active_world_style != null else 0.0
 			var material_metallic := _active_world_style.architecture_metallic if _active_world_style != null else 0.35
 			var material_roughness := _active_world_style.architecture_roughness if _active_world_style != null else 0.45
+			var material_rim_strength := _active_world_style.architecture_rim_strength if _active_world_style != null else 0.0
+			var material_rim_power := _active_world_style.architecture_rim_power if _active_world_style != null else 3.0
 			if slot_name == "Floor":
 				if _active_world_style != null and _active_world_style.world_id == "rhythm_light_grid":
 					material_surface = Color(0.028, 0.003, 0.004, 1.0) if _light_grid_mode == 1 \
@@ -429,11 +431,23 @@ func apply_visual_state(
 				themed.set_shader_parameter("material_override_mix", material_override_mix)
 				themed.set_shader_parameter("theme_metallic", material_metallic)
 				themed.set_shader_parameter("theme_roughness", material_roughness)
+				themed.set_shader_parameter("theme_rim_strength", material_rim_strength)
+				themed.set_shader_parameter("theme_rim_power", material_rim_power)
 			elif material is StandardMaterial3D:
 				var standard := material as StandardMaterial3D
-				standard.albedo_color = material_surface
-				standard.emission = material_accent
-				standard.emission_energy_multiplier = material_emission * 0.24
+				var authored_alpha := float(standard.get_meta("tunnel_authored_alpha", 1.0))
+				if _active_world_key == "glass_block_chamber" and bool(standard.get_meta("tunnel_is_transparent", false)):
+					# Preserve imported transparency. The former alpha=1 assignment made
+					# every GLTF glass insert render as a flat opaque panel.
+					var glass_tint := material_surface.lerp(Color(0.06, 0.30, 0.28, 1.0), 0.34)
+					var glass_alpha := authored_alpha if authored_alpha < 0.999 else 0.18
+					standard.albedo_color = Color(glass_tint.r, glass_tint.g, glass_tint.b, clampf(glass_alpha, 0.10, 0.30))
+					standard.emission = material_accent.lerp(Color(0.10, 0.62, 0.56, 1.0), 0.46)
+					standard.emission_energy_multiplier = material_emission * 0.12
+				else:
+					standard.albedo_color = Color(material_surface.r, material_surface.g, material_surface.b, authored_alpha)
+					standard.emission = material_accent
+					standard.emission_energy_multiplier = material_emission * 0.24
 				standard.metallic = lerpf(standard.metallic, material_metallic, material_override_mix)
 				standard.roughness = lerpf(standard.roughness, material_roughness, material_override_mix)
 		_last_external_primary = primary
@@ -1140,6 +1154,8 @@ func _create_external_material(source: StandardMaterial3D) -> Material:
 	# from luminance, so red/green/gold levels no longer inherit a blue body color.
 	if source != null and source.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 		var transparent_copy := source.duplicate() as StandardMaterial3D
+		transparent_copy.set_meta("tunnel_authored_alpha", source.albedo_color.a)
+		transparent_copy.set_meta("tunnel_is_transparent", true)
 		transparent_copy.emission_enabled = true
 		transparent_copy.metallic = maxf(transparent_copy.metallic, 0.28)
 		transparent_copy.roughness = minf(transparent_copy.roughness, 0.56)

@@ -198,7 +198,11 @@ Runtime renderer scripts.
   shell remains outside a verified `4.4 m` gameplay half-clearance and leaves the
   roof open so the panorama and hero portals provide depth instead of a heavy
   ceiling slab.
-- Calm presentation is graphite/aubergine glass with restrained cyan edge light.
+- Calm presentation is graphite/aubergine metal with transparent glass inserts,
+  restrained turquoise Fresnel edges and no extra dynamic lights. Imported GLTF
+  glass keeps its authored alpha instead of being flattened to an opaque surface.
+  Architecture deliberately avoids gameplay cyan: left/right cues retain pure
+  cyan/magenta and remain the brightest objects over a dark road backdrop.
   Beat and downbeat do not illuminate the shell. A gameplay action launches one
   distant `cyan -> violet -> rose` travelling wave; 32-count staging changes only
   palette balance, fog and a sub-degree FOV envelope.
@@ -260,8 +264,10 @@ production visual audit unless that legacy path is explicitly being migrated.
   theme materials. `tunnel_asset_preview.gd` is the standalone library inspector.
 - `assets/tunnel/shaders/tunnel_architecture_theme.gdshader` - shared Forward+
   material path for theme-aware GLTF architecture. It neutralizes baked source
-  hues while preserving texture/normal/ORM detail. Configured world pools and
-  their surface pipelines are warmed before audio starts to avoid streaming hitches.
+  hues while preserving texture/normal/ORM detail; an opt-in cheap Fresnel rim
+  gives glass/metal worlds readable silhouettes without extra lights. Configured
+  world pools and their surface pipelines are warmed before audio starts to avoid
+  streaming hitches.
 
 ### `scripts/`
 

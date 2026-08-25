@@ -4,6 +4,7 @@ class_name CyberAwakeningPreview
 const LEVEL_CONFIG := preload("res://resources/tunnel/levels/cyber_awakening.tres")
 const DEFAULT_CONFIG := preload("res://resources/tunnel/neon_tunnel_default.tres")
 const GOLD_MASTER_LOOKS := preload("res://scripts/godot/tunnel/gold_master_look_variants.gd")
+const NOTE_SCENE := preload("res://scenes/note.tscn")
 const BEAT_INTERVAL := 0.5
 const PREVIEW_ACTION_PERIOD_BEATS := 16
 const PREVIEW_ACTION_SEQUENCE := [
@@ -42,6 +43,7 @@ var _manual_action_fired := false
 var _current_preview_action := "WAIT"
 var _requested_look: String = GOLD_MASTER_LOOKS.PRODUCTION
 var _active_look: String = GOLD_MASTER_LOOKS.PRODUCTION
+var _show_gameplay_cues := false
 
 
 func _enter_tree() -> void:
@@ -77,6 +79,8 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	generator.configure_runtime(camera, world_environment.environment)
+	if _show_gameplay_cues:
+		_build_gameplay_cue_preview()
 	var active_preset := generator.current_level_preset()
 	if active_preset != null:
 		$PreviewUI/Margin/Panel/VBox/Title.text = active_preset.display_name()
@@ -165,6 +169,27 @@ func _parse_preview_args() -> void:
 			_capture_after = maxf(0.25, float(arg.trim_prefix("--capture-after=")))
 		elif arg.begins_with("--action-at="):
 			_manual_action_at = maxf(0.0, float(arg.trim_prefix("--action-at=")))
+		elif arg == "--gameplay-cues":
+			_show_gameplay_cues = true
+
+
+func _build_gameplay_cue_preview() -> void:
+	var preview_root := Node3D.new()
+	preview_root.name = "GameplayCuePreview"
+	add_child(preview_root)
+	_add_preview_cue(preview_root, 0, -1.8, "FOOT_PAD_LEFT")
+	_add_preview_cue(preview_root, 3, -4.8, "FOOT_PAD_RIGHT")
+	_add_preview_cue(preview_root, 0, -8.4, "HAND_TARGET_LEFT")
+	_add_preview_cue(preview_root, 3, -11.2, "HAND_TARGET_RIGHT")
+
+
+func _add_preview_cue(parent: Node3D, lane: int, z_position: float, cue: String) -> void:
+	var note := NOTE_SCENE.instantiate() as RhythmNote
+	if note == null:
+		push_error("Preview cue scene did not instantiate as RhythmNote")
+		return
+	note.setup(lane, 0.0, z_position, cue)
+	parent.add_child(note)
 
 
 func _trigger_scheduled_action(beat: int) -> void:
