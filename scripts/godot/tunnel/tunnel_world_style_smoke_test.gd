@@ -7,6 +7,7 @@ const EXCLUSIVE_NEW_WORLDS := [
 	"rhythm_star_frames", "rhythm_tall_frames", "rhythm_gate_frames",
 	"solar_skyrail", "quantum_mirror", "industrial_portal", "pinterest_prism",
 	"pinterest_prism_gold_master",
+	"glass_block_chamber",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -31,6 +32,7 @@ const WORLD_CASES := [
 	{"level": "FINAL SPECTRUM", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "SOLAR SKYRAIL", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "QUANTUM MIRROR", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
+	{"level": "GLASS BLOCK CHAMBER", "world": "glass_block_chamber", "asset_terms": ["Glass Block Chamber Shell", "Gold Master", "Road"]},
 ]
 
 

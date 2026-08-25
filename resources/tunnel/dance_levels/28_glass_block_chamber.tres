@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/light_grid_violet.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/glass_block_chamber.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_violet_cosmic.png" id="4_preview"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/prism_orchid_panorama_v1.png" id="5_panorama"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "GLASS BLOCK CHAMBER"
+description = "Тёмная стеклянная галерея: крупные оконные модули, плотные hero-порталы и мягкий свет только от движений."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.34, 0.24, 0.62, 1, 0.30, 0.72, 0.84, 1, 0.018, 0.010, 0.045, 1)
+preview_texture = ExtResource("4_preview")
+background_texture = ExtResource("5_panorama")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.025, "amount_scale": 0.025}
+lighting_settings = {"glow_intensity": 0.58, "glow_strength": 0.70, "bloom": 0.028, "frame_rest_glow": 0.18, "frame_rest_emission_scale": 0.78, "ambient_energy": 0.82, "ambient_palette_mix": 0.20, "ambient_lift": 0.22, "key_energy": 0.62, "ssr_enabled": true, "sky_background_enabled": true, "sky_background_energy": 0.58, "sky_background_stage_mix": 0.10, "sky_background_yaw_degrees": 0.0}
+fog_settings = {"density": 0.0010, "sky_affect": 0.14}
+camera_settings = {"step_impact": 0.44, "step_duration": 0.20, "fov_pulse": 0.30, "section_fov_push": 0.75, "section_transition_seconds": 0.90}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "visual_stage_enabled": true, "visual_stage_transition_seconds": 0.90, "wave_speed": 64.0, "wave_width": 13.0, "wave_lifetime": 2.1, "wave_near_fade_distance": 30.0, "wave_emission_strength": 0.34}
+preset_name = "GLASS BLOCK CHAMBER"
+style_id = "GlassBlockChamber"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 184237
+ring_density = 1.0
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.38
+glow_strength = 0.72
+camera_motion = 0.20
+speed_multiplier = 0.98
+atmosphere_density = 0.035
+floor_pattern = "None"
+layout_weight_scale = {"Ring": 3.0}
+level_id = "28_glass_block_chamber"
+segment_sequence = PackedStringArray("Ring")

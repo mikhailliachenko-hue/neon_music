@@ -1,0 +1,107 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Walls/WallAstra_Straight_Flat_Window.gltf" id="1_wall"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/kenney_space/glb/template-floor-big.glb" id="3_floor"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf" id="4_light"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Platforms/Platform_Window_Wide.gltf" id="5_glass"]
+
+[node name="GlassBlockChamberShell" type="Node3D"]
+
+[node name="Foundation" type="Node3D" parent="."]
+
+[node name="FloorRear" parent="Foundation" instance=ExtResource("3_floor")]
+position = Vector3(0, -6.4, -4.5)
+scale = Vector3(1.45, 1, 1.125)
+
+[node name="FloorFront" parent="Foundation" instance=ExtResource("3_floor")]
+position = Vector3(0, -6.4, 4.5)
+scale = Vector3(1.45, 1, 1.125)
+
+[node name="LeftGlassWall" type="Node3D" parent="."]
+
+[node name="Bay00" parent="LeftGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.18, -2.15, -7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay01" parent="LeftGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.18, -2.15, -3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay02" parent="LeftGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.18, -2.15, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay03" parent="LeftGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.18, -2.15, 3.6)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay04" parent="LeftGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(-3.18, -2.15, 7.2)
+scale = Vector3(1, 1, 0.9)
+
+[node name="RightGlassWall" type="Node3D" parent="."]
+
+[node name="Bay00" parent="RightGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(3.18, -2.15, -7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay01" parent="RightGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(3.18, -2.15, -3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay02" parent="RightGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(3.18, -2.15, 0)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay03" parent="RightGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(3.18, -2.15, 3.6)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="Bay04" parent="RightGlassWall" instance=ExtResource("1_wall")]
+position = Vector3(3.18, -2.15, 7.2)
+rotation_degrees = Vector3(0, 180, 0)
+scale = Vector3(1, 1, 0.9)
+
+[node name="GlassBlocks" type="Node3D" parent="."]
+
+[node name="LeftRear" parent="GlassBlocks" instance=ExtResource("5_glass")]
+position = Vector3(-5.15, 0.45, -5.4)
+rotation_degrees = Vector3(0, 0, 90)
+scale = Vector3(1.25, 0.65, 0.75)
+
+[node name="LeftFront" parent="GlassBlocks" instance=ExtResource("5_glass")]
+position = Vector3(-5.15, 0.45, 3.6)
+rotation_degrees = Vector3(0, 0, 90)
+scale = Vector3(1.25, 0.65, 0.75)
+
+[node name="RightRear" parent="GlassBlocks" instance=ExtResource("5_glass")]
+position = Vector3(5.15, 1.15, -3.6)
+rotation_degrees = Vector3(0, 180, -90)
+scale = Vector3(1.25, 0.65, 0.75)
+
+[node name="RightFront" parent="GlassBlocks" instance=ExtResource("5_glass")]
+position = Vector3(5.15, 1.15, 5.4)
+rotation_degrees = Vector3(0, 180, -90)
+scale = Vector3(1.25, 0.65, 0.75)
+
+[node name="EdgeLights" type="Node3D" parent="."]
+
+[node name="LeftRear" parent="EdgeLights" instance=ExtResource("4_light")]
+position = Vector3(-5.05, -0.2, -5.4)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="LeftFront" parent="EdgeLights" instance=ExtResource("4_light")]
+position = Vector3(-5.05, -0.2, 3.6)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="RightRear" parent="EdgeLights" instance=ExtResource("4_light")]
+position = Vector3(5.05, 1.8, -3.6)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="RightFront" parent="EdgeLights" instance=ExtResource("4_light")]
+position = Vector3(5.05, 1.8, 5.4)
+rotation_degrees = Vector3(0, 0, 90)

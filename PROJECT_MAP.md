@@ -129,7 +129,7 @@ Runtime renderer scripts.
   floor-line effects and wallpaper/background planes are disabled in these
   worlds; opaque colour, fog and sparse reflections come from the environment.
   The former production light-grid, gate, industrial, solar and quantum mappings
-  remain archived resources but are no longer selected by the 27-level library.
+  remain archived resources but are no longer selected by the production library.
 
 #### Pinterest Prism Gold Master
 
@@ -186,6 +186,28 @@ Runtime renderer scripts.
   `Pinterest Glow` is the production winner for `VIOLET GRID RUNNER`; the other
   two duplicate presentation Resources while sharing the same warmed asset set.
   Pass `--look=<name>` only when making controlled comparison captures.
+
+#### Glass Block Chamber
+
+- `GLASS BLOCK CHAMBER` is the second reference-grade visual slice and preset 28.
+  It uses the existing generator, selector, eight-segment pool and action API;
+  there is no level-specific runtime branch.
+- Its authoritative `glass_block_chamber` asset set composes imported Quaternius
+  `WallAstra_Straight_Flat_Window`, `Platform_Window_Wide` and `Prop_Light_Wide`
+  modules with the cached Kenney road and Gold Master prism/circle portals. The
+  shell remains outside a verified `4.4 m` gameplay half-clearance and leaves the
+  roof open so the panorama and hero portals provide depth instead of a heavy
+  ceiling slab.
+- Calm presentation is graphite/aubergine glass with restrained cyan edge light.
+  Beat and downbeat do not illuminate the shell. A gameplay action launches one
+  distant `cyan -> violet -> rose` travelling wave; 32-count staging changes only
+  palette balance, fog and a sub-degree FOV envelope.
+- Runtime panorama is reused from the cached Prism Orchid sky. No texture, scene,
+  material, light or particle is instantiated in response to music or actions.
+- L1 coverage is included in `dance_level_smoke_test.gd`,
+  `tunnel_world_style_smoke_test.gd` and `tunnel_gameplay_clearance_smoke_test.gd`.
+  Forward+ `calm`, `action` and `finale` evidence lives under
+  `output/diagnostics/glass_block_chamber/` and is not committed.
 
 #### Ideal Dance Mode level formula
 

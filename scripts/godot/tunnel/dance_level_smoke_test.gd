@@ -9,6 +9,7 @@ const EXPECTED_NAMES := [
 	"CYAN APEX", "VIOLET CIRCUIT", "DEEP ORBIT", "GOLDEN STARLINE",
 	"ICE PORTAL", "REDLINE SURGE", "TOXIC HALO", "SUNSET APEX",
 	"WHITE WAVELINE", "SPECTRUM HALO", "SOLAR SKYRAIL", "QUANTUM MIRROR",
+	"GLASS BLOCK CHAMBER",
 ]
 const MINIMAL_FRAME_LEVEL_IDS := {
 	"16_cyan_apex": true, "17_violet_circuit": true, "18_deep_orbit": true,
@@ -83,6 +84,10 @@ func _run() -> void:
 			_validate_authored_level(preset, "pinterest_prism", "RhythmFrames", true, failures)
 		if preset.display_name() == "QUANTUM MIRROR":
 			_validate_authored_level(preset, "pinterest_prism", "RhythmFrames", true, failures)
+		if preset.display_name() == "GLASS BLOCK CHAMBER":
+			_validate_authored_level(preset, "glass_block_chamber", "RhythmFrames", true, failures)
+			if not bool(preset.music_reaction_settings.get("action_only_visuals", false)):
+				failures.append("GLASS BLOCK CHAMBER must keep action-only visuals")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:

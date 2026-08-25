@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/glass_block/glass_block_chamber_shell.tscn" id="2_shell"]
+[ext_resource type="PackedScene" path="res://assets/worlds/tunnel/kenney_city_roads/road-straight.glb" id="3_road"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/gold_master/gold_master_prism_portal.tscn" id="4_prism"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/gold_master/gold_master_circle_portal.tscn" id="5_circle"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/particles/placeholder_energy_dust.tscn" id="6_particles"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "glass_block_chamber"
+display_name = "Glass Block Chamber Set"
+shell_assets = Array[PackedScene]([ExtResource("2_shell")])
+floor_assets = Array[PackedScene]([ExtResource("3_road")])
+ring_assets = Array[PackedScene]([ExtResource("4_prism"), ExtResource("5_circle")])
+particle_assets = Array[PackedScene]([ExtResource("6_particles")])
+shell_clearance_verified = true
+shell_inner_half_width = 4.55
+shell_floor_top_y = -2.16
+shell_ceiling_bottom_y = 5.45
+gameplay_clearance_verified = true
+frame_instances_per_segment = 5
+frame_inner_half_width = 5.0
+frame_opening_bottom_y = -2.05
+frame_opening_top_y = 5.8
+frame_target_width = 15.0
+frame_target_height = 10.8
+frame_target_depth = 0.34
+frame_target_center_y = 3.35
+frame_wraps_below_road = false
+
