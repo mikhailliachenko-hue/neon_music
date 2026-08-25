@@ -113,8 +113,8 @@ func activate(
 func set_fade(value: float) -> void:
 	var fade := clampf(value, 0.0, 1.0)
 	_body_material.set_shader_parameter("fade", fade)
-	_face_material.set_shader_parameter("opacity", (0.26 if visual_variant == "high_side_wall" else 0.22) * fade)
-	_face_material.set_shader_parameter("brightness", _face_brightness * (0.48 + fade * 0.52))
+	_face_material.set_shader_parameter("opacity", (0.34 if visual_variant == "high_side_wall" else 0.46) * fade)
+	_face_material.set_shader_parameter("brightness", _face_brightness * (0.62 + fade * 0.58))
 
 
 func deactivate() -> void:
@@ -145,4 +145,4 @@ func _apply_color() -> void:
 	var frame_color := _base_color.lerp(Color(0.88, 0.96, 1.0), 0.34)
 	_frame_material.albedo_color = Color(0.018, 0.024, 0.038, 1.0).lerp(frame_color, 0.12)
 	_frame_material.emission = frame_color
-	_frame_material.emission_energy_multiplier = 2.15 if visual_variant == "high_side_wall" else 1.35
+	_frame_material.emission_energy_multiplier = 2.65 if visual_variant == "high_side_wall" else 3.15

@@ -29,4 +29,5 @@ frame_target_width = 15.0
 frame_target_height = 10.8
 frame_target_depth = 0.34
 frame_target_center_y = 3.35
-frame_wraps_below_road = false
+frame_wraps_below_road = true
+frame_target_outer_bottom_y = -3.65

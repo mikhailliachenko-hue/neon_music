@@ -37,8 +37,11 @@ func _run() -> void:
 			and asset_set.frame_instances_per_segment != 6:
 			failures.append("%s must keep the Pinterest-dense six-star cadence" % preset.display_name())
 		if preset.world_style.world_id == "rhythm_star_frames" \
-			and asset_set.frame_target_depth > 2.0:
+		and asset_set.frame_target_depth > 2.0:
 			failures.append("%s star rails are stretched along the gameplay lane" % preset.display_name())
+		if preset.world_style.world_id == "rhythm_star_frames" \
+		and asset_set.frame_target_outer_bottom_y > -5.0:
+			failures.append("%s star side rays are not lowered clear of the receptor plane" % preset.display_name())
 		if preset.world_style.world_id == "solar_skyrail" \
 			and asset_set.frame_instances_per_segment < 3:
 			failures.append("%s must keep dense portal spacing" % preset.display_name())

@@ -12,6 +12,8 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	var low_signal := PROFILE_SCRIPT.obstacle_color({"visual_variant": "low_corridor"}, RIGHT_COLOR)
+	_assert_true(low_signal.r > 0.85 and low_signal.g > 0.18, "low obstacle must keep a bright warm signal color")
 	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 64}), "high_side_wall", "legacy 64-beat boundary must use rare high-wall fallback")
 	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 96}), "low_corridor", "legacy non-64 boundary must use low corridor")
 	_assert_equal(PROFILE_SCRIPT.event_variant({"beat_index": 64, "visual_variant": "low_corridor"}), "low_corridor", "explicit visual_variant must override legacy fallback")

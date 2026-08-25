@@ -9,6 +9,7 @@ const LOW_HEIGHT := 0.5
 const LOW_WIDTH := 3.8
 const LOW_LENGTH := 20.0
 const HIGH_COLOR := Color(0.96, 0.075, 0.74)
+const LOW_SIGNAL_COLOR := Color(1.0, 0.24, 0.035)
 
 
 static func event_variant(event: Dictionary) -> String:
@@ -33,7 +34,9 @@ static func dimensions(event: Dictionary, high_dimensions: Vector3) -> Vector3:
 static func obstacle_color(event: Dictionary, side_color: Color) -> Color:
 	if event_variant(event) == HIGH_SIDE_WALL:
 		return HIGH_COLOR.lerp(side_color, 0.16)
-	return side_color.darkened(0.12)
+	# Low obstacles sit close to the cyan/magenta road. A warm signal color keeps
+	# their silhouette readable in every level while retaining a slight side tint.
+	return LOW_SIGNAL_COLOR.lerp(side_color, 0.12)
 
 
 static func camera_settings(event: Dictionary) -> Dictionary:

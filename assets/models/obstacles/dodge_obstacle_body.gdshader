@@ -22,13 +22,13 @@ void fragment() {
 	float hex_distance = max(abs(hex_cell.y), abs(hex_cell.x) * 0.866025 + abs(hex_cell.y) * 0.5);
 	float honeycomb = 1.0 - smoothstep(0.025, 0.075, abs(hex_distance - 0.43));
 	vec3 graphite = vec3(0.012, 0.016, 0.028);
-	vec3 low_body = graphite + obstacle_color.rgb * 0.018;
+	vec3 low_body = graphite + obstacle_color.rgb * 0.065;
 	vec3 high_body = graphite + obstacle_color.rgb * 0.024;
 	ALBEDO = mix(low_body, high_body, profile_mode);
 	METALLIC = 0.72;
 	ROUGHNESS = 0.22;
-	float low_emission = (0.035 + honeycomb * 0.10 + diagonal_stripe * 0.045) * min(body_energy, 2.2) * fade;
+	float low_emission = (0.10 + honeycomb * 0.18 + diagonal_stripe * 0.12) * min(body_energy, 2.2) * fade;
 	float high_emission = (0.055 + honeycomb * 0.16 + diagonal_stripe * body_energy * 0.16) * fade;
 	EMISSION = obstacle_color.rgb * mix(low_emission, high_emission, profile_mode);
-	ALPHA = mix(0.13, 0.095, profile_mode) * fade + honeycomb * 0.018 * fade;
+	ALPHA = mix(0.30, 0.13, profile_mode) * fade + honeycomb * 0.035 * fade;
 }
