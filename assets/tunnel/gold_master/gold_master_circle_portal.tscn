@@ -1,9 +1,32 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="PackedScene" path="res://assets/tunnel/rings/rhythm_circle_frame.tscn" id="1_frame"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf" id="2_light"]
 
 [node name="GoldMasterCirclePortal" type="Node3D"]
 
 [node name="Frame" parent="." instance=ExtResource("1_frame")]
-position = Vector3(0, 0, -0.431184)
+position = Vector3(0, 1.5, -0.431184)
 scale = Vector3(0.900303, 0.900303, 1)
+
+[node name="Quarter2" parent="Frame"]
+visible = false
+
+[node name="Quarter3" parent="Frame"]
+visible = false
+
+[node name="LeftLeg" type="Node3D" parent="."]
+position = Vector3(-3.6, -1.5, 0)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="Light" parent="LeftLeg" instance=ExtResource("2_light")]
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(2.2727, 0.55, 0.75)
+
+[node name="RightLeg" type="Node3D" parent="."]
+position = Vector3(3.6, 1.5, 0)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="Light" parent="RightLeg" instance=ExtResource("2_light")]
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(2.2727, 0.55, 0.75)

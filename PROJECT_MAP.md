@@ -157,6 +157,11 @@ Runtime renderer scripts.
   and gameplay-clearance smokes. Runtime evidence belongs under
   `output/diagnostics/gold_master_prism/`; these generated captures and movies
   are not source assets and are not committed.
+- `gold_master_look_variants.gd` provides three non-selector QA looks for the
+  standalone preview: `dark_luxury`, `pinterest_glow` and `clean_rhythm`.
+  `Pinterest Glow` is the production winner for `VIOLET GRID RUNNER`; the other
+  two duplicate presentation Resources while sharing the same warmed asset set.
+  Pass `--look=<name>` only when making controlled comparison captures.
 
 #### Ideal Dance Mode level formula
 

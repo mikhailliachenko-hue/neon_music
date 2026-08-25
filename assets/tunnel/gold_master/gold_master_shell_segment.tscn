@@ -112,54 +112,6 @@ position = Vector3(3.05, -2.15, 7.2)
 rotation_degrees = Vector3(0, 180, 0)
 scale = Vector3(1, 1, 0.9)
 
-[node name="LeftShoulder" type="Node3D" parent="."]
-position = Vector3(-4.925, 4.125, 0)
-rotation_degrees = Vector3(0, 0, -20.43)
-
-[node name="Panel00" parent="LeftShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, -7.2)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel01" parent="LeftShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, -3.6)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel02" parent="LeftShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 0)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel03" parent="LeftShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 3.6)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel04" parent="LeftShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 7.2)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="RightShoulder" type="Node3D" parent="."]
-position = Vector3(4.925, 4.125, 0)
-rotation_degrees = Vector3(0, 0, 20.43)
-
-[node name="Panel00" parent="RightShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, -7.2)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel01" parent="RightShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, -3.6)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel02" parent="RightShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 0)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel03" parent="RightShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 3.6)
-scale = Vector3(1, 1.3605, 0.9)
-
-[node name="Panel04" parent="RightShoulder" instance=ExtResource("2_top")]
-position = Vector3(2, -5.442, 7.2)
-scale = Vector3(1, 1.3605, 0.9)
-
 [node name="Ceiling" type="Node3D" parent="."]
 
 [node name="Panel00" parent="Ceiling" instance=ExtResource("2_top")]

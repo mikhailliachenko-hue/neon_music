@@ -2,9 +2,15 @@ extends SceneTree
 
 const LEVEL_SCENE := preload("res://scenes/tunnel/levels/cyber_awakening.tscn")
 const SHELL_SCENE := preload("res://assets/tunnel/gold_master/gold_master_shell_segment.tscn")
+const LOOK_VARIANTS := preload("res://scripts/godot/tunnel/gold_master_look_variants.gd")
+const PORTAL_SCENES := [
+	preload("res://assets/tunnel/gold_master/gold_master_prism_portal.tscn"),
+	preload("res://assets/tunnel/gold_master/gold_master_circle_portal.tscn"),
+	preload("res://assets/tunnel/gold_master/gold_master_clean_portal.tscn"),
+]
 const EXPECTED_WORLD := "pinterest_prism_gold_master"
-const EXPECTED_PRIMARY := Color(0.415686, 0.176471, 0.568627, 1.0)
-const EXPECTED_BACKGROUND := Color(0.019608, 0.011765, 0.047059, 1.0)
+const EXPECTED_PRIMARY := Color(0.486275, 0.247059, 0.690196, 1.0)
+const EXPECTED_BACKGROUND := Color(0.035294, 0.015686, 0.086275, 1.0)
 
 
 func _initialize() -> void:
@@ -14,6 +20,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var failures := PackedStringArray()
 	await _validate_authored_shell(failures)
+	await _validate_authored_portals(failures)
 	var generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
 	root.add_child(generator)
 	await process_frame
@@ -29,6 +36,7 @@ func _run() -> void:
 		generator.sync_to_song_time(0.0, _music_state(0, 0, true))
 		generator.sync_to_song_time(160.0, _music_state(320, 0, true))
 		_validate_runtime_contract(generator, environment, failures)
+		_validate_look_variants(generator.current_level_preset(), failures)
 		_validate_action_only_contract(generator, failures)
 		_validate_pool_stability(generator, failures)
 	print("PINTEREST_PRISM_GOLD_MASTER_SMOKE failures=%d pool=%d asset_pool=%d" % [
@@ -49,21 +57,55 @@ func _validate_authored_shell(failures: PackedStringArray) -> void:
 	await process_frame
 	var foundation := _combined_bounds(shell.get_node("Foundation") as Node3D, shell)
 	var left_wall := _combined_bounds(shell.get_node("LeftWall") as Node3D, shell)
-	var left_shoulder := _combined_bounds(shell.get_node("LeftShoulder") as Node3D, shell)
 	var right_wall := _combined_bounds(shell.get_node("RightWall") as Node3D, shell)
-	var right_shoulder := _combined_bounds(shell.get_node("RightShoulder") as Node3D, shell)
 	var ceiling := _combined_bounds(shell.get_node("Ceiling") as Node3D, shell)
 	if foundation.end.y > -2.05:
 		failures.append("authored foundation enters the step envelope")
-	if maxf(left_wall.end.x, left_shoulder.end.x) > -4.4:
-		failures.append("authored left shell enters the gameplay corridor: wall=%s shoulder=%s" % [str(left_wall), str(left_shoulder)])
-	if minf(right_wall.position.x, right_shoulder.position.x) < 4.4:
-		failures.append("authored right shell enters the gameplay corridor: wall=%s shoulder=%s" % [str(right_wall), str(right_shoulder)])
+	if left_wall.end.x > -4.4:
+		failures.append("authored left shell enters the gameplay corridor: %s" % str(left_wall))
+	if right_wall.position.x < 4.4:
+		failures.append("authored right shell enters the gameplay corridor: %s" % str(right_wall))
 	if ceiling.position.y < 4.3:
 		failures.append("authored ceiling enters the hand envelope")
 	if absf(foundation.size.z - 18.0) > 0.05:
 		failures.append("authored shell no longer covers one 18 m segment")
 	shell.queue_free()
+
+
+func _validate_authored_portals(failures: PackedStringArray) -> void:
+	for packed in PORTAL_SCENES:
+		var portal := packed.instantiate() as Node3D
+		root.add_child(portal)
+		await process_frame
+		var source_bounds := _combined_bounds(portal, portal)
+		var safe_size := Vector3(
+			maxf(source_bounds.size.x, 0.001),
+			maxf(source_bounds.size.y, 0.001),
+			maxf(source_bounds.size.z, 0.001)
+		)
+		portal.scale = Vector3(15.0, 10.8, 0.34) / safe_size
+		portal.position = Vector3(0.0, 3.35, 0.0) - source_bounds.get_center() * portal.scale
+		await process_frame
+		var enters_gameplay := false
+		for child in portal.find_children("*", "MeshInstance3D", true, false):
+			var mesh_instance := child as MeshInstance3D
+			if mesh_instance.mesh == null or not mesh_instance.is_visible_in_tree():
+				continue
+			for surface in range(mesh_instance.mesh.get_surface_count()):
+				var arrays := mesh_instance.mesh.surface_get_arrays(surface)
+				var vertices := arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array
+				for vertex in vertices:
+					var point := mesh_instance.global_transform * vertex
+					if absf(point.x) < 4.4 and point.y > -2.04 and point.y < 4.3:
+						enters_gameplay = true
+						break
+				if enters_gameplay:
+					break
+			if enters_gameplay:
+				break
+		if enters_gameplay:
+			failures.append("authored portal %s enters the gameplay envelope" % portal.name)
+		portal.queue_free()
 
 
 func _validate_runtime_contract(
@@ -121,6 +163,27 @@ func _validate_action_only_contract(generator: NeonTunnelGenerator, failures: Pa
 			failures.append("%s did not create exactly one Gold Master wave" % action)
 	if not bool(generator.get_runtime_stats().get("visual_stage_enabled", false)):
 		failures.append("Gold Master 32-count visual staging is disabled")
+
+
+func _validate_look_variants(source: TunnelLevelPreset, failures: PackedStringArray) -> void:
+	var source_primary := source.color_palette[0]
+	var source_style := source.world_style
+	var primaries := {}
+	for look_name in LOOK_VARIANTS.names():
+		var preview := source.duplicate(true) as TunnelLevelPreset
+		var applied := LOOK_VARIANTS.apply_to(preview, look_name)
+		if applied != look_name:
+			failures.append("preview look %s was not applied" % look_name)
+			continue
+		primaries[preview.color_palette[0].to_html()] = true
+		if preview.world_style == source_style or preview.world_style.asset_set != source_style.asset_set:
+			failures.append("preview look %s changed the shared asset-pool contract" % look_name)
+		if not bool(preview.music_reaction_settings.get("action_only_visuals", false)):
+			failures.append("preview look %s enabled beat-driven visuals" % look_name)
+	if primaries.size() != LOOK_VARIANTS.names().size():
+		failures.append("Gold Master preview looks are not visually distinct")
+	if not source.color_palette[0].is_equal_approx(source_primary) or source.world_style != source_style:
+		failures.append("preview look comparison mutated the production preset")
 
 
 func _validate_pool_stability(generator: NeonTunnelGenerator, failures: PackedStringArray) -> void:

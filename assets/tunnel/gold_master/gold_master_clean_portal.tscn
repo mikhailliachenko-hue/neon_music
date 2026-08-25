@@ -1,9 +1,28 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="PackedScene" path="res://assets/tunnel/sketchfab_clean_portal/clean_energy_portal.tscn" id="1_frame"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/quaternius_megakit/glTF/Props/Prop_Light_Wide.gltf" id="1_light"]
 
 [node name="GoldMasterCleanPortal" type="Node3D"]
 
-[node name="Frame" parent="." instance=ExtResource("1_frame")]
-position = Vector3(-0.044949, -3.78537, -0.023301)
-scale = Vector3(3.60335, 3.64852, 3.72066)
+[node name="Top" type="Node3D" parent="."]
+position = Vector3(3.6, 3.6, 0)
+
+[node name="Light" parent="Top" instance=ExtResource("1_light")]
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(5.4545, 0.55, 0.75)
+
+[node name="Left" type="Node3D" parent="."]
+position = Vector3(-3.6, -1.5, 0)
+rotation_degrees = Vector3(0, 0, -90)
+
+[node name="Light" parent="Left" instance=ExtResource("1_light")]
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(3.8636, 0.55, 0.75)
+
+[node name="Right" type="Node3D" parent="."]
+position = Vector3(3.6, 3.6, 0)
+rotation_degrees = Vector3(0, 0, 90)
+
+[node name="Light" parent="Right" instance=ExtResource("1_light")]
+rotation_degrees = Vector3(90, 0, 0)
+scale = Vector3(3.8636, 0.55, 0.75)

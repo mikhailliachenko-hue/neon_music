@@ -3,6 +3,7 @@ class_name CyberAwakeningPreview
 
 const LEVEL_CONFIG := preload("res://resources/tunnel/levels/cyber_awakening.tres")
 const DEFAULT_CONFIG := preload("res://resources/tunnel/neon_tunnel_default.tres")
+const GOLD_MASTER_LOOKS := preload("res://scripts/godot/tunnel/gold_master_look_variants.gd")
 const BEAT_INTERVAL := 0.5
 const PREVIEW_ACTION_PERIOD_BEATS := 16
 const PREVIEW_ACTION_SEQUENCE := [
@@ -39,6 +40,8 @@ var _capture_started := false
 var _manual_action_at := -1.0
 var _manual_action_fired := false
 var _current_preview_action := "WAIT"
+var _requested_look: String = GOLD_MASTER_LOOKS.PRODUCTION
+var _active_look: String = GOLD_MASTER_LOOKS.PRODUCTION
 
 
 func _enter_tree() -> void:
@@ -62,6 +65,7 @@ func _enter_tree() -> void:
 		preview_preset.theme = target_theme
 		preview_preset.decoration_density = clampf(_density, 0.0, 1.5)
 		preview_preset.panel_density = clampf(_density * 1.08, 0.0, 1.5)
+		_active_look = GOLD_MASTER_LOOKS.apply_to(preview_preset, _requested_look)
 		var themes: Array[TunnelTheme] = [target_theme]
 		var presets: Array[TunnelLevelPreset] = [preview_preset]
 		preview_config.themes = themes
@@ -76,8 +80,8 @@ func _ready() -> void:
 	var active_preset := generator.current_level_preset()
 	if active_preset != null:
 		$PreviewUI/Margin/Panel/VBox/Title.text = active_preset.display_name()
-	print("CYBER_AWAKENING_PREVIEW speed=%.2f theme=%s seed=%d density=%.2f start=%.2f" % [
-		_speed, _theme_name, _seed, _density, _preview_time,
+	print("CYBER_AWAKENING_PREVIEW speed=%.2f theme=%s seed=%d density=%.2f start=%.2f look=%s" % [
+		_speed, _theme_name, _seed, _density, _preview_time, _active_look,
 	])
 
 
@@ -138,6 +142,8 @@ func _parse_preview_args() -> void:
 			_seed = int(arg.trim_prefix("--seed="))
 		elif arg.begins_with("--density="):
 			_density = clampf(float(arg.trim_prefix("--density=")), 0.0, 1.5)
+		elif arg.begins_with("--look="):
+			_requested_look = arg.trim_prefix("--look=")
 		elif arg.begins_with("--phase="):
 			var requested := arg.trim_prefix("--phase=").to_lower()
 			var phase_names := ["entrance", "portalrhythm", "lasergrid", "showcase"]
@@ -219,7 +225,8 @@ func _update_info(delta: float, beat: int, count32: int) -> void:
 		return
 	_info_elapsed = 0.0
 	var stats := generator.get_runtime_stats()
-	info_label.text = "PREVIEW LEVEL — NO MUSIC\nSpeed: %.2f\nTheme: %s\nSeed: %d\nDensity: %.2f\nPhase: %s\nAction: %s\nBeat: %d\n32-count: %d\nFPS: %.1f" % [
+	info_label.text = "PREVIEW LEVEL — NO MUSIC\nLook: %s\nSpeed: %.2f\nTheme: %s\nSeed: %d\nDensity: %.2f\nPhase: %s\nAction: %s\nBeat: %d\n32-count: %d\nFPS: %.1f" % [
+		_active_look,
 		_speed, _theme_name, _seed, _density, String(stats.get("level_phase", "Entrance")),
 		_current_preview_action, beat, count32, float(Performance.get_monitor(Performance.TIME_FPS)),
 	]
