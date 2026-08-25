@@ -172,10 +172,12 @@ static func _contact_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.albedo_color = Color(0.004, 0.007, 0.016, 0.82)
+	material.albedo_color = Color(0.006 + color.r * 0.025, 0.009 + color.g * 0.025, 0.020 + color.b * 0.025, 0.90)
 	material.emission_enabled = true
 	material.emission = color
-	material.emission_energy_multiplier = 0.12
+	# A controlled pool of colour seats the cue on the road. It is brighter than
+	# the passive lane tint but much dimmer than the target rim/footprint.
+	material.emission_energy_multiplier = 0.34
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_materials[key] = material
 	return material

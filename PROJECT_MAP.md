@@ -85,6 +85,12 @@ Runtime renderer scripts.
   cyan/magenta active lanes remain gameplay-authoritative. Transparent OBS overlay
   deliberately disables SSR because screen-space reflection cannot sample the
   separately composited external background.
+  Four permanent low-energy lane boundaries and a faint cyan-left/magenta-right
+  surface tint preserve spatial orientation in calm/dark sections without raising
+  global exposure. Every round step target also owns one wider low-energy contact
+  bed, making its road contact readable while the footprint and rim remain the
+  brightest instruction. This shared hierarchy applies to all current and future
+  LevelPreset resources without per-level copies.
 - `gameplay_cue_kit.gd` and `assets/models/gameplay_cues/` - cached shared model/material family for STEP and PUNCH cues. It wraps existing imported CC0 GLTF resources instead of generating gameplay geometry or loading models per note; cyan/left and magenta/right remain the stable semantic contract.
 - `foot_rail_trajectory.gd` - validates the optional rail contract and evaluates allocation-free mirrored lane interpolation with a legacy straight fallback.
 - `receptor.gd` - `NoteReceptor`; hit plane flash.

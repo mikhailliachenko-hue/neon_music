@@ -3773,6 +3773,8 @@ func _configure_track_shader() -> void:
 	material.set_shader_parameter("surface_specular", 0.68)
 	material.set_shader_parameter("clearcoat_strength", 0.74)
 	material.set_shader_parameter("clearcoat_roughness", 0.10)
+	material.set_shader_parameter("passive_lane_tint", 0.034)
+	material.set_shader_parameter("lane_boundary_energy", 0.12)
 
 
 func _apply_track_level_look() -> void:
