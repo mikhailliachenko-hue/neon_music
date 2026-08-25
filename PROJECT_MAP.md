@@ -446,6 +446,17 @@ python scripts/python/timing_diagnostics.py --video "path\to\recording.mp4" --be
 - Marker controls are not spawned during playback: the component uses one custom-drawn canvas plus three persistent text labels.
 - Runtime font remains the stable Kenney Future Narrow asset.
 - Headless contract test: `scripts/godot/ui/dance_progress_hud_smoke_test.gd`. Visual capture evidence: `output/diagnostics/progress_hud_v2/`.
+
+## Tunnel Color Harmony
+
+- Every `TunnelLevelPreset.color_palette` follows the same three-slot contract: `[primary, accent, background]`. `NeonMaterialController` derives shadow, crest, floor and environment colors from those slots; gameplay cyan/magenta remains independent and must stay visually brighter than architecture.
+- Production palettes are grouped into seven harmonious families rather than raw RGB themes: Prism Orchid, Wine Coral, Solar Amber, Ice Cyan, Deep Indigo, Emerald Lime and Future Silver. A level may vary value and balance inside its family, but should not introduce a third saturated architectural hue.
+- Calm-frame composition target: roughly 70–80% graphite/near-black body, 15–25% dominant neon and 5–10% related accent. Saturated color belongs on trims, reflections, haze and action-wave crests—not across a whole wall body.
+- Red levels use a wine/charcoal base, deep crimson primary and coral/amber accent. Avoid pure `Color(1, 0, 0)` surfaces: they flatten imported geometry and make the tunnel look detached from its background.
+- Green levels use emerald/teal bodies with a restrained lime crest; violet levels stay inside aubergine/orchid/pink; ice and white levels use navy/graphite shadows so their bright edges retain depth.
+- Palette changes remain data-only in `resources/tunnel/dance_levels/*.tres` and shared fallbacks in `resources/tunnel/themes/*.tres`. Do not add palette-specific branches to the generator or alter gameplay transforms.
+- Forward+ harmony QA captures for representative red, violet, ice, gold and green levels live in `output/diagnostics/color_harmony_qa/`.
+
 ## Where To Change What
 
 - Analyzer/contract path: `scripts/python/audio_analyzer.py`, `music_expression.py`, `phrase_grid.py`, `choreography_v4.py`, then update tests. Preserve Track V1 as the one-file envelope and Beat Grid V2/Beatmap V4 as the canonical inner contracts.

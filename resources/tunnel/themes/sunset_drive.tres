@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "SunsetDrive"
-emission_color = Color(1, 0.471, 0.302, 1)
+emission_color = Color(0.88, 0.34, 0.24, 1)
 accent_color = Color(1, 0.337, 0.812, 1)
-background_color = Color(0.018, 0.0015, 0.02, 1)
-fog_color = Color(0.14, 0.018, 0.055, 1)
+background_color = Color(0.030, 0.006, 0.030, 1)
+fog_color = Color(0.13, 0.025, 0.065, 1)
 fog_density = 0.00135
 glow_intensity = 0.74
 emission_energy = 6.25

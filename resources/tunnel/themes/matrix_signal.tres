@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "MatrixSignal"
-emission_color = Color(0.333, 0.949, 0.655, 1)
+emission_color = Color(0.16, 0.70, 0.42, 1)
 accent_color = Color(0.784, 1, 0.698, 1)
-background_color = Color(0.001, 0.014, 0.004, 1)
-fog_color = Color(0.006, 0.11, 0.025, 1)
+background_color = Color(0.003, 0.018, 0.010, 1)
+fog_color = Color(0.010, 0.10, 0.045, 1)
 fog_density = 0.0014
 glow_intensity = 0.64
 emission_energy = 5.85

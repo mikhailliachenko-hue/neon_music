@@ -5,10 +5,10 @@
 [resource]
 script = ExtResource("1_theme")
 theme_name = "ElectricPink"
-emission_color = Color(1, 0.337, 0.812, 1)
+emission_color = Color(0.82, 0.22, 0.62, 1)
 accent_color = Color(0.604, 0.388, 1, 1)
-background_color = Color(0.018, 0.001, 0.018, 1)
-fog_color = Color(0.18, 0.012, 0.12, 1)
+background_color = Color(0.025, 0.005, 0.035, 1)
+fog_color = Color(0.13, 0.022, 0.095, 1)
 fog_density = 0.0046
 glow_intensity = 0.82
 emission_energy = 6.7
