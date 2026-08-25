@@ -210,10 +210,13 @@ func _ready() -> void:
 	# Headless validation should advance the deterministic render clock as fast
 	# as the machine allows; graphical captures stay locked to their target FPS.
 	Engine.max_fps = 0 if render_clock_mode and _is_headless_runtime() else (int(render_clock_fps) if render_clock_mode else 60)
-	_configure_background_video()
 	_configure_track_shader()
 	_build_retrowave_environment()
 	_build_tunnel()
+	# Decide window compositing only after the tunnel has completed its runtime
+	# setup. Doing this earlier could briefly classify F6 as a background-video
+	# scene and leave the native Godot window in transparent overlay mode.
+	_configure_background_video()
 	_restore_dance_level_selection()
 	_build_execution_deck()
 	_init_tuning_values()
@@ -227,6 +230,7 @@ func _ready() -> void:
 	_seek_runtime_indices_for_song_time(render_clock_start_at)
 	_prime_first_note_pipeline(render_clock_start_at)
 	await _warmup_tunnel_before_playback()
+	_enforce_expected_window_compositing()
 	if debug_timeline_enabled:
 		_build_debug_timeline_overlay()
 	if not _is_headless_runtime():
@@ -987,6 +991,9 @@ func _clear_background_video_nodes() -> void:
 
 func _enable_external_background_overlay(always_on_top: bool = false) -> void:
 	background_external_overlay_enabled = true
+	# Explicit OBS mode opts into alpha for this process only. Normal F6 keeps
+	# the project-level permission disabled, preventing accidental transparency.
+	ProjectSettings.set_setting("display/window/per_pixel_transparency/allowed", true)
 	get_viewport().transparent_bg = true
 	get_window().transparent = true
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, true)
@@ -1027,7 +1034,20 @@ func _force_opaque_tunnel_output() -> void:
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, false)
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, false)
 	RenderingServer.set_default_clear_color(Color(0.003, 0.012, 0.032, 1.0))
-	print("Tunnel output: opaque viewport=true internal_backdrop=true obs_overlay=false")
+	print("Tunnel output: opaque viewport=%s window=%s native_flag=%s internal_backdrop=true obs_overlay=false" % [
+		str(not get_viewport().transparent_bg),
+		str(not get_window().transparent),
+		str(not DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT)),
+	])
+
+
+func _enforce_expected_window_compositing() -> void:
+	if _obs_overlay_requested():
+		return
+	if tunnel_generator != null and tunnel_generator.replaces_background_video():
+		_force_opaque_tunnel_output()
+
+
 
 
 func _refocus_game_window_after_external_player_start() -> void:

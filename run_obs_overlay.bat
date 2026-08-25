@@ -16,6 +16,6 @@ if not exist "%GODOT_GUI%" (
     set "GODOT_GUI=godot.exe"
 )
 
-start "Neon Music OBS Overlay" "%GODOT_GUI%" --path "%PROJECT_DIR%." --resolution 2560x1440 -- --obs-overlay --render-clock=audio --no-tuning-gui
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%scripts\run_obs_overlay.ps1" -ProjectDir "%PROJECT_DIR%." -GodotPath "%GODOT_GUI%"
 
 endlocal
