@@ -201,6 +201,7 @@ var tunnel_spectrum_last_sample_usec := -TUNNEL_SPECTRUM_SAMPLE_INTERVAL_USEC
 
 
 func _ready() -> void:
+	_reset_default_window_compositing()
 	_configure_render_clock()
 	_configure_frame_sequence_capture()
 	level_preview_mode = OS.get_cmdline_user_args().has("--preview-level")
@@ -378,6 +379,20 @@ func _soft_restart() -> void:
 	_start_background_video()
 	started = true
 	print("Scene soft restart: tuning preserved")
+
+
+func _reset_default_window_compositing() -> void:
+	# F6 and ordinary project runs must never inherit a transparent native window
+	# from an earlier OBS/external-player session. Dedicated overlay modes enable
+	# transparency again later in _configure_background_video().
+	if _obs_overlay_requested():
+		return
+	background_external_overlay_enabled = false
+	get_viewport().transparent_bg = false
+	get_window().transparent = false
+	if not _is_headless_runtime():
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_TRANSPARENT, false)
+	RenderingServer.set_default_clear_color(Color(0.0, 0.0, 0.0, 1.0))
 
 func _toggle_fullscreen() -> void:
 	var mode := DisplayServer.window_get_mode()
