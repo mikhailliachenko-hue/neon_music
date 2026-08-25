@@ -376,6 +376,13 @@ func apply_visual_state(
 		# wall reads as flicker even when its transform is continuous.
 		var world_emission_scale := _active_world_style.architecture_emission_scale if _active_world_style != null else 1.0
 		var architecture_emission := (0.42 + emission_energy * 0.09) * profile_energy * world_emission_scale
+		# Rhythm-frame worlds rely on thin imported silhouettes rather than large
+		# luminous walls. Keep a restrained steady fill so dark GLB surfaces and the
+		# road remain legible between actions without turning the architecture into
+		# another gameplay cue or increasing scene-wide bloom.
+		var calm_readability_glow := 0.0
+		if _active_world_style != null and _active_world_style.spatial_profile == "RhythmFrames":
+			calm_readability_glow = clampf(_frame_rest_glow * 0.34, 0.045, 0.12)
 		var active_external_materials: Array[Material] = []
 		for stored_material in _external_materials_by_world.get(_active_world_key, []):
 			active_external_materials.append(stored_material as Material)
@@ -390,6 +397,7 @@ func apply_visual_state(
 			var authored_mix := _active_world_style.authored_color_mix if _active_world_style != null else 0.46
 			var authored_accent_influence := _active_world_style.authored_accent_influence if _active_world_style != null else 0.44
 			var body_glow := _active_world_style.architecture_body_glow if _active_world_style != null else 0.0
+			body_glow = maxf(body_glow, calm_readability_glow)
 			var material_override_mix := _active_world_style.architecture_material_override_mix if _active_world_style != null else 0.0
 			var material_metallic := _active_world_style.architecture_metallic if _active_world_style != null else 0.35
 			var material_roughness := _active_world_style.architecture_roughness if _active_world_style != null else 0.45
@@ -404,10 +412,11 @@ func apply_visual_state(
 					material_emission *= 0.14
 					authored_mix = 0.16
 				else:
-					material_surface = Color(0.020, 0.010, 0.028, 1.0)
-					material_primary = material_surface.lerp(primary, 0.08)
+					material_surface = Color(0.030, 0.020, 0.040, 1.0).lerp(primary, 0.045)
+					material_primary = material_surface.lerp(primary, 0.12)
 					material_accent = primary
-					material_emission *= 0.36
+					material_emission *= 0.46
+					body_glow = maxf(body_glow, calm_readability_glow * 0.72)
 					authored_mix = _active_world_style.floor_authored_color_mix if _active_world_style != null else 0.08
 					material_override_mix = _active_world_style.floor_material_override_mix if _active_world_style != null else 0.0
 					material_metallic = _active_world_style.floor_metallic if _active_world_style != null else 0.35
@@ -447,7 +456,7 @@ func apply_visual_state(
 				else:
 					standard.albedo_color = Color(material_surface.r, material_surface.g, material_surface.b, authored_alpha)
 					standard.emission = material_accent
-					standard.emission_energy_multiplier = material_emission * 0.24
+					standard.emission_energy_multiplier = material_emission * (0.38 if slot_name == "Floor" else 0.24)
 				standard.metallic = lerpf(standard.metallic, material_metallic, material_override_mix)
 				standard.roughness = lerpf(standard.roughness, material_roughness, material_override_mix)
 		_last_external_primary = primary

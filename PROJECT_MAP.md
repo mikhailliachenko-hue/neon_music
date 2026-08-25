@@ -209,6 +209,12 @@ Runtime renderer scripts.
 - Calm presentation is graphite/aubergine metal with transparent glass inserts,
   restrained turquoise Fresnel edges and no extra dynamic lights. Imported GLTF
   glass keeps its authored alpha instead of being flattened to an opaque surface.
+  The chamber now carries an explicit calm readability calibration: stronger
+  ambient/key midtones, a restrained shader body fill and a small per-level
+  exposure lift reveal the PBR panels without increasing bloom or reducing the
+  brightness hierarchy of cyan/magenta gameplay cues. All RhythmFrames worlds
+  share a low steady floor/frame fill, so dark presets remain readable between
+  action waves without adding runtime lights.
   Architecture deliberately avoids gameplay cyan: left/right cues retain pure
   cyan/magenta and remain the brightest objects over a dark road backdrop.
   Seven frames fill each 18 m segment; prism and circle groups are both warmed

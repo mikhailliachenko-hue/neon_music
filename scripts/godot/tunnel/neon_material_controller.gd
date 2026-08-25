@@ -226,6 +226,15 @@ func _apply_environment(reaction: float) -> void:
 	var requested_ambient_energy := float(_preset.lighting_settings.get("ambient_energy", theme_ambient_energy)) \
 		if _preset != null else theme_ambient_energy
 	_environment.ambient_light_energy = clampf(requested_ambient_energy * lerpf(0.94, stage_emission_scale, 0.45), 0.0, 1.2)
+	# Exposure is calibrated per level, independently from glow. This gives dark
+	# PBR modules readable midtones without widening neon halos or washing out
+	# cyan/magenta gameplay targets.
+	_environment.adjustment_enabled = true
+	_environment.adjustment_brightness = clampf(
+		float(_preset.lighting_settings.get("scene_brightness", 1.04)) if _preset != null else 1.04,
+		0.92,
+		1.18
+	)
 	_environment.fog_enabled = _config.fog_density > 0.0
 	_environment.fog_light_color = source.fog_color.lerp(_current_theme.fog_color, blend)
 	_environment.fog_density = lerpf(source.fog_density, _current_theme.fog_density, blend) * fog_scale * stage_fog_scale

@@ -97,6 +97,10 @@ func _run() -> void:
 				failures.append("GLASS BLOCK CHAMBER lost its dense seven-frame cadence")
 			if preset.world_style.asset_set.frame_variant_pool_size < 2:
 				failures.append("GLASS BLOCK CHAMBER must keep prism/circle portal variation")
+			if float(preset.lighting_settings.get("ambient_energy", 0.0)) < 0.90 \
+				or float(preset.lighting_settings.get("scene_brightness", 0.0)) < 1.08 \
+				or preset.world_style.architecture_body_glow < 0.24:
+				failures.append("GLASS BLOCK CHAMBER lost its calm architecture readability")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:
