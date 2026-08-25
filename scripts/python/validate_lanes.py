@@ -121,6 +121,40 @@ def _expected_annotation(note_time: float, anchor_time: float, beat_interval: fl
     }
 
 
+def _expected_grid_annotation(note_time: float, timing: dict[str, Any]) -> dict[str, Any]:
+    """Mirror analyzer Beat Grid V2 annotation for wall/hold events."""
+    canonical = timing.get("canonical_beats", [])
+    grid = [beat for beat in canonical if isinstance(beat, dict)] if isinstance(canonical, list) else []
+    if not grid:
+        anchor = timing.get("anchor", {})
+        anchor_time = float(anchor.get("time", 0.0)) if isinstance(anchor, dict) else 0.0
+        return _expected_annotation(note_time, anchor_time, float(timing.get("beat_interval", 0.5)))
+    nearest_position, nearest = min(
+        enumerate(grid),
+        key=lambda pair: abs(float(pair[1].get("time", 0.0)) - note_time),
+    )
+    nearest_index = int(nearest.get("index", nearest_position))
+    nearest_time = float(nearest.get("time", 0.0))
+    fallback_interval = float(timing.get("beat_interval", 0.5))
+    if note_time >= nearest_time and nearest_position + 1 < len(grid):
+        local_interval = max(
+            1e-6,
+            float(grid[nearest_position + 1].get("time", nearest_time + fallback_interval)) - nearest_time,
+        )
+    elif note_time < nearest_time and nearest_position > 0:
+        previous_time = float(grid[nearest_position - 1].get("time", nearest_time - fallback_interval))
+        local_interval = max(1e-6, nearest_time - previous_time)
+    else:
+        local_interval = fallback_interval
+    return {
+        "beat_index": nearest_index,
+        "beat_time": _round6(nearest_time),
+        "beat_phase": _round6((note_time - nearest_time) / max(local_interval, 1e-6)),
+        "beat_delta": _round6(note_time - nearest_time),
+        "downbeat": bool(nearest.get("downbeat", nearest_index % 4 == 0)),
+    }
+
+
 def _assert_field(name: str, actual: Any, expected: Any) -> None:
     if isinstance(expected, float):
         if not _is_close(actual, expected):
@@ -523,7 +557,7 @@ def _validate_wall_events(
             _fail(f"wall_events[{index}].safe_lanes must be {expected_safe_lanes} for {event_type}.")
         if sorted(lanes + safe_lanes) != [0, 1, 2, 3]:
             _fail(f"wall_events[{index}] lanes/safe_lanes must partition all lanes.")
-        expected = _expected_annotation(start, float(timing["anchor"]["time"]), beat_interval)
+        expected = _expected_grid_annotation(start, timing)
         for key, value in expected.items():
             _assert_field(f"wall_events[{index}].{key}", event.get(key), value)
         variant = normalize_visual_variant(event.get("visual_variant"), allow_missing=True)
@@ -658,7 +692,7 @@ def _validate_hold_events(
         if side != expected_side or str(event.get("foot", expected_side)) != expected_side:
             _fail(f"hold_events[{index}] side/foot must match lane side {expected_side}.")
         side_set.add(side)
-        expected = _expected_annotation(start, anchor_time, beat_interval)
+        expected = _expected_grid_annotation(start, timing)
         for key, value in expected.items():
             _assert_field(f"hold_events[{index}].{key}", event.get(key), value)
         selection = event.get("selection")

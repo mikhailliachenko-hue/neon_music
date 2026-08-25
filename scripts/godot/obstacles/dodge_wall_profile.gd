@@ -46,12 +46,12 @@ static func camera_settings(event: Dictionary) -> Dictionary:
 			"roll_degrees": 2.2,
 			"yaw_degrees": 0.75,
 			"in_duration": 0.78,
-			"return_duration": 0.90,
+			"return_duration": 0.56,
 		}
 	return {
 		"distance": 1.10,
 		"roll_degrees": 1.8,
 		"yaw_degrees": 0.0,
 		"in_duration": 0.72,
-		"return_duration": 0.82,
+		"return_duration": 0.52,
 	}

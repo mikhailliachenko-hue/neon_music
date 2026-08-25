@@ -12,6 +12,7 @@ INCOMPATIBLE_MOVEMENTS = {
     "SHALLOW_SQUAT",
     "SQUAT_REACH",
     "DOUBLE_HAND_HOLD",
+    "DOUBLE_FOOT_PULSE",
 }
 INCOMPATIBLE_CUES = {"LOW_CLEARANCE_GATE", "OVERHEAD_BAR", "SIDE_SWEEP_WALL"}
 WALL_DANCE_MIN_ACTIONS = 3
@@ -32,19 +33,28 @@ def _set_side(event: dict[str, Any], event_type: str) -> None:
     event["safe_lanes"] = [2, 3] if event_type == "wall_left" else [0, 1]
 
 
-def _movement_conflict(movement: dict[str, Any], window_start: float, window_end: float) -> bool:
+def _movement_conflict_reason(
+    movement: dict[str, Any],
+    window_start: float,
+    window_end: float,
+) -> str | None:
     hit_time = float(movement.get("hit_time", movement.get("time", 0.0)))
     duration = max(0.0, float(movement.get("duration", 0.0)))
     if not _overlaps(window_start, window_end, hit_time, hit_time + max(duration, 0.001)):
-        return False
+        return None
     movement_name = str(movement.get("movement", "")).upper()
     cue = str(movement.get("cue_archetype", "")).upper()
-    return (
-        movement_name in INCOMPATIBLE_MOVEMENTS
-        or cue in INCOMPATIBLE_CUES
-        or bool(movement.get("sustained", False))
-        or duration >= 2.0
-    )
+    if movement_name in INCOMPATIBLE_MOVEMENTS:
+        return f"movement:{movement_name}"
+    if cue in INCOMPATIBLE_CUES:
+        return f"cue:{cue}"
+    if bool(movement.get("sustained", False)):
+        return "sustained"
+    return None
+
+
+def _movement_conflict(movement: dict[str, Any], window_start: float, window_end: float) -> bool:
+    return _movement_conflict_reason(movement, window_start, window_end) is not None
 
 
 def _note_lanes(note: dict[str, Any]) -> set[int]:
@@ -224,6 +234,7 @@ def prepare_runtime_wall_events(
         "note_lane_redirected": 0,
         "high_downgraded": 0,
         "movement_conflict_discarded": 0,
+        "movement_conflict_reasons": {},
         "lane_conflict_discarded": 0,
         "wall_dance_insufficient_skipped": 0,
         "wall_dance_pattern_count": 0,
@@ -243,11 +254,19 @@ def prepare_runtime_wall_events(
         anticipation = max(0.0, float(event.get("anticipation", 0.0)))
         window_start = start - anticipation
         window_end = end + max(0.0, float(recovery_window))
-        if any(_movement_conflict(movement, window_start, window_end) for movement in movement_events):
+        conflict_reasons = [
+            reason
+            for movement in movement_events
+            if (reason := _movement_conflict_reason(movement, window_start, window_end)) is not None
+        ]
+        if conflict_reasons:
             if event.get("visual_variant") == "high_side_wall":
                 event["visual_variant"] = "low_corridor"
                 diagnostics["high_downgraded"] += 1
             diagnostics["movement_conflict_discarded"] += 1
+            reason_counts = diagnostics["movement_conflict_reasons"]
+            for reason in sorted(set(conflict_reasons)):
+                reason_counts[reason] = int(reason_counts.get(reason, 0)) + 1
             continue
 
         raw_event_type = str(event["type"])

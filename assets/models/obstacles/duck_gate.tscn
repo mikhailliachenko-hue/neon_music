@@ -66,7 +66,7 @@ size = Vector3(0.075, 0.46, 0.045)
 [node name="DuckGate" type="Node3D"]
 
 [node name="OverheadBarrierBeam" type="Node3D" parent="."]
-position = Vector3(0, 2.9, 0)
+position = Vector3(0, 3.2, 0)
 
 [node name="ContainerBody" type="MeshInstance3D" parent="OverheadBarrierBeam"]
 mesh = SubResource("Mesh_container_body")
@@ -146,7 +146,7 @@ material_override = SubResource("Mat_container_rim")
 cast_shadow = 0
 
 [node name="DownChevrons" type="Node3D" parent="."]
-position = Vector3(0, 2.23, 0.56)
+position = Vector3(0, 2.53, 0.56)
 
 [node name="LeftChevronA" type="MeshInstance3D" parent="DownChevrons"]
 position = Vector3(-1.68, 0.08, 0)

@@ -103,6 +103,14 @@ func _run() -> void:
 	quiet_motion.apply(3.05, 0.0, 0.0)
 	if quiet_camera.transform.is_equal_approx(before_action) and is_equal_approx(quiet_camera.fov, before_action_fov):
 		failures.append("jump action did not create a camera response")
+	quiet_motion.apply(3.24, 0.0, 0.0)
+	var jump_lift := quiet_camera.position.y - 1.0
+	var jump_pitch := absf(quiet_camera.rotation_degrees.x + 4.0)
+	if jump_lift < 0.075 or jump_pitch < 0.35:
+		failures.append("jump camera arc is too weak: lift=%.3f pitch=%.3f" % [jump_lift, jump_pitch])
+	quiet_motion.apply(3.80, 0.0, 0.0)
+	if not quiet_camera.position.is_equal_approx(Vector3(0.0, 1.0, 3.0)) or not is_equal_approx(quiet_camera.fov, 67.0):
+		failures.append("jump camera arc did not settle back to baseline")
 
 	var hand_camera := Camera3D.new()
 	var hand_motion := TunnelCameraMotionController.new()
@@ -131,16 +139,16 @@ func _run() -> void:
 	else:
 		var barrier_bounds := _combined_global_bounds(overhead_beam)
 		barrier_bottom = barrier_bounds.position.y
-		if barrier_bottom < 0.55:
+		if barrier_bottom < 0.85:
 			failures.append("duck barrier still enters the standing face envelope: %s" % str(barrier_bounds))
 
 	quiet_motion.trigger_section_transition()
-	beat_motion.apply(3.20, 0.0, 0.0)
-	quiet_motion.apply(3.20, 0.0, 0.0)
+	beat_motion.apply(3.90, 0.0, 0.0)
+	quiet_motion.apply(3.90, 0.0, 0.0)
 	if is_equal_approx(beat_camera.fov, quiet_camera.fov):
 		failures.append("section transition did not create an FOV push")
-	beat_motion.apply(4.00, 0.0, 0.0)
-	quiet_motion.apply(4.00, 0.0, 0.0)
+	beat_motion.apply(4.70, 0.0, 0.0)
+	quiet_motion.apply(4.70, 0.0, 0.0)
 	if not beat_camera.position.is_equal_approx(quiet_camera.position) or not is_equal_approx(beat_camera.fov, quiet_camera.fov):
 		failures.append("section transition did not return to the camera baseline")
 
@@ -153,13 +161,15 @@ func _run() -> void:
 		failures.append("frame wave near fade is too close to gameplay")
 	if float(stats.get("frame_wave_emission_strength", 99.0)) > 0.6:
 		failures.append("frame wave emission strength is too distracting")
-	print("TUNNEL_INTERACTION_SMOKE spectrum=%s/%d mode=%s pool=%d deferred_recycles=%d beat_camera_static=%s hand_rotation_deg=%.3f duck_barrier_bottom=%.3f wave_near=%.3f wave_far=%.3f" % [
+	print("TUNNEL_INTERACTION_SMOKE spectrum=%s/%d mode=%s pool=%d deferred_recycles=%d beat_camera_static=%s jump_lift=%.3f jump_pitch=%.3f hand_rotation_deg=%.3f duck_barrier_bottom=%.3f wave_near=%.3f wave_far=%.3f" % [
 		String(stats.get("spectrum_source", "off")),
 		int(stats.get("spectrum_bands", 0)),
 		spectrum.anchor_mode() if spectrum != null else "missing",
 		int(stats.get("pool_size", 0)),
 		recycled_profile_changes,
 		str(failures.find("beat/drop still changes the camera") < 0),
+		jump_lift,
+		jump_pitch,
 		hand_rotation_delta,
 		barrier_bottom,
 		near_wave_visibility,

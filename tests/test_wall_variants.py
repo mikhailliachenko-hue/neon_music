@@ -72,6 +72,42 @@ def test_runtime_safety_never_moves_jump_or_duck() -> None:
     assert adjusted_notes == []
     assert diagnostics["high_downgraded"] == 1
     assert diagnostics["movement_conflict_discarded"] == 1
+    assert diagnostics["movement_conflict_reasons"] == {"movement:DUCK": 1}
+
+
+def test_runtime_safety_does_not_treat_an_ordinary_block_duration_as_a_hold() -> None:
+    wall = _wall("wall_left", LOW_CORRIDOR)
+    # Movement-event duration describes the complete 8-count block.  It is not
+    # a sustained gameplay volume and must not reject an otherwise safe wall.
+    movement = {
+        "movement": "STEP_TOUCH_LEFT",
+        "cue_archetype": "FOOT_PAD_LEFT",
+        "hit_time": 17.0,
+        "duration": 4.0,
+        "sustained": False,
+    }
+    accepted, _notes, diagnostics = prepare_runtime_wall_events(
+        [wall], [], [movement], recovery_window=0.85,
+    )
+    assert len(accepted) == 1
+    assert diagnostics["movement_conflict_discarded"] == 0
+
+
+def test_runtime_safety_keeps_true_long_foot_rails_out_of_wall_windows() -> None:
+    wall = _wall("wall_left", HIGH_SIDE_WALL)
+    movement = {
+        "movement": "DOUBLE_FOOT_PULSE",
+        "cue_archetype": "FLOOR_PULSE_LARGE",
+        "hit_time": 17.0,
+        "duration": 4.0,
+    }
+    accepted, _notes, diagnostics = prepare_runtime_wall_events(
+        [wall], [], [movement], recovery_window=0.85,
+    )
+    assert accepted == []
+    assert diagnostics["high_downgraded"] == 1
+    assert diagnostics["movement_conflict_discarded"] == 1
+    assert diagnostics["movement_conflict_reasons"] == {"movement:DOUBLE_FOOT_PULSE": 1}
 
 
 def test_runtime_safety_redirects_short_cues_to_the_safe_half() -> None:

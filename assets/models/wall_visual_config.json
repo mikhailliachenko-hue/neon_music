@@ -1,5 +1,5 @@
 {
-  "anticipation_duration": 1.85,
+  "anticipation_duration": 1.8,
   "calibration_frames": [
     {
       "role": "right wall / cyan-magenta full-height reference",
@@ -21,14 +21,14 @@
   "calibration_notes": "Updated from the user-provided wall frame, local background/reference_fullhd.mp4 frames near 25s, 75s, 86s, and 96s, and the user screen recording from 2026-07-28 22:15:55. Recording audio cross-correlation places source audio at +3.900s in the capture; current listening passes bracketed the comfortable sync point between the previous +56ms late-feeling setting and the 0ms early-feeling setting, so global_audio_offset_ms defaults to +28.0 as the midpoint. Frame-locked Movie Maker timing remains based on exact frame time. Use [/] in graphical runs for live 5ms nudges: [ makes steps earlier, ] makes steps later; Shift uses 1ms nudges. visual_hit_offset_ms remains 0.0 for fine calibration. Gameplay SFX are intentionally disabled/removed; music audio is the only timing master.",
   "camera_dodge_distance": 0.95,
   "camera_dodge_easing": "sine",
-  "camera_dodge_hold": 0.15,
+  "camera_dodge_hold": 0.08,
   "camera_dodge_in_duration": 0.55,
-  "camera_dodge_return_duration": 0.7,
-  "camera_fov": 70.0,
-  "camera_pitch": -3.5,
+  "camera_dodge_return_duration": 0.52,
+  "camera_fov": 69.5,
+  "camera_pitch": -3.40000000000001,
   "camera_x": 0.0,
-  "camera_y": -0.12,
-  "camera_z": 6.5,
+  "camera_y": 1.15,
+  "camera_z": 6.55,
   "global_audio_offset_ms": 28.0,
   "next_cell_ring_brightness": 0.9,
   "next_cell_ring_color": [
@@ -40,7 +40,7 @@
   "next_cell_ring_fade_duration": 0.32,
   "next_cell_ring_lead_time": 1.15,
   "note_y": -1.70000004768372,
-  "rail_y": -1.60000004768372,
+  "rail_y": -1.62,
   "receptor_y": -1.72000009536744,
   "safe_lane_color": [
     0.36,
@@ -145,7 +145,7 @@
   "visual_hit_offset_ms": -1.0,
   "wall_edge_emission": 12.0,
   "wall_edge_glow": 6.4,
-  "wall_emission_strength": 2.0,
+  "wall_emission_strength": 1.9,
   "wall_height": 4.8,
   "wall_left_color": [
     0.196,
@@ -162,5 +162,5 @@
   "wall_segment_count": 18.0,
   "wall_segment_spacing": 1.25,
   "wall_strip_emission": 4.8,
-  "wall_width_x": 3.9
+  "wall_width_x": 3.85
 }

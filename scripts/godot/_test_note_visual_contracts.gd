@@ -333,5 +333,5 @@ func _test_duck_container(stage: Node3D, failures: Array[String]) -> void:
 	if size.x < 8.0 or size.y > 0.75:
 		failures.append("duck container is not wide and vertically squashed: %s" % str(size))
 	var bottom := gate.position.y + beam.position.y - size.y * 0.5
-	if bottom < 0.55:
+	if bottom < 0.85:
 		failures.append("duck container enters the standing face safety envelope")

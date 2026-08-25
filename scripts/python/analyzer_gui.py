@@ -68,8 +68,8 @@ VISUAL_DEFAULTS = {
     "next_cell_ring_fade_duration": 0.32,
     "camera_dodge_distance": 1.05,
     "camera_dodge_in_duration": 0.55,
-    "camera_dodge_hold": 0.25,
-    "camera_dodge_return_duration": 0.7,
+    "camera_dodge_hold": 0.08,
+    "camera_dodge_return_duration": 0.52,
     "camera_dodge_easing": "sine",
     "global_audio_offset_ms": 28.0,
     "visual_hit_offset_ms": 0.0,
@@ -319,6 +319,11 @@ class AnalyzerApp(tk.Tk):
         self._spin(parent, 1, "8-count block", self.subphrase_length_beats_var, 4, 16, 4, "beats")
         self._spin(parent, 2, "Downbeat offset", self.manual_downbeat_offset_seconds_var, -4.0, 4.0, 0.01, "sec")
         ttk.Checkbutton(parent, text="Allow crooked phrase", variable=self.allow_crooked_phrase_var).grid(row=3, column=1, sticky="w", pady=4)
+        ttk.Label(
+            parent,
+            text="Automatic Director: teach → repeat → mirror → payoff.",
+            style="SectionBody.TLabel",
+        ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 2))
         parent.columnconfigure(1, weight=1)
 
     def _build_wall_visuals(self, parent) -> None:
@@ -547,7 +552,10 @@ class AnalyzerApp(tk.Tk):
             hold_count = int(timing.get("hold_count", 0))
             hand_hold_count = sum(str(event.get("movement", "")) == "DOUBLE_HAND_HOLD" for event in beatmap.get("movement_events", []))
             variant_counts = wall_summary.get("variant_counts", {})
-            self._queue.put(("ok", "Detected {notes} gameplay notes and {walls} analyzer wall windows ({high_walls} bright high / {low_walls} low corridor); {runtime_walls} remain after V4 movement safety. Double-hand holds: {hand_holds}; legacy floor holds: {holds}. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
+            choreography = beatmap.get("choreography_v4", {})
+            director = choreography.get("director_plan", {}) if isinstance(choreography, dict) else {}
+            director_phrases = len(director.get("directives", [])) if isinstance(director, dict) else 0
+            self._queue.put(("ok", "Detected {notes} gameplay notes and {walls} analyzer wall windows ({high_walls} bright high / {low_walls} low corridor); {runtime_walls} remain after V4 movement safety. Double-hand holds: {hand_holds}; legacy floor holds: {holds}. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. 32-count Director phrases: {director_phrases}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
                 notes=len(audio_analyzer._beatmap_notes(beatmap)),
                 walls=wall_summary.get("event_count", 0),
                 runtime_walls=wall_summary.get("runtime_event_count", 0),
@@ -558,6 +566,7 @@ class AnalyzerApp(tk.Tk):
                 sections=len(timing.get("sections", [])),
                 neural=bool(timing.get("neural_meter", {}).get("used", False)),
                 peaks=timing.get("music_expression", {}).get("summary", {}).get("peak_accent_count", 0),
+                director_phrases=director_phrases,
                 strict=wall_summary.get("strict_candidate_count", 0),
                 candidates=wall_summary.get("candidate_count", 0),
                 prep=diagnostics.get("wall_preparation_accepted_notes", 0),

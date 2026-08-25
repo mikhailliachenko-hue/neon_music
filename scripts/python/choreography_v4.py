@@ -33,6 +33,7 @@ from choreography_concurrency import (
     ground_step_target_count as _ground_step_target_count,
     limit_renderer_foot_concurrency as _limit_renderer_foot_concurrency,
 )
+from choreography_director import build_director_plan, rescore_candidates, score_sequence
 
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
 BEATMAP_SCHEMA = "neon_music.beatmap.v4"
@@ -1614,7 +1615,7 @@ def build_choreography(
         for index in range(len(beats), requested_beats):
             beats.append({"index": index, "time": round(start + (index - len(beats)) * interval, 6), "source": "controlled_extrapolation", "extrapolated": True, "confidence": .35, "downbeat": index % 4 == 0})
     familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
-    candidate_debug, selected_sequences, phrase_contexts, selected_candidate_ids = [], [], [], []
+    candidate_debug, selected_sequences, selected_candidate_ids = [], [], []
     phrase_chapter_signatures: list[tuple[str, ...]] = []
     phrase_chapter_indices: list[int] = []
     phrase_chapter_phases: list[str] = []
@@ -1626,9 +1627,20 @@ def build_choreography(
     chapter_phrase_count = 0
     chapter_index = -1
     phrase_count = max(1, math.ceil(len(beats) / 32))
+    phrase_contexts = [_phrase_music_context(grid, index) for index in range(phrase_count)]
+    director_plan = build_director_plan(grid, phrase_contexts, phrase_count)
     for phrase_index in range(phrase_count):
-        music_context = _phrase_music_context(grid, phrase_index)
+        music_context = phrase_contexts[phrase_index]
         candidates, selection = generate_candidates(phrase_index, profile, familiarity, music_context=music_context)
+        director_directive = director_plan["directives"][phrase_index]
+        rescore_candidates(candidates, director_directive, MOVEMENTS)
+        valid = [candidate for candidate in candidates if not candidate["hard_violations"]]
+        if valid:
+            for candidate in candidates:
+                candidate["selected"] = False
+            selection["selected"] = max(valid, key=lambda candidate: (candidate["score"], candidate["candidate_id"]))
+            selection["selected"]["selected"] = True
+            selection["selected_candidate_id"] = selection["selected"]["candidate_id"]
         current_role = str(music_context.get("section_role", "")).lower()
         if previous_sequence:
             for candidate in candidates:
@@ -1721,7 +1733,6 @@ def build_choreography(
                     selection["selected"] = replacement
                     selection["selected_candidate_id"] = replacement["candidate_id"]
         candidate_debug.extend(candidates)
-        phrase_contexts.append(music_context)
         selected_candidate_ids.append(selection["selected_candidate_id"])
         selected_sequences.append(selected_candidate["sequence"])
         selected_signature = phrase_action_signature(selected_candidate["sequence"], MOVEMENTS)
@@ -1783,9 +1794,19 @@ def build_choreography(
             "dynamic_contrast", "dynamic_contrast_fit", "motif_overlap",
             "motif_variation_fit", "cross_phrase_transition", "recovery_relief",
             "motif_recall", "motif_exact_repeat",
+            "director_fit", "director_cadence_fit", "director_density_arc_fit",
+            "director_payoff_fit", "director_rest_fit", "director_lateral_variation",
+            "director_mechanic_coherence", "director_obstacle_fit",
+            "director_max_adjacent_run",
         ):
             if key in previous_diagnostics:
                 selected_debug["metrics"][key] = previous_diagnostics[key]
+        selected_debug["score_breakdown"] = dict(selected_debug["metrics"])
+        selected_debug["metrics"].update(score_sequence(
+            phrase,
+            director_plan["directives"][phrase_index],
+            MOVEMENTS,
+        ))
         selected_debug["score_breakdown"] = dict(selected_debug["metrics"])
         selected_debug["hard_violations"] = phrase_readability_violations(phrase, MOVEMENTS)
         phrase_chapter_signatures[phrase_index] = phrase_action_signature(phrase, MOVEMENTS)
@@ -1905,6 +1926,12 @@ def build_choreography(
             "body_counterpoint_fit": next((candidate.get("metrics", {}).get("body_counterpoint_fit") for candidate in candidate_debug if candidate.get("candidate_id") == selected_candidate_ids[phrase_index]), None),
             "dynamic_axes": _sequence_dynamic_axes(selected_sequences[phrase_index]) if phrase_index < len(selected_sequences) else {},
             "micro_rise": micro_rise,
+            "director": director_plan["directives"][phrase_index],
+            "director_metrics": {
+                key: value
+                for key, value in next((candidate.get("metrics", {}) for candidate in candidate_debug if candidate.get("candidate_id") == selected_candidate_ids[phrase_index]), {}).items()
+                if key.startswith("director_")
+            },
             "reference_hand_hold_accent": phrase_index in hand_hold_phrase_indices,
             "reference_jump_repeat_challenge": phrase_index in reference_jump_repeat_phrase_indices,
             "reference_finale_callback": phrase_index == reference_finale_callback_phrase_index,
@@ -1990,11 +2017,11 @@ def build_choreography(
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
-        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.5",
+        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.6",
         "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
-        "phrase_plan": phrase_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
+        "phrase_plan": phrase_plan, "director_plan": director_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
         "base_groove_events": base_events, "movement_events": movement_events, "mandatory_movement_events": movement_events,
         "micro_accents": micro_accents, "semantic_obstacle_events": obstacles,
         "candidate_debug": candidate_debug,
@@ -2140,6 +2167,10 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         "micro_rise_fit", "payoff_strength", "micro_transition_flow",
         "compound_flow", "compound_variety", "body_counterpoint_fit", "pickup_payoff_fit",
         "transition_cost_p95", "motif_recall", "motif_variation_fit", "motif_exact_repeat",
+        "director_fit", "director_cadence_fit", "director_density_arc_fit",
+        "director_payoff_fit", "director_rest_fit", "director_lateral_variation",
+        "director_mechanic_coherence", "director_obstacle_fit",
+        "director_max_adjacent_run",
         # These are structural acceptance diagnostics. A constant value can be
         # the desired result (for example every block has exactly one family).
         "unique_movement_count", "primary_family_count", "family_switch_count",
@@ -2180,6 +2211,9 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
             "music_alignment", "event_fit", "energy_fit", "section_fit",
             "difficulty_fit", "body_balance", "visual_readability", "fatigue_safety",
             "rhythmic_phase_fit", "body_counterpoint_fit", "pickup_payoff_fit",
+            "director_fit", "director_cadence_fit", "director_density_arc_fit",
+            "director_payoff_fit", "director_rest_fit", "director_lateral_variation",
+            "director_obstacle_fit",
             "density_fit",
             "phrase_coherence", "unique_movement_count", "primary_family_count",
             "family_switch_count", "block_family_focus", "motif_repetition",
