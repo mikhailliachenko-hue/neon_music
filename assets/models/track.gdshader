@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, blend_mix, cull_disabled, depth_prepass_alpha;
+render_mode blend_mix, cull_disabled, depth_prepass_alpha, diffuse_burley, specular_schlick_ggx;
 
 uniform sampler2D floor_grid_texture : source_color, repeat_enable, filter_linear_mipmap;
 uniform vec4 base_color : source_color = vec4(0.032, 0.045, 0.065, 1.0);
@@ -17,6 +17,11 @@ uniform float depth_fade_power = 3.35;
 uniform float horizon_start = 0.12;
 uniform float execution_glow = 0.0;
 uniform float section_intensity = 1.0;
+uniform float surface_metallic : hint_range(0.0, 1.0) = 0.82;
+uniform float surface_roughness : hint_range(0.04, 0.8) = 0.16;
+uniform float surface_specular : hint_range(0.0, 1.0) = 0.62;
+uniform float clearcoat_strength : hint_range(0.0, 1.0) = 0.72;
+uniform float clearcoat_roughness : hint_range(0.0, 1.0) = 0.10;
 
 void fragment() {
 	float x = UV.x;
@@ -45,5 +50,14 @@ void fragment() {
 
 	ALBEDO = color;
 	EMISSION = (road_texture * 0.018 + fill_color * fill_mask * 1.15 + color * execution_band * execution_glow) * section_intensity;
+	// The gameplay plane is also the visible road. Keeping it PBR-lit lets the
+	// Forward+ SSR pass reflect nearby portals, hands and foot targets instead of
+	// covering the glossy tunnel floor with a flat unshaded card.
+	float texture_luma = dot(grid_sample.rgb, vec3(0.2126, 0.7152, 0.0722));
+	METALLIC = surface_metallic;
+	ROUGHNESS = clamp(surface_roughness + texture_luma * 0.055 + micro_lines * 0.8, 0.06, 0.42);
+	SPECULAR = surface_specular;
+	CLEARCOAT = clearcoat_strength;
+	CLEARCOAT_ROUGHNESS = clearcoat_roughness;
 	ALPHA = 1.0;
 }

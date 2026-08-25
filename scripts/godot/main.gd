@@ -218,6 +218,7 @@ func _ready() -> void:
 	# scene and leave the native Godot window in transparent overlay mode.
 	_configure_background_video()
 	_restore_dance_level_selection()
+	_apply_track_level_look()
 	_build_execution_deck()
 	_init_tuning_values()
 	# Ghost brackets disabled: they read as extra gameplay objects.
@@ -1713,6 +1714,7 @@ func _select_gui_level() -> void:
 	if tunnel_generator.select_level_by_index(selected_level_index, seed):
 		if level_speed_slider != null:
 			tunnel_generator.set_runtime_speed(level_speed_slider.value)
+		_apply_track_level_look()
 		_save_dance_level_selection()
 		_refresh_level_selector_details()
 
@@ -1723,6 +1725,7 @@ func _select_random_dance_level() -> void:
 	if index < 0:
 		return
 	selected_level_index = index
+	_apply_track_level_look()
 	if level_seed_spin != null:
 		level_seed_spin.set_value_no_signal(random_seed)
 	_save_dance_level_selection(true)
@@ -3765,6 +3768,27 @@ func _configure_track_shader() -> void:
 	material.set_shader_parameter("grid_tiling_x", 1.4)
 	material.set_shader_parameter("grid_tiling_y", 17.0)
 	material.set_shader_parameter("depth_fade_power", 3.35)
+	material.set_shader_parameter("surface_metallic", 0.84)
+	material.set_shader_parameter("surface_roughness", 0.11)
+	material.set_shader_parameter("surface_specular", 0.68)
+	material.set_shader_parameter("clearcoat_strength", 0.74)
+	material.set_shader_parameter("clearcoat_roughness", 0.10)
+
+
+func _apply_track_level_look() -> void:
+	var material := track.material_override as ShaderMaterial
+	if material == null:
+		return
+	var palette := _current_hud_palette()
+	var primary := palette[0] if palette.size() > 0 else CYAN
+	var accent := palette[1] if palette.size() > 1 else MAGENTA
+	var background := palette[2] if palette.size() > 2 else Color(0.01, 0.02, 0.06, 1.0)
+	# Preserve gameplay cyan/magenta for active lanes. The passive road borrows a
+	# restrained amount of the selected level palette so every world feels unified.
+	var road_base := background.lerp(primary, 0.14).lerp(Color(0.048, 0.055, 0.075, 1.0), 0.58)
+	material.set_shader_parameter("base_color", road_base)
+	material.set_shader_parameter("divider_color", primary.lerp(Color.WHITE, 0.52))
+	material.set_shader_parameter("edge_color", accent.lerp(primary, 0.18))
 
 
 func _build_retrowave_environment() -> void:

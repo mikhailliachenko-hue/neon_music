@@ -246,10 +246,18 @@ func _apply_environment(reaction: float) -> void:
 	_environment.glow_enabled = true
 	_environment.glow_bloom = _config.glow_bloom
 	_environment.glow_strength = _config.glow_strength * preset_glow * lerpf(0.96, stage_emission_scale, 0.42)
-	if _preset != null and _preset.lighting_settings.has("ssr_enabled"):
-		var requested_ssr := bool(_preset.lighting_settings.get("ssr_enabled", false))
-		if _environment.ssr_enabled != requested_ssr:
-			_environment.ssr_enabled = requested_ssr
+	# The gameplay Track is now a shared glossy PBR surface. Keep SSR available
+	# for every opaque Dance Mode level; transparent native OBS composition cannot
+	# sample the external background and deliberately remains reflection-free.
+	var requested_ssr := not get_viewport().transparent_bg \
+		and bool(_preset.lighting_settings.get("road_reflections_enabled", true) if _preset != null else true)
+	if _environment.ssr_enabled != requested_ssr:
+		_environment.ssr_enabled = requested_ssr
+	if requested_ssr:
+		_environment.ssr_max_steps = 96
+		_environment.ssr_fade_in = 0.08
+		_environment.ssr_fade_out = 3.2
+		_environment.ssr_depth_tolerance = 0.16
 	var theme_glow := lerpf(source.glow_intensity, _current_theme.glow_intensity, blend)
 	_environment.glow_intensity = minf(
 		1.45,
