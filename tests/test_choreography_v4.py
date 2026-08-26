@@ -663,6 +663,35 @@ def test_long_double_foot_rails_export_optional_trajectory_contract():
         assert len(kinds) >= 2
 
 
+def test_grounded_double_steps_are_short_paired_and_vary_stance():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    events = [
+        event for event in beatmap["movement_events"]
+        if event["movement"] == "DOUBLE_STEP_TOGETHER"
+    ]
+    assert len(events) >= 2
+    notes_by_event = {
+        event["id"]: [
+            note for note in beatmap["notes"]
+            if note["movement_event_id"] == event["id"]
+        ]
+        for event in events
+    }
+    stances = set()
+    for event in events:
+        notes = notes_by_event[event["id"]]
+        assert len(notes) == 2
+        assert {note["lane_side"] for note in notes} == {"left", "right"}
+        assert all(note["duration"] == 0.0 and not note["sustained"] for note in notes)
+        assert len({round(float(note["hit_time"]), 6) for note in notes}) == 1
+        stance = event["double_step_stance"]
+        stances.add(stance)
+        lanes = sorted(int(note["lane"]) for note in notes)
+        assert lanes == ([0, 3] if stance == "wide" else [1, 2])
+    assert stances == {"wide", "narrow"}
+
+
 def test_hand_phrases_teach_call_response_before_bilateral_payoff():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
