@@ -39,3 +39,43 @@ def test_report_summarizes_cadence_simultaneous_groups_and_walls() -> None:
     assert report["wall_runtime_accepted"] == 2
     assert report["wall_gap_beats_min"] == 64
     assert report["warning_count"] == 1
+
+
+def test_report_uses_canonical_movement_hit_beats_before_note_timestamps() -> None:
+    track = {
+        "bpm": 120.0,
+        "beat_interval": 0.5,
+        "movement_events": [
+            {
+                "movement": "STEP_TOUCH_LEFT",
+                "family": "lateral",
+                "canonical_beat_index": 5,
+                "internal_hits": [
+                    {"beat_offset": 0, "time": 80.0},
+                    {"beat_offset": 1, "time": 90.0},
+                ],
+            },
+            {
+                "movement": "STEP_TOUCH_RIGHT",
+                "family": "lateral",
+                "canonical_beat_index": 8,
+                "internal_hits": [
+                    {"beat_offset": 0, "time": 100.0},
+                    {"beat_offset": 3, "time": 110.0},
+                ],
+            },
+        ],
+        # These deliberately misleading times would create a completely
+        # different cadence if the report quantized renderer time again.
+        "notes": [
+            {"hit_time": 50.0},
+            {"hit_time": 50.5},
+            {"hit_time": 51.0},
+            {"hit_time": 51.5},
+        ],
+    }
+
+    report = build_report(track)
+
+    assert report["eight_count_hit_moments"] == [2, 2]
+    assert report["max_adjacent_hit_run"] == 2

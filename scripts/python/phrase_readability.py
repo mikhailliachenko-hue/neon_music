@@ -79,6 +79,19 @@ HAND_TEMPLATES = (
     ),
 )
 
+# A reference-style burst that changes body channel only at an 8-count
+# boundary: steady feet establish the rhythm, then mirrored reaches answer it.
+# It gives musically busy breakdowns a coherent option instead of forcing a
+# choice between an all-feet fill and an all-hands recovery.
+DANCE_MIX_TEMPLATES = (
+    (
+        (("MARCH_IN_PLACE", 8),),
+        (("STEP_TOUCH_LEFT", 4), ("STEP_TOUCH_RIGHT", 4)),
+        (("SIDE_REACH_LEFT", 4), ("SIDE_REACH_RIGHT", 4)),
+        (("SIDE_REACH_RIGHT", 4), ("SIDE_REACH_LEFT", 4)),
+    ),
+)
+
 COMBO_TEMPLATES = (
     (
         (("STEP_PUNCH_LEFT", 4), ("STEP_PUNCH_RIGHT", 4)),
@@ -127,7 +140,7 @@ ROLE_TEMPLATE_POOLS = {
     "groove": FEET_TEMPLATES + HAND_TEMPLATES,
     "verse": FEET_TEMPLATES + HAND_TEMPLATES,
     "bridge": HAND_TEMPLATES + COMBO_TEMPLATES + FEET_TEMPLATES,
-    "breakdown": HAND_TEMPLATES + FEET_TEMPLATES,
+    "breakdown": DANCE_MIX_TEMPLATES + HAND_TEMPLATES + FEET_TEMPLATES,
     "recovery": FEET_TEMPLATES + HAND_TEMPLATES,
     "build": CHALLENGE_TEMPLATES + COMBO_TEMPLATES + FEET_TEMPLATES + HAND_TEMPLATES,
     "drop": COMBO_TEMPLATES + CHALLENGE_TEMPLATES + HAND_TEMPLATES + FEET_TEMPLATES,

@@ -10,11 +10,14 @@ PYTHON_DIR = ROOT / "scripts" / "python"
 if str(PYTHON_DIR) not in sys.path:
     sys.path.insert(0, str(PYTHON_DIR))
 
+from audio_analyzer import _wall_canonical_grid  # noqa: E402
 from wall_choreography_safety import prepare_runtime_wall_events  # noqa: E402
+from validate_lanes import _validate_wall_events  # noqa: E402
 from wall_variant_assignment import (  # noqa: E402
     HIGH_SIDE_WALL,
     LOW_CORRIDOR,
     assign_visual_variants,
+    count_boundary_lead,
     normalize_visual_variant,
     variant_counts,
 )
@@ -28,6 +31,94 @@ def _candidate(beat_index: int, score: float = 0.8, transition: float = 0.2) -> 
         "transition_rms_delta": transition,
         "transition_onset_delta": transition * 0.75,
     }
+
+
+def _canonical_grid(count: int = 160, interval: float = 0.5) -> list[dict[str, object]]:
+    return [
+        {
+            "index": 7000 + position * 7,
+            "time": position * interval,
+            "downbeat": bool((7000 + position * 7) % 4 == 0),
+        }
+        for position in range(count)
+    ]
+
+
+def _canonical_candidate(
+    position: int,
+    canonical: list[dict[str, object]],
+    *,
+    transition: float,
+    public_beat_index: int | None = None,
+) -> dict[str, object]:
+    return {
+        "start": float(canonical[position]["time"]),
+        "beat_index": (
+            int(canonical[position]["index"])
+            if public_beat_index is None
+            else int(public_beat_index)
+        ),
+        "score": 0.8,
+        "transition_rms_delta": transition,
+        "transition_onset_delta": transition * 0.75,
+    }
+
+
+def _validated_high_wall(
+    position: int,
+    canonical: list[dict[str, object]],
+    event_type: str = "wall_right",
+) -> dict[str, object]:
+    start = float(canonical[position]["time"])
+    duration = 4.0
+    blocked = [0, 1] if event_type == "wall_left" else [2, 3]
+    safe = [2, 3] if event_type == "wall_left" else [0, 1]
+    return {
+        "type": event_type,
+        "time": start,
+        "start": start,
+        "duration": duration,
+        "end": start + duration,
+        "lanes": blocked,
+        "safe_lanes": safe,
+        "anticipation": 1.5,
+        "beat_index": int(canonical[position]["index"]),
+        "beat_time": start,
+        "beat_phase": 0.0,
+        "beat_delta": 0.0,
+        "downbeat": bool(canonical[position]["downbeat"]),
+        "visual_variant": HIGH_SIDE_WALL,
+        "selection": {
+            "strict_low": True,
+            "variant_score": 1.0,
+            "variant_reasons": ["pre_32_count_boundary"],
+            "analysis_start": max(0.0, start - 1.5),
+            "analysis_end": start + duration + 1.0,
+        },
+    }
+
+
+def _wall_validation_timing(
+    canonical: list[dict[str, object]],
+    events: list[dict[str, object]],
+) -> tuple[dict[str, object], dict[str, object]]:
+    settings: dict[str, object] = {
+        "enabled": True,
+        "duration_beats": 8,
+        "min_gap_bars": 1,
+        "anticipation": 1.5,
+        "high_wall_min_gap_bars": 16,
+    }
+    timing: dict[str, object] = {
+        "beat_interval": 0.5,
+        "canonical_beats": canonical,
+        "wall_generation": {
+            "strategy": "auto_sustained_low_onset_energy_rest_windows",
+            "strict_candidate_count": len(events),
+            "variant_counts": variant_counts(events),
+        },
+    }
+    return timing, settings
 
 
 def _wall(event_type: str, variant: str, start: float = 16.0) -> dict[str, object]:
@@ -55,6 +146,111 @@ def test_variant_assignment_is_deterministic_and_musical() -> None:
     assert all(right["beat_index"] - left["beat_index"] >= 64 for left, right in zip(high, high[1:]))
     assert all("variant_score" in candidate and candidate["variant_reasons"] for candidate in first)
     assert variant_counts(first) == {HIGH_SIDE_WALL: 3, LOW_CORRIDOR: 7, "legacy_fallback": 0}
+
+
+def test_high_wall_boundary_window_is_pre_boundary_only() -> None:
+    assert count_boundary_lead(0) is None
+    assert count_boundary_lead(28) is None
+    assert count_boundary_lead(29) == 3
+    assert count_boundary_lead(30) == 2
+    assert count_boundary_lead(31) == 1
+    assert count_boundary_lead(32) == 0
+    assert count_boundary_lead(33) is None
+
+
+def test_wall_canonical_grid_uses_pre_migration_beat_grid() -> None:
+    legacy_rows = _canonical_grid(4)
+    assert _wall_canonical_grid({"beat_grid": legacy_rows}) == legacy_rows
+    assert _wall_canonical_grid({"canonical_beats": legacy_rows, "beat_grid": []}) == legacy_rows
+
+
+def test_variant_assignment_uses_canonical_timestamp_position_without_rewriting_public_index() -> None:
+    canonical = _canonical_grid(560)
+    positions = (29, 93, 145, 177, 389, 497, 529)
+    candidates = [
+        _canonical_candidate(position, canonical, transition=(index + 1) / 10.0)
+        for index, position in enumerate(positions)
+    ]
+    original = [dict(candidate) for candidate in candidates]
+
+    first = assign_visual_variants(
+        candidates,
+        enabled=True,
+        target_ratio=0.30,
+        min_gap_bars=16,
+        canonical_beats=canonical,
+    )
+    second = assign_visual_variants(
+        candidates,
+        enabled=True,
+        target_ratio=0.30,
+        min_gap_bars=16,
+        canonical_beats=canonical,
+    )
+
+    assert first == second
+    assert candidates == original
+    assert [candidate["beat_index"] for candidate in first] == [
+        candidate["beat_index"] for candidate in original
+    ]
+    high_starts = [
+        float(candidate["start"])
+        for candidate in first
+        if candidate["visual_variant"] == HIGH_SIDE_WALL
+    ]
+    assert high_starts == [float(canonical[29]["time"]), float(canonical[93]["time"])]
+    assert all(
+        int(candidate["beat_index"]) % 32 != 0
+        for candidate in first
+        if candidate["visual_variant"] == HIGH_SIDE_WALL
+    )
+    assert variant_counts(first) == {HIGH_SIDE_WALL: 2, LOW_CORRIDOR: 5, "legacy_fallback": 0}
+
+
+def test_variant_assignment_enforces_min_gap_in_canonical_positions() -> None:
+    canonical = _canonical_grid(128)
+    candidates = [
+        _canonical_candidate(29, canonical, transition=1.0, public_beat_index=5),
+        _canonical_candidate(61, canonical, transition=0.9, public_beat_index=5000),
+        _canonical_candidate(93, canonical, transition=0.8, public_beat_index=10000),
+    ]
+
+    assigned = assign_visual_variants(
+        candidates,
+        enabled=True,
+        target_ratio=0.50,
+        min_gap_bars=16,
+        canonical_beats=canonical,
+    )
+
+    assert [
+        float(candidate["start"])
+        for candidate in assigned
+        if candidate["visual_variant"] == HIGH_SIDE_WALL
+    ] == [float(canonical[29]["time"]), float(canonical[93]["time"])]
+    rejected = assigned[1]
+    assert rejected["visual_variant"] == LOW_CORRIDOR
+    assert "high_wall_gap_limited" in rejected["variant_reasons"]
+
+
+def test_wall_validator_uses_canonical_position_for_boundary_and_gap() -> None:
+    canonical = _canonical_grid(128)
+    accepted = [_validated_high_wall(29, canonical)]
+    timing, settings = _wall_validation_timing(canonical, accepted)
+    _validate_wall_events(accepted, [], timing, settings)
+
+    after_boundary = [_validated_high_wall(33, canonical)]
+    timing, settings = _wall_validation_timing(canonical, after_boundary)
+    with pytest.raises(SystemExit, match="up to 3 beats before a 32-count boundary"):
+        _validate_wall_events(after_boundary, [], timing, settings)
+
+    too_close = [
+        _validated_high_wall(29, canonical, "wall_right"),
+        _validated_high_wall(61, canonical, "wall_left"),
+    ]
+    timing, settings = _wall_validation_timing(canonical, too_close)
+    with pytest.raises(SystemExit, match="violates configured high-wall gap"):
+        _validate_wall_events(too_close, [], timing, settings)
 
 
 def test_manual_variant_validation_keeps_legacy_optional() -> None:

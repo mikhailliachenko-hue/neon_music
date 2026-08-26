@@ -393,6 +393,14 @@ def _wall_annotation(start: float, timing: dict[str, object]) -> dict[str, objec
     return _grid_annotation(start, timing)
 
 
+def _wall_canonical_grid(timing: dict[str, object]) -> list[dict[str, object]]:
+    """Return canonical rows before or after the V1 -> V2 migration."""
+    raw_grid = timing.get("canonical_beats", timing.get("beat_grid", []))
+    if not isinstance(raw_grid, list):
+        return []
+    return [beat for beat in raw_grid if isinstance(beat, dict)]
+
+
 def _normalize_wall_event(
     raw_event: dict[str, object],
     timing: dict[str, object],
@@ -610,11 +618,16 @@ def generate_wall_events(
             break
 
     selected.sort(key=lambda item: float(item["start"]))
+    # Wall selection runs before the V1 timing payload is migrated to Beat
+    # Grid V2. Its ``beat_grid`` rows are the future canonical array, while
+    # their public ``index`` values intentionally retain the legacy anchor.
+    canonical_beats = _wall_canonical_grid(timing)
     selected = assign_visual_variants(
         selected,
         enabled=high_wall_enabled,
         target_ratio=high_wall_target_ratio,
         min_gap_bars=high_wall_min_gap_bars,
+        canonical_beats=canonical_beats,
     )
     events: list[dict[str, object]] = []
     for index, candidate in enumerate(selected):

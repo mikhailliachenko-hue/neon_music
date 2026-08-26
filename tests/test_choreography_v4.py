@@ -12,9 +12,17 @@ from choreography_v4 import (  # noqa: E402
     _motif_memory_metrics, _movement_transition_cost,
     _metrics, _body_counterpoint_fit, _ground_step_target_count,
     _limit_renderer_foot_concurrency,
+    _repair_director_wall_candidates,
 )
 from generate_choreography_v4 import synchronize_grid_projection  # noqa: E402
 from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
+
+
+APPROVED_BURST_BREATH_MASKS = {
+    2: {(0, 3), (0, 4)},
+    3: {(0, 1, 4), (0, 2, 4), (0, 3, 5)},
+    4: {(0, 1, 3, 4), (0, 2, 3, 5), (0, 1, 4, 5)},
+}
 
 legacy_grid_path = ROOT / "output/beat_grid.json"
 legacy_map_path = ROOT / "output/beatmap.json"
@@ -43,6 +51,23 @@ def test_v2_grid_migration_is_idempotent():
     assert second == first
     assert second["canonical_beats"] == first["canonical_beats"]
     assert second.get("raw_detected_beats") == first.get("raw_detected_beats")
+
+
+def test_v1_migration_retains_source_grid_index_for_legacy_event_validation():
+    migrated = migrate_beat_grid_v1({
+        "schema": "neon_music.beat_grid.v1",
+        "duration": 2.0,
+        "bpm": 120.0,
+        "beat_interval": 0.5,
+        "anchor": {"time": 4.0},
+        "beat_grid": [
+            {"index": -8 + position, "time": position * 0.5, "downbeat": (-8 + position) % 4 == 0}
+            for position in range(5)
+        ],
+    })
+
+    assert [beat["source_index"] for beat in migrated["canonical_beats"]] == [-8, -7, -6, -5, -4]
+    assert [beat["source_downbeat"] for beat in migrated["canonical_beats"]] == [True, False, False, False, True]
 
 def test_downbeat_phase_ambiguity():
     grid, _ = products()
@@ -153,19 +178,109 @@ def test_music_density_ornament_pass_is_bounded_and_deterministic():
     summary_low = apply_rhythm_ornaments(low, [low_context], MOVEMENTS, profile="normal")
     assert high_a == high_b and summary_a == summary_b
     assert summary_a["added_hits"] > summary_low["added_hits"] == 0
+    high_masks = []
+    low_masks = []
     for block in range(4):
-        positions = sorted({
-            item["start_beat"] + offset
+        high_positions = tuple(sorted({
+            item["start_beat"] + offset - block * 8
             for item in high_a[0]
             if block * 8 <= item["start_beat"] < (block + 1) * 8
             for offset in item["internal_hit_offsets"]
-        })
-        assert 2 < len(positions) <= 4
-        assert any(position % 2 for position in positions)
+        }))
+        low_positions = tuple(sorted({
+            item["start_beat"] + offset - block * 8
+            for item in low[0]
+            if block * 8 <= item["start_beat"] < (block + 1) * 8
+            for offset in item["internal_hit_offsets"]
+        }))
+        high_masks.append(high_positions)
+        low_masks.append(low_positions)
+        assert high_positions in APPROVED_BURST_BREATH_MASKS[4]
+        assert low_positions in APPROVED_BURST_BREATH_MASKS[2]
+        assert 6 not in high_positions and 7 not in high_positions
+        assert 6 not in low_positions and 7 not in low_positions
         assert not any(
             right - middle == 1 and middle - left == 1
-            for left, middle, right in zip(positions, positions[1:], positions[2:])
+            for left, middle, right in zip(
+                high_positions, high_positions[1:], high_positions[2:],
+            )
         )
+
+    # Repeat and mirror must preserve the same rhythm; only body side changes.
+    assert high_masks[1] == high_masks[2]
+    assert low_masks[1] == low_masks[2]
+
+
+def test_warmup_profile_is_unchanged_by_reference_rhythm_shaping():
+    sequences = [_hand_test_sequence()]
+    before = copy.deepcopy(sequences)
+    context = {
+        "section_role": "drop",
+        "targets": {"density": 1.0, "intensity": 1.0, "syncopation": 1.0},
+        "beat_features": {
+            index: {"accent": 1.0, "energy": 1.0, "complexity": 1.0}
+            for index in range(32)
+        },
+    }
+
+    summary = apply_rhythm_ornaments(
+        sequences,
+        [context],
+        MOVEMENTS,
+        profile="warmup_first",
+    )
+
+    assert sequences == before
+    assert summary["enabled"] is False
+    assert summary["added_hits"] == 0
+
+
+def test_director_repairs_all_rejected_wall_candidates_without_moving_timing():
+    sequence = [
+        {
+            "movement": "JUMP",
+            "start_beat": index * 4,
+            "duration_beats": 4,
+            "body_side": "center",
+            "mirror_mode": False,
+            "internal_hit_offsets": [0, 2],
+            "cell_function": "TEST_WALL_CONFLICT",
+            "dynamic_role": ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[index // 2],
+        }
+        for index in range(8)
+    ]
+    candidates = [{
+        "candidate_id": "all_wall_conflicts",
+        "sequence": sequence,
+        "sequence_hash": sequence_hash(sequence),
+        "metrics": {},
+        "score_breakdown": {},
+        "score": 0.5,
+        "hard_violations": ["director_reserved_wall_conflict"],
+        "soft_warnings": [],
+        "selected": True,
+    }]
+    directive = {
+        "phrase_index": 0,
+        "target_hits_per_8_count": [2, 2, 3, 3],
+        "cell_roles": ["teach", "repeat", "mirror", "payoff"],
+        "reserved_wall_windows": [{"start_beat": 0, "end_beat": 32}],
+    }
+
+    repaired = _repair_director_wall_candidates(
+        candidates,
+        directive,
+        profile="normal",
+        familiarity={"WEIGHT_SHIFT"},
+        phrase_index=0,
+        music_context={"section_role": "intro"},
+    )
+
+    assert repaired == 8
+    assert all(item["movement"] == "WEIGHT_SHIFT" for item in candidates[0]["sequence"])
+    assert [item["start_beat"] for item in candidates[0]["sequence"]] == list(range(0, 32, 4))
+    assert candidates[0]["hard_violations"] == []
+    assert "director_wall_conflict_repaired" in candidates[0]["soft_warnings"]
 
 
 def test_syncopated_track_profile_rewards_phase_appropriate_families():

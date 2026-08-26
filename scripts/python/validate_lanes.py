@@ -15,8 +15,14 @@ from typing import Any
 
 from validate_choreography_v3 import validate as validate_choreography_v3
 from choreography_v4 import validate_v4
+from canonical_timing import canonical_position_for_time
 from neon_track_io import extract_beat_grid, extract_beatmap, load_neon_track
-from wall_variant_assignment import HIGH_SIDE_WALL, normalize_visual_variant, variant_counts
+from wall_variant_assignment import (
+    HIGH_SIDE_WALL,
+    count_boundary_lead,
+    normalize_visual_variant,
+    variant_counts,
+)
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 TRACK_PATH = PROJECT_DIR / "output" / "neon_track.json"
@@ -121,8 +127,21 @@ def _expected_annotation(note_time: float, anchor_time: float, beat_interval: fl
     }
 
 
-def _expected_grid_annotation(note_time: float, timing: dict[str, Any]) -> dict[str, Any]:
-    """Mirror analyzer Beat Grid V2 annotation for wall/hold events."""
+def _expected_grid_annotation(
+    note_time: float,
+    timing: dict[str, Any],
+    *,
+    preserve_source_index: bool = False,
+    source_beat_index: int | None = None,
+) -> dict[str, Any]:
+    """Return a canonical annotation or persisted source-grid annotation.
+
+    Wall and hold rows are created before Beat Grid V1 is migrated to V2. The
+    migration reindexes ``canonical_beats`` from zero but deliberately leaves
+    the public event ``beat_index`` intact for JSON compatibility. Validate
+    those public fields against the preserved source anchor; canonical timing
+    is validated separately wherever section-relative positions are needed.
+    """
     canonical = timing.get("canonical_beats", [])
     grid = [beat for beat in canonical if isinstance(beat, dict)] if isinstance(canonical, list) else []
     if not grid:
@@ -146,13 +165,25 @@ def _expected_grid_annotation(note_time: float, timing: dict[str, Any]) -> dict[
         local_interval = max(1e-6, nearest_time - previous_time)
     else:
         local_interval = fallback_interval
-    return {
+    result = {
         "beat_index": nearest_index,
         "beat_time": _round6(nearest_time),
         "beat_phase": _round6((note_time - nearest_time) / max(local_interval, 1e-6)),
         "beat_delta": _round6(note_time - nearest_time),
         "downbeat": bool(nearest.get("downbeat", nearest_index % 4 == 0)),
     }
+    if preserve_source_index:
+        if "source_index" in nearest:
+            result["beat_index"] = int(nearest["source_index"])
+            result["downbeat"] = bool(nearest.get("source_downbeat", int(nearest["source_index"]) % 4 == 0))
+        elif source_beat_index is not None:
+            # Удалить когда станет неактуально: V4.6 and older Beat Grid V2
+            # files did not retain source_index on canonical rows. Their public
+            # wall/hold index remains opaque but downbeat consistency is still
+            # validated until those tracks are regenerated.
+            result["beat_index"] = int(source_beat_index)
+            result["downbeat"] = bool(int(source_beat_index) % 4 == 0)
+    return result
 
 
 def _assert_field(name: str, actual: Any, expected: Any) -> None:
@@ -515,11 +546,17 @@ def _validate_wall_events(
     )
     previous_start = -float("inf")
     previous_type = ""
-    previous_high_beat = -10**9
+    previous_high_position = -10**9
     generation = timing.get("wall_generation", {})
     generation_strategy = str(generation.get("strategy", ""))
     modern_variant_diagnostics = isinstance(generation.get("variant_counts"), dict)
     high_gap_beats = max(32, int(wall_settings.get("high_wall_min_gap_bars", 16)) * 4)
+    canonical_source = timing.get("canonical_beats", [])
+    canonical_beats = (
+        [beat for beat in canonical_source if isinstance(beat, dict)]
+        if isinstance(canonical_source, list)
+        else []
+    )
     if wall_events:
         strict_count = int(timing.get("wall_generation", {}).get("strict_candidate_count", 0))
         if strict_count < len(wall_events):
@@ -557,19 +594,36 @@ def _validate_wall_events(
             _fail(f"wall_events[{index}].safe_lanes must be {expected_safe_lanes} for {event_type}.")
         if sorted(lanes + safe_lanes) != [0, 1, 2, 3]:
             _fail(f"wall_events[{index}] lanes/safe_lanes must partition all lanes.")
-        expected = _expected_grid_annotation(start, timing)
+        raw_source_beat = event.get("beat_index")
+        if not isinstance(raw_source_beat, int):
+            _fail(f"wall_events[{index}].beat_index must be an integer source-grid index.")
+        expected = _expected_grid_annotation(
+            start,
+            timing,
+            preserve_source_index=True,
+            source_beat_index=raw_source_beat,
+        )
         for key, value in expected.items():
             _assert_field(f"wall_events[{index}].{key}", event.get(key), value)
         variant = normalize_visual_variant(event.get("visual_variant"), allow_missing=True)
         if modern_variant_diagnostics and generation_strategy.startswith("auto_") and variant is None:
             _fail(f"wall_events[{index}] auto event is missing visual_variant.")
         if variant == HIGH_SIDE_WALL:
-            beat_index = int(event.get("beat_index", -1))
-            if beat_index < 32 or beat_index % 32 != 0:
-                _fail(f"wall_events[{index}] high_side_wall must start on a 32-count boundary.")
-            if beat_index - previous_high_beat < high_gap_beats:
+            if canonical_beats:
+                canonical_position = canonical_position_for_time(canonical_beats, start)
+            else:
+                # Удалить когда станет неактуально: old timing payloads do not
+                # publish canonical_beats, so their source index is the only
+                # available section coordinate.
+                canonical_position = int(event.get("beat_index", -1))
+            if count_boundary_lead(canonical_position) is None:
+                _fail(
+                    f"wall_events[{index}] high_side_wall must start on or up to "
+                    "3 beats before a 32-count boundary."
+                )
+            if canonical_position - previous_high_position < high_gap_beats:
                 _fail(f"wall_events[{index}] high_side_wall violates configured high-wall gap.")
-            previous_high_beat = beat_index
+            previous_high_position = canonical_position
         selection = event.get("selection", {})
         if generation_strategy.startswith("auto_") and (not isinstance(selection, dict) or selection.get("strict_low") is not True):
             _fail(f"wall_events[{index}] must carry strict_low selection diagnostics.")
@@ -692,7 +746,15 @@ def _validate_hold_events(
         if side != expected_side or str(event.get("foot", expected_side)) != expected_side:
             _fail(f"hold_events[{index}] side/foot must match lane side {expected_side}.")
         side_set.add(side)
-        expected = _expected_grid_annotation(start, timing)
+        raw_source_beat = event.get("beat_index")
+        if not isinstance(raw_source_beat, int):
+            _fail(f"hold_events[{index}].beat_index must be an integer source-grid index.")
+        expected = _expected_grid_annotation(
+            start,
+            timing,
+            preserve_source_index=True,
+            source_beat_index=raw_source_beat,
+        )
         for key, value in expected.items():
             _assert_field(f"hold_events[{index}].{key}", event.get(key), value)
         selection = event.get("selection")

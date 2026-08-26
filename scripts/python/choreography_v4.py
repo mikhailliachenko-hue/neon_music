@@ -33,7 +33,13 @@ from choreography_concurrency import (
     ground_step_target_count as _ground_step_target_count,
     limit_renderer_foot_concurrency as _limit_renderer_foot_concurrency,
 )
-from choreography_director import build_director_plan, rescore_candidates, score_sequence
+from choreography_director import (
+    build_director_plan,
+    director_hard_violations,
+    rescore_candidates,
+    score_sequence,
+)
+from canonical_timing import canonical_position_for_time
 
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
 BEATMAP_SCHEMA = "neon_music.beatmap.v4"
@@ -262,8 +268,12 @@ def migrate_beat_grid_v1(source: dict[str, Any]) -> dict[str, Any]:
     canonical = []
     for index, value in enumerate(canonical_times):
         extrapolated = bool(raw and value > fallback_start)
+        source_row = legacy_grid[index] if index < len(legacy_grid) and isinstance(legacy_grid[index], dict) else {}
+        source_index = int(source_row.get("index", index))
         canonical.append({
             "index": index, "time": round(value, 6), "source": "controlled_extrapolation" if extrapolated else "observed_fit",
+            "source_index": source_index,
+            "source_downbeat": bool(source_row.get("downbeat", source_index % 4 == 0)),
             "extrapolated": extrapolated, "confidence": round(0.35 if extrapolated else max(0.35, 1.0 - (min(residuals) / interval if residuals else 0.4)), 4),
             "downbeat": index % 4 == 0, "count8_start": index % 8 == 0, "count32_start": index % 32 == 0,
         })
@@ -657,6 +667,7 @@ def _apply_reference_jump_repeat_challenges(
     selected_sequences: list[list[dict[str, Any]]],
     phrase_contexts: list[dict[str, Any]],
     profile: str,
+    excluded_phrase_indices: set[int] | None = None,
 ) -> list[int]:
     """Add the reference's jump-jump, breath, duck mini challenge.
 
@@ -669,9 +680,10 @@ def _apply_reference_jump_repeat_challenges(
     applied: list[int] = []
     last_phrase = -6
     strong_roles = {"build", "chorus", "drop", "peak", "finale"}
+    excluded = excluded_phrase_indices or set()
     for phrase_index, phrase in enumerate(selected_sequences):
         role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
-        if phrase_index == 0 or phrase_index % 2 != 0 or phrase_index >= len(selected_sequences) - 2:
+        if phrase_index == 0 or phrase_index in excluded or phrase_index % 2 != 0 or phrase_index >= len(selected_sequences) - 2:
             continue
         if role not in strong_roles or phrase_index - last_phrase < 6:
             continue
@@ -693,11 +705,15 @@ def _apply_reference_finale_callback(
     selected_sequences: list[list[dict[str, Any]]],
     profile: str,
     total_beats: int,
+    excluded_phrase_indices: set[int] | None = None,
 ) -> int:
     """Recall the clearest long-step and hand call without raising difficulty."""
     if profile == WARMUP_PROFILE:
         return -1
+    excluded = excluded_phrase_indices or set()
     for phrase_index in range(len(selected_sequences) - 1, 0, -1):
+        if phrase_index in excluded:
+            continue
         phrase = selected_sequences[phrase_index]
         phrase_start = phrase_index * 32
         if phrase_start + 32 > total_beats:
@@ -777,6 +793,7 @@ def _shape_reference_long_step_accents(
     selected_sequences: list[list[dict[str, Any]]],
     phrase_contexts: list[dict[str, Any]],
     profile: str,
+    excluded_phrase_indices: set[int] | None = None,
 ) -> dict[str, int]:
     """Treat a long rail as a music-directed mini-scene, never filler.
 
@@ -800,6 +817,7 @@ def _shape_reference_long_step_accents(
     retained = 0
     recovery_rewrites = 0
     previous_movement = ""
+    excluded = excluded_phrase_indices or set()
     for flat_index, (phrase_index, item) in enumerate(flattened):
         movement = str(item.get("movement", ""))
         if movement != "DOUBLE_FOOT_PULSE":
@@ -813,7 +831,7 @@ def _shape_reference_long_step_accents(
         music_support = not has_feature_evidence or peak_count >= 1 or strong_count >= 3
         prepared = previous_movement in DOUBLE_FOOT_SETUP_MOVEMENTS
         payoff = str(item.get("dynamic_role", "")) == "PAYOFF"
-        if not (prepared and payoff and music_support):
+        if phrase_index in excluded or not (prepared and payoff and music_support):
             start_beat = int(item.get("start_beat", 0))
             replacement_id = "STEP_TOUCH_LEFT" if (start_beat // 2) % 2 == 0 else "STEP_TOUCH_RIGHT"
             _retarget_sequence_item(item, replacement_id, "READABLE_STEP_FALLBACK")
@@ -1298,7 +1316,16 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
             "section_fit": .12, "difficulty_fit": .10, "body_balance": .08,
             "fatigue_safety": .07, "visual_readability": .08, "density_fit": .10,
         }
-    elif role in {"breakdown", "outro"}:
+    elif role == "breakdown":
+        # Breakdowns often contain a detected fill/drop pickup before the next
+        # section. Prefer a readable feet-to-hands answer over a static
+        # all-hands recovery when that transition is present.
+        weights = {
+            "event_fit": .34, "fatigue_safety": .16, "visual_readability": .14,
+            "music_alignment": .10, "section_fit": .07, "energy_fit": .06,
+            "difficulty_fit": .05, "body_balance": .06, "density_fit": .02,
+        }
+    elif role == "outro":
         weights = {
             "event_fit": .18, "fatigue_safety": .18, "visual_readability": .16,
             "music_alignment": .14, "section_fit": .12, "energy_fit": .08,
@@ -1334,6 +1361,57 @@ def _weighted_candidate_score(metrics: dict[str, float], music_context: dict[str
         + .03 * float(metrics.get("pickup_payoff_fit", .55))
         + .03 * float(metrics.get("phrase_coherence", .5))
     )
+
+
+def _repair_director_wall_candidates(
+    candidates: list[dict[str, Any]],
+    directive: dict[str, Any],
+    *,
+    profile: str,
+    familiarity: set[str],
+    phrase_index: int,
+    music_context: dict[str, Any],
+) -> int:
+    """Replace only wall-conflicting full-body cells with a safe recovery.
+
+    This path is used only if Director reservation rejected every authored
+    candidate. It preserves timing and candidate identity, so the wall remains
+    available without inventing beats or moving the obstacle after the fact.
+    """
+    repaired_items = 0
+    for candidate in candidates:
+        if "director_reserved_wall_conflict" not in candidate.get("hard_violations", []):
+            continue
+        sequence = copy.deepcopy(candidate.get("sequence", []))
+        candidate_repairs = 0
+        for item in sequence:
+            if not director_hard_violations([item], directive):
+                continue
+            original_movement = str(item.get("movement", ""))
+            _retarget_sequence_item(item, "WEIGHT_SHIFT", "DIRECTOR_WALL_SAFE_RECOVERY")
+            item["wall_safety_repaired_from"] = original_movement
+            candidate_repairs += 1
+        if candidate_repairs == 0:
+            continue
+        metrics = _metrics(sequence, phrase_index, familiarity, music_context)
+        candidate.update({
+            "sequence": sequence,
+            "sequence_hash": sequence_hash(sequence),
+            "metrics": metrics,
+            "score_breakdown": dict(metrics),
+            "score": round(_weighted_candidate_score(metrics, music_context), 6),
+            "hard_violations": _hard_violations(
+                sequence, profile, familiarity, phrase_index, music_context,
+            ),
+            "selected": False,
+        })
+        candidate.setdefault("soft_warnings", []).append(
+            "director_wall_conflict_repaired",
+        )
+        repaired_items += candidate_repairs
+    if repaired_items:
+        rescore_candidates(candidates, directive, MOVEMENTS)
+    return repaired_items
 
 
 def _sequence_dynamic_axes(sequence: list[dict[str, Any]]) -> dict[str, float]:
@@ -1516,12 +1594,25 @@ def _side_fields(side: str) -> dict[str, Any]:
 
 
 def _phrase_music_context(grid: dict[str, Any], phrase_index: int, phrase_length: int = 32) -> dict[str, Any]:
+    canonical = [
+        beat for beat in grid.get("canonical_beats", [])
+        if isinstance(beat, dict)
+    ]
     raw_features = grid.get("beat_features", [])
-    feature_map = {
-        int(feature.get("index", 0)): feature
-        for feature in raw_features
-        if isinstance(feature, dict)
-    } if isinstance(raw_features, list) else {}
+    feature_map: dict[int, dict[str, Any]] = {}
+    if isinstance(raw_features, list):
+        for raw_feature in raw_features:
+            if not isinstance(raw_feature, dict):
+                continue
+            source_index = int(raw_feature.get("index", 0))
+            feature_index = source_index
+            if canonical and isinstance(raw_feature.get("time"), (int, float)):
+                feature_index = canonical_position_for_time(canonical, float(raw_feature["time"]))
+            feature = copy.deepcopy(raw_feature)
+            feature["source_index"] = source_index
+            feature["canonical_beat_index"] = feature_index
+            feature["index"] = feature_index
+            feature_map[feature_index] = feature
     start = phrase_index * phrase_length
     end = start + phrase_length
     selected = [feature for index, feature in feature_map.items() if start <= index < end]
@@ -1545,10 +1636,9 @@ def _phrase_music_context(grid: dict[str, Any], phrase_index: int, phrase_length
     section_id = ""
     start_time = None
     end_time = None
-    canonical = grid.get("canonical_beats", [])
-    if isinstance(canonical, list) and start < len(canonical) and isinstance(canonical[start], dict):
+    if start < len(canonical):
         start_time = float(canonical[start].get("time", 0.0))
-    if isinstance(canonical, list) and min(end - 1, len(canonical) - 1) >= 0:
+    if min(end - 1, len(canonical) - 1) >= 0:
         end_time = float(canonical[min(end - 1, len(canonical) - 1)].get("time", start_time or 0.0))
     sections = [section for section in grid.get("sections", []) if isinstance(section, dict)] if isinstance(grid.get("sections", []), list) else []
     chosen_section = None
@@ -1571,10 +1661,17 @@ def _phrase_music_context(grid: dict[str, Any], phrase_index: int, phrase_length
     lead_events: list[dict[str, Any]] = []
     tail_events: list[dict[str, Any]] = []
     if isinstance(raw_events, list):
-        for event in raw_events:
-            if not isinstance(event, dict):
+        for raw_event in raw_events:
+            if not isinstance(raw_event, dict):
                 continue
-            event_beat = int(event.get("beat_index", -1))
+            source_beat = int(raw_event.get("beat_index", -1))
+            event_beat = source_beat
+            if canonical and isinstance(raw_event.get("time"), (int, float)):
+                event_beat = canonical_position_for_time(canonical, float(raw_event["time"]))
+            event = copy.deepcopy(raw_event)
+            event["source_beat_index"] = source_beat
+            event["canonical_beat_index"] = event_beat
+            event["beat_index"] = event_beat
             if start <= event_beat < end:
                 primary_events.append(event)
             elif start - 4 <= event_beat < start:
@@ -1635,6 +1732,16 @@ def build_choreography(
         director_directive = director_plan["directives"][phrase_index]
         rescore_candidates(candidates, director_directive, MOVEMENTS)
         valid = [candidate for candidate in candidates if not candidate["hard_violations"]]
+        if not valid and director_directive.get("reserved_wall_windows"):
+            _repair_director_wall_candidates(
+                candidates,
+                director_directive,
+                profile=profile,
+                familiarity=familiarity,
+                phrase_index=phrase_index,
+                music_context=music_context,
+            )
+            valid = [candidate for candidate in candidates if not candidate["hard_violations"]]
         if valid:
             for candidate in candidates:
                 candidate["selected"] = False
@@ -1696,6 +1803,9 @@ def build_choreography(
                 candidate for candidate in candidates
                 if not candidate["hard_violations"]
                 and phrase_action_signature(candidate["sequence"], MOVEMENTS) == chapter_signature
+                # A 64-beat motif is a preference, not permission to fight the
+                # correctly aligned section target with an exhausted body part.
+                and float(candidate.get("metrics", {}).get("body_balance", 0.0)) >= 0.45
             ]
             if chapter_candidates:
                 for candidate in candidates:
@@ -1751,11 +1861,19 @@ def build_choreography(
             motif_memory[current_role] = copy.deepcopy(selected_candidate["sequence"])
         familiarity.update(item["movement"] for item in selected_candidate["sequence"])
     selected_sequences = [copy.deepcopy(phrase) for phrase in selected_sequences]
+    wall_phrase_indices = {
+        int(directive.get("phrase_index", -1))
+        for directive in director_plan.get("directives", [])
+        if isinstance(directive, dict) and directive.get("reserved_wall_windows")
+    }
     hand_hold_config = grid.get("generation_settings", {}).get("reference_hand_holds", {})
     if not isinstance(hand_hold_config, dict):
         hand_hold_config = {}
     reference_jump_repeat_phrase_indices = _apply_reference_jump_repeat_challenges(
-        selected_sequences, phrase_contexts, profile,
+        selected_sequences,
+        phrase_contexts,
+        profile,
+        excluded_phrase_indices=wall_phrase_indices,
     )
     hand_hold_phrase_indices = _apply_reference_hand_hold_accents(
         selected_sequences,
@@ -1763,19 +1881,30 @@ def build_choreography(
         enabled=bool(hand_hold_config.get("enabled", True)),
         rate_phrases=max(2, int(hand_hold_config.get("rate_phrases", 4))),
         profile=profile,
-        excluded_phrase_indices=set(reference_jump_repeat_phrase_indices),
+        excluded_phrase_indices=wall_phrase_indices | set(reference_jump_repeat_phrase_indices),
     )
     reference_hand_call_rewrites = _apply_reference_hand_call_response(selected_sequences, profile)
     # Holds now live only inside hand-only 8-counts. Injecting a foot recovery
     # after them was the source of an unreadable mid-block family switch.
     reference_hand_recovery_rewrites = 0
-    reference_long_steps = _shape_reference_long_step_accents(selected_sequences, phrase_contexts, profile)
-    reference_finale_callback_phrase_index = _apply_reference_finale_callback(selected_sequences, profile, len(beats))
+    reference_long_steps = _shape_reference_long_step_accents(
+        selected_sequences,
+        phrase_contexts,
+        profile,
+        excluded_phrase_indices=wall_phrase_indices,
+    )
+    reference_finale_callback_phrase_index = _apply_reference_finale_callback(
+        selected_sequences,
+        profile,
+        len(beats),
+        excluded_phrase_indices=wall_phrase_indices,
+    )
     rhythm_ornaments = apply_rhythm_ornaments(
         selected_sequences,
         phrase_contexts,
         MOVEMENTS,
         profile=profile,
+        director_plan=director_plan,
     )
     post_process_familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
     for phrase_index, phrase in enumerate(selected_sequences):
@@ -1808,7 +1937,13 @@ def build_choreography(
             MOVEMENTS,
         ))
         selected_debug["score_breakdown"] = dict(selected_debug["metrics"])
-        selected_debug["hard_violations"] = phrase_readability_violations(phrase, MOVEMENTS)
+        selected_debug["hard_violations"] = sorted({
+            *phrase_readability_violations(phrase, MOVEMENTS),
+            *director_hard_violations(
+                phrase,
+                director_plan["directives"][phrase_index],
+            ),
+        })
         phrase_chapter_signatures[phrase_index] = phrase_action_signature(phrase, MOVEMENTS)
         post_process_familiarity.update(item["movement"] for item in phrase)
 
@@ -2017,7 +2152,7 @@ def build_choreography(
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
-        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.6",
+        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.7",
         "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),

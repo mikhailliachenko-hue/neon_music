@@ -197,9 +197,13 @@ func _apply_environment(reaction: float) -> void:
 	if get_viewport().transparent_bg:
 		_environment.background_mode = Environment.BG_CLEAR_COLOR
 		_environment.sky = null
+		# OBS owns the visible backdrop in transparent-overlay mode, but tunnel
+		# geometry still needs a deterministic color ambient source.
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	elif _sky_background_enabled():
 		_environment.background_mode = Environment.BG_SKY
 		_environment.sky = _active_background_sky
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 		var base_sky_energy := clampf(float(_preset.lighting_settings.get("sky_background_energy", 0.78)), 0.05, 2.0)
 		var stage_mix := clampf(float(_preset.lighting_settings.get("sky_background_stage_mix", 0.12)), 0.0, 0.35)
 		var sky_yaw_degrees := float(_preset.lighting_settings.get("sky_background_yaw_degrees", 0.0))
@@ -208,6 +212,7 @@ func _apply_environment(reaction: float) -> void:
 	else:
 		_environment.background_mode = Environment.BG_COLOR
 		_environment.sky = null
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		_environment.sky_rotation = Vector3.ZERO
 		_environment.background_energy_multiplier = 1.0
 		var themed_background := _previous_background.lerp(_current_background, blend)

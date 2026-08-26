@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from canonical_timing import canonical_span_for_times
+
 
 DIRECTOR_SCHEMA = "neon_music.choreography_director.v1"
 
@@ -45,17 +47,42 @@ def _wall_windows(grid: dict[str, Any]) -> list[dict[str, Any]]:
     wall_generation = grid.get("wall_generation", {})
     if not isinstance(wall_generation, dict):
         return []
+    canonical = [
+        value for value in grid.get("canonical_beats", [])
+        if isinstance(value, dict)
+    ]
+    wall_settings = grid.get("generation_settings", {}).get("walls", {})
+    if not isinstance(wall_settings, dict):
+        wall_settings = {}
+    default_duration_beats = max(1, int(wall_settings.get("duration_beats", 8)))
+    default_recovery = max(0.0, float(wall_settings.get("recovery_window", 0.0)))
     windows: list[dict[str, Any]] = []
     for event in wall_generation.get("events", []):
         if not isinstance(event, dict):
             continue
-        start = int(event.get("beat_index", -1))
+        raw_start = int(event.get("beat_index", -1))
+        duration = max(1, int(round(float(event.get("duration_beats", default_duration_beats)))))
+        start = raw_start
+        end = start + duration
+        raw_time = event.get("start", event.get("time"))
+        if canonical and isinstance(raw_time, (int, float)):
+            active_start = float(raw_time)
+            active_end = float(event.get(
+                "end",
+                active_start + float(event.get("duration", duration * float(grid.get("beat_interval", 0.5)))),
+            ))
+            anticipation = max(0.0, float(event.get("anticipation", wall_settings.get("anticipation", 0.0))))
+            start, end = canonical_span_for_times(
+                canonical,
+                active_start - anticipation,
+                active_end + default_recovery,
+            )
         if start < 0:
             continue
-        duration = max(1, int(round(float(event.get("duration_beats", 8)))))
         windows.append({
             "start_beat": start,
-            "end_beat": start + duration,
+            "end_beat": end,
+            "source_beat_index": raw_start,
             "type": str(event.get("type", "")),
             "visual_variant": str(event.get("visual_variant", "low_corridor")),
         })
@@ -153,6 +180,24 @@ def _wall_compatibility(sequence: list[dict[str, Any]], directive: dict[str, Any
     return max(0.0, 1.0 - 0.5 * conflicts)
 
 
+def director_hard_violations(
+    sequence: list[dict[str, Any]],
+    directive: dict[str, Any],
+) -> list[str]:
+    """Reject full-body actions inside a reserved wall safety span."""
+    windows = directive.get("reserved_wall_windows", [])
+    if not windows:
+        return []
+    for item in sequence:
+        if str(item.get("movement", "")).upper() not in _WALL_INCOMPATIBLE:
+            continue
+        start = int(item.get("start_beat", 0))
+        end = start + max(1, int(item.get("duration_beats", 1)))
+        if any(start < int(window["end_beat"]) and int(window["start_beat"]) < end for window in windows):
+            return ["director_reserved_wall_conflict"]
+    return []
+
+
 def score_sequence(
     sequence: list[dict[str, Any]],
     directive: dict[str, Any],
@@ -212,6 +257,13 @@ def rescore_candidates(
     """Blend Director pacing with the existing music-aware candidate score."""
     for candidate in candidates:
         if candidate.get("hard_violations"):
+            continue
+        hard_violations = director_hard_violations(candidate.get("sequence", []), directive)
+        if hard_violations:
+            candidate["hard_violations"] = sorted({
+                *candidate.get("hard_violations", []),
+                *hard_violations,
+            })
             continue
         metrics = score_sequence(candidate.get("sequence", []), directive, movement_library)
         candidate.setdefault("metrics", {}).update(metrics)

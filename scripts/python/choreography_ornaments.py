@@ -30,8 +30,17 @@ PROTECTED_MOVEMENTS = {
 }
 ORNAMENT_FAMILIES = {"base_groove", "rhythm_runner", "lateral", "boxing", "upper_body"}
 HAND_FAMILIES = {"boxing", "upper_body"}
+MIRRORED_COMPONENT_FAMILIES = HAND_FAMILIES | {"lateral"}
 STRONG_ROLES = {"build", "drop", "chorus", "peak", "finale"}
 CALM_ROLES = {"intro", "breakdown", "recovery", "outro"}
+
+# Short authored bursts replace the mechanically even 1-3-5-7 grid.  Every
+# approved mask keeps beats 6-7 free and never exceeds two adjacent actions.
+APPROVED_RHYTHM_MASKS: dict[int, tuple[tuple[int, ...], ...]] = {
+    2: ((0, 3), (0, 4)),
+    3: ((0, 1, 4), (0, 2, 4), (0, 3, 5)),
+    4: ((0, 1, 3, 4), (0, 2, 3, 5), (0, 1, 4, 5)),
+}
 
 
 def desired_hit_count(context: dict[str, Any], block_index: int = 0) -> int:
@@ -95,16 +104,6 @@ def _feature_score(feature: dict[str, Any], beat_index: int, context: dict[str, 
     )
 
 
-def _creates_long_run(existing: set[int], candidate: int) -> bool:
-    ordered = sorted(existing | {candidate})
-    run = 1
-    for left, right in zip(ordered, ordered[1:]):
-        run = run + 1 if right - left == 1 else 1
-        if run > 2:
-            return True
-    return False
-
-
 def _owner_for_position(items: list[dict[str, Any]], position: int) -> dict[str, Any] | None:
     for item in items:
         start = int(item.get("start_beat", 0))
@@ -114,19 +113,88 @@ def _owner_for_position(items: list[dict[str, Any]], position: int) -> dict[str,
     return None
 
 
-def _refresh_hand_components(item: dict[str, Any], movements: dict[str, dict[str, Any]]) -> None:
+def _refresh_mirrored_components(item: dict[str, Any], movements: dict[str, dict[str, Any]]) -> None:
     movement_id = str(item.get("movement", ""))
     meta = movements.get(movement_id, {})
-    if str(meta.get("family", "")) not in HAND_FAMILIES:
+    if str(meta.get("family", "")) not in MIRRORED_COMPONENT_FAMILIES:
+        item.pop("internal_hit_components", None)
         return
     mirror_id = str(meta.get("mirror_id", movement_id))
     if mirror_id == movement_id:
+        item.pop("internal_hit_components", None)
         return
     offsets = sorted({int(value) for value in item.get("internal_hit_offsets", [])})
     item["internal_hit_components"] = {
         str(offset): movement_id if index % 2 == 0 else mirror_id
         for index, offset in enumerate(offsets)
     }
+
+
+def _mask_score(
+    mask: tuple[int, ...],
+    start: int,
+    feature_map: dict[int, dict[str, Any]],
+    context: dict[str, Any],
+) -> float:
+    return sum(
+        _feature_score(feature_map.get(start + offset, {}), start + offset, context)
+        for offset in mask
+    )
+
+
+def _mask_covers_items(
+    mask: tuple[int, ...],
+    items: list[dict[str, Any]],
+    start: int,
+) -> bool:
+    owners = {
+        id(owner)
+        for offset in mask
+        if (owner := _owner_for_position(items, start + offset)) is not None
+    }
+    return len(owners) == len(items)
+
+
+def _choose_rhythm_mask(
+    target: int,
+    items: list[dict[str, Any]],
+    start: int,
+    feature_map: dict[int, dict[str, Any]],
+    context: dict[str, Any],
+) -> tuple[int, ...] | None:
+    candidates = [
+        mask for mask in APPROVED_RHYTHM_MASKS.get(target, ())
+        if _mask_covers_items(mask, items, start)
+    ]
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda mask: (-_mask_score(mask, start, feature_map, context), mask),
+    )
+
+
+def _apply_rhythm_mask(
+    items: list[dict[str, Any]],
+    start: int,
+    mask: tuple[int, ...],
+    movements: dict[str, dict[str, Any]],
+) -> tuple[int, int]:
+    before = _hit_positions(items)
+    for item in items:
+        item["internal_hit_offsets"] = []
+        item.pop("internal_hit_components", None)
+    for offset in mask:
+        position = start + offset
+        owner = _owner_for_position(items, position)
+        if owner is None:
+            continue
+        owner["internal_hit_offsets"].append(position - int(owner.get("start_beat", 0)))
+    for item in items:
+        item["internal_hit_offsets"] = sorted({int(value) for value in item["internal_hit_offsets"]})
+        _refresh_mirrored_components(item, movements)
+    after = _hit_positions(items)
+    return len(after - before), len(before - after)
 
 
 def density_fit_for_sequence(
@@ -156,8 +224,9 @@ def apply_rhythm_ornaments(
     movements: dict[str, dict[str, Any]],
     *,
     profile: str,
+    director_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Add at most two music-ranked hits to a safe 8-count.
+    """Shape safe 8-counts into deterministic burst-then-breath phrases.
 
     The teaching profile is intentionally unchanged.  A normal block never
     exceeds four unique hit beats and never contains a run longer than two
@@ -166,8 +235,14 @@ def apply_rhythm_ornaments(
     summary: dict[str, Any] = {
         "enabled": profile != "warmup_first",
         "added_hits": 0,
+        "removed_hits": 0,
         "ornamented_blocks": 0,
+        "shaped_blocks": 0,
         "protected_blocks": 0,
+        "eligible_blocks": 0,
+        "approved_mask_blocks": 0,
+        "tail_breath_blocks": 0,
+        "approved_mask_ratio": 0.0,
         "target_distribution": {"2": 0, "3": 0, "4": 0},
     }
     if profile == "warmup_first":
@@ -176,57 +251,47 @@ def apply_rhythm_ornaments(
     for phrase_index, sequence in enumerate(selected_sequences):
         context = phrase_contexts[phrase_index] if phrase_index < len(phrase_contexts) else {}
         feature_map = context.get("beat_features", {}) if isinstance(context.get("beat_features", {}), dict) else {}
+        directives = director_plan.get("directives", []) if isinstance(director_plan, dict) else []
+        directive = directives[phrase_index] if phrase_index < len(directives) else {}
+        director_targets = directive.get("target_hits_per_8_count", []) if isinstance(directive, dict) else []
         phrase_start = phrase_index * 32
+        repeat_mask: tuple[int, ...] | None = None
         for block_index in range(4):
             start = phrase_start + block_index * 8
             end = start + 8
             items = _block_items(sequence, start, end)
-            target = desired_hit_count(context, block_index)
+            target = (
+                int(director_targets[block_index])
+                if block_index < len(director_targets)
+                else desired_hit_count(context, block_index)
+            )
+            target = max(2, min(4, target))
             summary["target_distribution"][str(target)] += 1
             if _protected_block(items, movements):
                 summary["protected_blocks"] += 1
                 continue
-            existing = _hit_positions(items)
-            missing = min(2, max(0, target - len(existing)))
-            if missing <= 0:
+            summary["eligible_blocks"] += 1
+            mask = repeat_mask if block_index == 2 and repeat_mask is not None and len(repeat_mask) == target else None
+            if mask is None or not _mask_covers_items(mask, items, start):
+                mask = _choose_rhythm_mask(target, items, start, feature_map, context)
+            if mask is None:
                 continue
-            ranked = []
-            for position in range(start, end):
-                if position in existing or _owner_for_position(items, position) is None:
-                    continue
-                feature = feature_map.get(position, {})
-                if not isinstance(feature, dict):
-                    feature = {}
-                ranked.append((_feature_score(feature, position, context), position))
-            ranked.sort(key=lambda row: (-row[0], row[1]))
-            added = 0
-            # A drive block should expose one readable adjacent-beat accent.
-            # Prefer the best odd beat first, then fill by music score.
-            ordered = [row for row in ranked if row[1] % 2 == 1] + [row for row in ranked if row[1] % 2 == 0]
-            seen_positions: set[int] = set()
-            for _score, position in ordered:
-                if position in seen_positions:
-                    continue
-                seen_positions.add(position)
-                if _creates_long_run(existing, position):
-                    continue
-                owner = _owner_for_position(items, position)
-                if owner is None:
-                    continue
-                offset = position - int(owner.get("start_beat", 0))
-                owner["internal_hit_offsets"] = sorted({
-                    *[int(value) for value in owner.get("internal_hit_offsets", [])],
-                    offset,
-                })
-                existing.add(position)
-                added += 1
-                summary["added_hits"] += 1
-                if added >= missing:
-                    break
-            if added:
-                for item in items:
-                    _refresh_hand_components(item, movements)
+            if block_index == 1:
+                repeat_mask = mask
+            before = _hit_positions(items)
+            added, removed = _apply_rhythm_mask(items, start, mask, movements)
+            summary["added_hits"] += added
+            summary["removed_hits"] += removed
+            summary["shaped_blocks"] += 1
+            summary["approved_mask_blocks"] += 1
+            summary["tail_breath_blocks"] += int(6 not in mask and 7 not in mask)
+            if _hit_positions(items) != before:
                 summary["ornamented_blocks"] += 1
+    if summary["eligible_blocks"]:
+        summary["approved_mask_ratio"] = round(
+            summary["approved_mask_blocks"] / summary["eligible_blocks"],
+            6,
+        )
     return summary
 
 

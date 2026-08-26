@@ -13,6 +13,10 @@ var _glow_material: StandardMaterial3D
 var _level_backdrop_material: StandardMaterial3D
 var _base_amount := 72
 var _preset_density := 1.0
+var _background_planes_enabled := true
+var _uses_environment_sky := false
+var _has_level_background := false
+var _theme_name := "CyberBlue"
 var _visual_stage_state := {
 	"enabled": false,
 	"emission_scale": 1.0,
@@ -54,17 +58,17 @@ func _ready() -> void:
 func set_preset(preset: TunnelLevelPreset) -> void:
 	_preset_density = preset.atmosphere_density if preset != null else 1.0
 	particles.amount = clampi(roundi(float(_base_amount) * _preset_density), 24, 128)
-	var background_planes_enabled := preset == null or preset.world_style == null or preset.world_style.background_planes_enabled
-	var uses_environment_sky := preset != null and bool(preset.lighting_settings.get("sky_background_enabled", false))
-	var has_level_background := background_planes_enabled and not uses_environment_sky and preset != null and preset.background_texture != null
-	level_backdrop.visible = has_level_background
-	if has_level_background and _level_backdrop_material != null:
+	_background_planes_enabled = preset == null or preset.world_style == null or preset.world_style.background_planes_enabled
+	_uses_environment_sky = preset != null and bool(preset.lighting_settings.get("sky_background_enabled", false))
+	# A level-owned texture is presentation data, not world geometry. The world
+	# flag only controls generic fallback planes and must not suppress the level's
+	# authored 16:9 background.
+	_has_level_background = not _uses_environment_sky and preset != null and preset.background_texture != null
+	if _has_level_background and _level_backdrop_material != null:
 		_level_backdrop_material.albedo_texture = preset.background_texture
 		_level_backdrop_material.emission_texture = preset.background_texture
-	var theme_name := preset.theme.theme_name if preset != null and preset.theme != null else "CyberBlue"
-	backdrop_navy.visible = background_planes_enabled and not has_level_background and theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
-	backdrop_graphite.visible = background_planes_enabled and not has_level_background and theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
-	backdrop_violet.visible = background_planes_enabled and not has_level_background and not backdrop_navy.visible and not backdrop_graphite.visible
+	_theme_name = preset.theme.theme_name if preset != null and preset.theme != null else "CyberBlue"
+	_refresh_background_visibility()
 
 
 func trigger_drop() -> void:
@@ -76,6 +80,7 @@ func set_visual_stage(stage_state: Dictionary) -> void:
 
 
 func apply_visual_state(primary: Color, accent: Color, pulse: float, drop_pulse: float, song_time: float) -> void:
+	_refresh_background_visibility()
 	if _particle_material == null or _glow_material == null:
 		return
 	var particle_color := primary.lerp(accent, 0.35)
@@ -98,3 +103,15 @@ func apply_visual_state(primary: Color, accent: Color, pulse: float, drop_pulse:
 	_glow_material.emission_energy_multiplier = (2.8 + pulse * 0.55 + drop_pulse * 0.7) * stage_emission_scale
 	var ambient_breath := 0.0 if stage_enabled else sin(song_time * 0.5) * 0.012
 	distant_glow.scale = Vector3.ONE * (1.0 + pulse * 0.018 + ambient_breath + stage_reflection_scale * 0.008)
+
+
+func _refresh_background_visibility() -> void:
+	var internal_background_enabled := not get_viewport().transparent_bg
+	level_backdrop.visible = internal_background_enabled and _has_level_background
+	var show_fallback := internal_background_enabled \
+		and _background_planes_enabled \
+		and not _has_level_background \
+		and not _uses_environment_sky
+	backdrop_navy.visible = show_fallback and _theme_name in ["CyberBlue", "DeepSpace", "IceCyber", "IceBlue", "Space", "Dark", "Quantum", "CityNeon", "Mirror", "Storm", "Laser"]
+	backdrop_graphite.visible = show_fallback and _theme_name in ["FutureWhite", "ToxicGreen", "GoldenFuture", "Gold", "Matrix"]
+	backdrop_violet.visible = show_fallback and not backdrop_navy.visible and not backdrop_graphite.visible

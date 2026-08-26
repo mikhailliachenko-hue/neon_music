@@ -134,12 +134,23 @@ func _run() -> void:
 			failures.append("pool changed while selecting: %s" % preset.display_name())
 		var backdrop := generator.get_node_or_null("Atmosphere/Backdrops/LevelBackdrop") as MeshInstance3D
 		var backdrop_material := backdrop.material_override as StandardMaterial3D if backdrop != null else null
-		var expects_background_plane := preset.world_style == null or preset.world_style.background_planes_enabled
-		if expects_background_plane:
+		var uses_environment_sky := bool(preset.lighting_settings.get("sky_background_enabled", false))
+		if not uses_environment_sky:
 			if backdrop == null or not backdrop.visible or backdrop_material == null or backdrop_material.albedo_texture != preset.background_texture:
 				failures.append("runtime background did not switch: %s" % preset.display_name())
 		elif backdrop != null and backdrop.visible:
-			failures.append("Pinterest world leaked a pasted backdrop plane: %s" % preset.display_name())
+			failures.append("sky-backed level also rendered a backdrop plane: %s" % preset.display_name())
+	# Internal backgrounds must never leak into the transparent OBS gameplay layer.
+	if generator.select_level_by_name("CYBER AWAKENING", 991001):
+		var obs_backdrop := generator.get_node_or_null("Atmosphere/Backdrops/LevelBackdrop") as MeshInstance3D
+		root.transparent_bg = true
+		generator.atmosphere_controller.apply_visual_state(Color.WHITE, Color.WHITE, 0.0, 0.0, 0.0)
+		if obs_backdrop != null and obs_backdrop.visible:
+			failures.append("transparent OBS mode kept the internal level backdrop visible")
+		root.transparent_bg = false
+		generator.atmosphere_controller.apply_visual_state(Color.WHITE, Color.WHITE, 0.0, 0.0, 0.0)
+		if obs_backdrop == null or not obs_backdrop.visible:
+			failures.append("opaque mode did not restore the internal level backdrop")
 	if themes.size() < 12:
 		failures.append("themes are not visually diverse: %d unique" % themes.size())
 	if world_styles.size() < 6:

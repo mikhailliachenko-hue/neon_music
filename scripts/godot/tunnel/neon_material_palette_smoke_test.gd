@@ -33,6 +33,9 @@ func _run() -> void:
 	)
 	controller.configure(environment, config, theme, first)
 	var first_state := controller.update(0.0, 0.0)
+	if environment.background_mode != Environment.BG_COLOR \
+		or environment.ambient_light_source != Environment.AMBIENT_SOURCE_COLOR:
+		failures.append("color background did not select color ambient lighting")
 	_expect_color(first_state.get("primary", Color.BLACK), first.color_palette[0], "palette index 0 did not drive primary", failures)
 	_expect_color(first_state.get("accent", Color.BLACK), first.color_palette[1], "palette index 1 did not drive accent", failures)
 	_expect_color(first_state.get("background", Color.BLACK), first.color_palette[2], "palette index 2 did not drive background", failures)
@@ -85,6 +88,25 @@ func _run() -> void:
 	_expect_color(theme.accent_color, theme_snapshot[1], "controller mutated shared Theme accent", failures)
 	_expect_color(theme.background_color, theme_snapshot[2], "controller mutated shared Theme background", failures)
 	_expect_color(theme.floor_color, theme_snapshot[3], "controller mutated shared Theme floor", failures)
+
+	var sky_preset := _make_preset(theme, first.color_palette)
+	var sky_image := Image.create(4, 2, false, Image.FORMAT_RGBA8)
+	sky_image.fill(Color("120824"))
+	sky_preset.background_texture = ImageTexture.create_from_image(sky_image)
+	sky_preset.lighting_settings = {"sky_background_enabled": true}
+	controller.configure(environment, config, theme, sky_preset)
+	controller.update(0.0, 0.0)
+	if environment.background_mode != Environment.BG_SKY \
+		or environment.sky == null \
+		or environment.ambient_light_source != Environment.AMBIENT_SOURCE_SKY:
+		failures.append("panorama background did not select sky ambient lighting")
+	root.get_viewport().transparent_bg = true
+	controller.update(0.0, 0.0)
+	if environment.background_mode != Environment.BG_CLEAR_COLOR \
+		or environment.sky != null \
+		or environment.ambient_light_source != Environment.AMBIENT_SOURCE_COLOR:
+		failures.append("transparent OBS mode did not keep color ambient lighting")
+	root.get_viewport().transparent_bg = false
 
 	print("NEON_MATERIAL_PALETTE_SMOKE transitions=1 partial_fallback=1 legacy_fallback=1 failures=%d" % failures.size())
 	for failure in failures:

@@ -30,3 +30,26 @@ def test_grid_annotation_uses_canonical_beat_time_instead_of_uniform_bpm() -> No
         "beat_delta": 0.0,
         "downbeat": True,
     }
+
+
+def test_grid_annotation_preserves_pre_migration_source_index() -> None:
+    timing = {
+        "beat_interval": 0.44,
+        "anchor": {"time": 4.05},
+        "canonical_beats": [
+            {
+                "index": position,
+                "source_index": position - 9,
+                "source_downbeat": (position - 9) % 4 == 0,
+                "time": 0.24 + position * 0.44,
+                "downbeat": position % 4 == 0,
+            }
+            for position in range(64)
+        ],
+    }
+
+    result = _expected_grid_annotation(13.0, timing, preserve_source_index=True)
+
+    assert result["beat_index"] == 20
+    assert result["beat_time"] == 13.0
+    assert result["downbeat"] is True
