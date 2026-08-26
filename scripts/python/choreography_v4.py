@@ -763,6 +763,7 @@ def _apply_reference_jump_repeat_challenges(
     phrase_contexts: list[dict[str, Any]],
     profile: str,
     excluded_phrase_indices: set[int] | None = None,
+    fallback_excluded_phrase_indices: set[int] | None = None,
 ) -> list[int]:
     """Add the reference's jump-jump, breath, duck mini challenge.
 
@@ -776,24 +777,92 @@ def _apply_reference_jump_repeat_challenges(
     last_phrase = -6
     strong_roles = {"build", "chorus", "drop", "peak", "finale"}
     excluded = excluded_phrase_indices or set()
+    fallback_excluded = (
+        excluded
+        if fallback_excluded_phrase_indices is None
+        else fallback_excluded_phrase_indices
+    )
+
+    # A full song needs more than an opportunistic jump chapter: wall planning
+    # may legitimately reserve every preferred strong phrase. Keep the strict
+    # reference placement first, then fill the missing chapters from the best
+    # remaining complete phrases. This preserves wall safety while guaranteeing
+    # that the paired-foot mechanic is actually taught and repeated.
+    complete_candidates = [
+        phrase_index
+        for phrase_index, phrase in enumerate(selected_sequences)
+        if phrase_index > 0
+        and phrase_index not in fallback_excluded
+        and phrase_index < len(selected_sequences) - 1
+        and _reference_phrase_is_complete(phrase, phrase_index)
+    ]
+    target_count = min(3, max(1, len(selected_sequences) // 5)) if complete_candidates else 0
+
+    replacements = [
+        ("MARCH_IN_PLACE", 8, "REFERENCE_JUMP_SETUP", "SETUP"),
+        ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
+        ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
+        ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
+        ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
+        ("WEIGHT_SHIFT", 8, "REFERENCE_JUMP_RECOVERY", "PAYOFF"),
+    ]
+
+    def apply_phrase(phrase_index: int) -> bool:
+        phrase_start = phrase_index * 32
+        if not _replace_reference_window(
+            selected_sequences[phrase_index],
+            phrase_start,
+            phrase_start + 32,
+            replacements,
+        ):
+            return False
+        applied.append(phrase_index)
+        return True
+
     for phrase_index, phrase in enumerate(selected_sequences):
         role = str(phrase_contexts[phrase_index].get("section_role", "")).lower() if phrase_index < len(phrase_contexts) else ""
         if phrase_index == 0 or phrase_index in excluded or phrase_index % 2 != 0 or phrase_index >= len(selected_sequences) - 2:
             continue
         if role not in strong_roles or phrase_index - last_phrase < 6:
             continue
-        phrase_start = phrase_index * 32
-        if _replace_reference_window(phrase, phrase_start, phrase_start + 32, [
-            ("MARCH_IN_PLACE", 8, "REFERENCE_JUMP_SETUP", "SETUP"),
-            ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
-            ("SMALL_JUMP", 4, "REFERENCE_JUMP_REPEAT", "DEVELOP"),
-            ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
-            ("DUCK", 4, "REFERENCE_DUCK_ANSWER", "LIFT"),
-            ("WEIGHT_SHIFT", 8, "REFERENCE_JUMP_RECOVERY", "PAYOFF"),
-        ]):
-            applied.append(phrase_index)
+        if apply_phrase(phrase_index):
             last_phrase = phrase_index
-    return applied
+
+    if len(applied) < target_count:
+        def fallback_score(phrase_index: int) -> tuple[int, int, int]:
+            context = phrase_contexts[phrase_index] if phrase_index < len(phrase_contexts) else {}
+            role = str(context.get("section_role", "")).lower()
+            intensity = float(context.get("target_intensity", context.get("energy", 0.0)) or 0.0)
+            return (
+                1 if role in strong_roles else 0,
+                int(round(intensity * 1000.0)),
+                1 if phrase_index % 2 == 0 else 0,
+            )
+
+        for phrase_index in sorted(complete_candidates, key=fallback_score, reverse=True):
+            if len(applied) >= target_count:
+                break
+            if phrase_index in applied:
+                continue
+            # Two phrases (64 beats) leave room to read, perform and recover.
+            if any(abs(phrase_index - used_index) < 2 for used_index in applied):
+                continue
+            apply_phrase(phrase_index)
+
+    return sorted(applied)
+
+
+def _reference_phrase_is_complete(phrase: list[dict[str, Any]], phrase_index: int) -> bool:
+    phrase_start = phrase_index * 32
+    phrase_end = max(
+        (
+            int(item.get("start_beat", phrase_start))
+            + int(item.get("duration_beats", 0))
+            for item in phrase
+        ),
+        default=phrase_start,
+    )
+    return phrase_end >= phrase_start + 32
 
 
 def _apply_reference_finale_callback(
@@ -1964,20 +2033,29 @@ def build_choreography(
     hand_hold_config = grid.get("generation_settings", {}).get("reference_hand_holds", {})
     if not isinstance(hand_hold_config, dict):
         hand_hold_config = {}
-    reference_jump_repeat_phrase_indices = _apply_reference_jump_repeat_challenges(
-        selected_sequences,
-        phrase_contexts,
-        profile,
-        excluded_phrase_indices=wall_phrase_indices,
-    )
     hand_hold_phrase_indices = _apply_reference_hand_hold_accents(
         selected_sequences,
         phrase_contexts,
         enabled=bool(hand_hold_config.get("enabled", True)),
         rate_phrases=max(2, int(hand_hold_config.get("rate_phrases", 4))),
         profile=profile,
-        excluded_phrase_indices=wall_phrase_indices | set(reference_jump_repeat_phrase_indices),
+        excluded_phrase_indices=wall_phrase_indices,
     )
+    reference_jump_repeat_phrase_indices = _apply_reference_jump_repeat_challenges(
+        selected_sequences,
+        phrase_contexts,
+        profile,
+        excluded_phrase_indices=wall_phrase_indices | set(hand_hold_phrase_indices),
+        # If walls occupy almost the entire song, gameplay wins. The existing
+        # runtime wall-safety bridge removes the now-conflicting wall event.
+        fallback_excluded_phrase_indices=set(hand_hold_phrase_indices),
+    )
+    for phrase_index in reference_jump_repeat_phrase_indices:
+        directive = director_plan.get("directives", [])[phrase_index]
+        reserved_windows = directive.get("reserved_wall_windows", [])
+        if reserved_windows:
+            directive["reclaimed_wall_windows_for_jump_challenge"] = copy.deepcopy(reserved_windows)
+            directive["reserved_wall_windows"] = []
     reference_hand_call_rewrites = _apply_reference_hand_call_response(selected_sequences, profile)
     # Holds now live only inside hand-only 8-counts. Injecting a foot recovery
     # after them was the source of an unreadable mid-block family switch.

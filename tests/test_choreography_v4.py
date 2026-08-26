@@ -718,6 +718,44 @@ def test_reference_jump_repeat_uses_two_landings_then_breath_duck_and_recovery()
     assert challenge[1]["internal_hit_offsets"] == [0, 2]
 
 
+def test_reference_jump_repeat_falls_back_when_walls_own_strong_phrases():
+    sequences = []
+    contexts = []
+    for phrase_index in range(11):
+        phrase_start = phrase_index * 32
+        sequences.append([
+            {
+                "movement": "MARCH_IN_PLACE",
+                "start_beat": phrase_start + cell * 8,
+                "duration_beats": 8,
+                "cell_function": "TEST_CELL",
+                "dynamic_role": "SETUP",
+            }
+            for cell in range(4)
+        ])
+        contexts.append({
+            "section_role": "drop" if phrase_index in {2, 4, 6, 8} else "verse",
+            "target_intensity": 0.45 + phrase_index * 0.03,
+        })
+
+    reserved_for_walls = {2, 4, 6, 8}
+    phrase_indices = _apply_reference_jump_repeat_challenges(
+        sequences,
+        contexts,
+        profile="normal",
+        excluded_phrase_indices=reserved_for_walls,
+    )
+
+    assert len(phrase_indices) == 2
+    assert not (set(phrase_indices) & reserved_for_walls)
+    assert phrase_indices[1] - phrase_indices[0] >= 2
+    assert all(
+        [event["movement"] for event in sequences[phrase_index]][1:3]
+        == ["SMALL_JUMP", "SMALL_JUMP"]
+        for phrase_index in phrase_indices
+    )
+
+
 def test_finale_callback_is_inside_track_and_recalls_rail_then_hand_call():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
