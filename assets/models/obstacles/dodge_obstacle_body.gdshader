@@ -1,5 +1,8 @@
 shader_type spatial;
-render_mode blend_mix, cull_disabled;
+// The obstacle is intentionally translucent, but it must still occlude gameplay
+// targets behind its blocked half. Without a depth write, footprints remain
+// visible through the full wall volume and look as if they were spawned inside.
+render_mode blend_mix, cull_disabled, depth_draw_always;
 
 uniform vec4 obstacle_color : source_color = vec4(0.96, 0.075, 0.74, 1.0);
 uniform float fade : hint_range(0.0, 1.0) = 1.0;
@@ -30,5 +33,5 @@ void fragment() {
 	float low_emission = (0.10 + honeycomb * 0.18 + diagonal_stripe * 0.12) * min(body_energy, 2.2) * fade;
 	float high_emission = (0.055 + honeycomb * 0.16 + diagonal_stripe * body_energy * 0.16) * fade;
 	EMISSION = obstacle_color.rgb * mix(low_emission, high_emission, profile_mode);
-	ALPHA = mix(0.30, 0.13, profile_mode) * fade + honeycomb * 0.035 * fade;
+	ALPHA = mix(0.38, 0.22, profile_mode) * fade + honeycomb * 0.045 * fade;
 }

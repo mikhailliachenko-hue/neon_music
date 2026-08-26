@@ -13,6 +13,7 @@ from choreography_v4 import (  # noqa: E402
     _metrics, _body_counterpoint_fit, _ground_step_target_count,
     _limit_renderer_foot_concurrency,
     _repair_director_wall_candidates,
+    _apply_reference_jump_repeat_challenges,
 )
 from generate_choreography_v4 import attach_runtime_wall_projection, synchronize_grid_projection  # noqa: E402
 from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
@@ -684,27 +685,37 @@ def test_hand_phrases_teach_call_response_before_bilateral_payoff():
 
 
 def test_reference_jump_repeat_uses_two_landings_then_breath_duck_and_recovery():
-    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
-    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
-    phrase_indices = beatmap["settings"]["reference_jump_repeat_challenges"]["applied_phrase_indices"]
-    assert phrase_indices
-    for phrase_index in phrase_indices:
-        events = [event for event in beatmap["movement_events"] if event["phrase_index"] == phrase_index]
-        challenge = [
-            event for event in events
-            if event["cell_function"] in {
-                "REFERENCE_JUMP_REPEAT", "REFERENCE_JUMP_BREATH",
-                "REFERENCE_DUCK_ANSWER", "REFERENCE_JUMP_RECOVERY",
+    # Keep this mechanic contract independent from the user's mutable active
+    # track. A valid track may reserve every eligible strong phrase for walls,
+    # in which case the integration result correctly contains no jump chapter.
+    sequences = []
+    contexts = []
+    for phrase_index in range(5):
+        phrase_start = phrase_index * 32
+        sequences.append([
+            {
+                "movement": "MARCH_IN_PLACE",
+                "start_beat": phrase_start + cell * 8,
+                "duration_beats": 8,
+                "cell_function": "TEST_CELL",
+                "dynamic_role": "SETUP",
             }
-        ]
-        assert [event["movement"] for event in challenge] == [
-            "SMALL_JUMP", "SMALL_JUMP", "DUCK", "DUCK", "WEIGHT_SHIFT",
-        ]
-        jump = challenge[0]
-        assert [hit["beat_offset"] for hit in jump["internal_hits"]] == [0, 2]
-        jump_notes = [note for note in beatmap["notes"] if note["movement_event_id"] == jump["id"]]
-        assert len(jump_notes) == 2
-        assert all(note["lanes"] and len(note["lanes"]) == 2 for note in jump_notes)
+            for cell in range(4)
+        ])
+        contexts.append({"section_role": "build" if phrase_index == 2 else "verse"})
+
+    phrase_indices = _apply_reference_jump_repeat_challenges(
+        sequences,
+        contexts,
+        profile="normal",
+    )
+    assert phrase_indices == [2]
+    challenge = sequences[2]
+    assert [event["movement"] for event in challenge] == [
+        "MARCH_IN_PLACE", "SMALL_JUMP", "SMALL_JUMP", "DUCK", "DUCK", "WEIGHT_SHIFT",
+    ]
+    assert [event["start_beat"] for event in challenge] == [64, 72, 76, 80, 84, 88]
+    assert challenge[1]["internal_hit_offsets"] == [0, 2]
 
 
 def test_finale_callback_is_inside_track_and_recalls_rail_then_hand_call():

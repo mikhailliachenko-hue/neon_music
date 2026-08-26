@@ -37,6 +37,7 @@ const DANCE_LEVEL_SELECTION_PATH := "user://dance_mode_selection.json"
 const DEFAULT_WALL_WIDTH_X := 3.9
 const DEFAULT_WALL_HEIGHT := 4.8
 const DEFAULT_WALL_LENGTH_Z := 24.0
+const WALL_CENTER_OFFSET_X := 2.14
 const WALL_FRONT_OVERHANG_Z := 1.15
 const DEFAULT_WALL_OPACITY := 0.18
 const DEFAULT_WALL_EMISSION_STRENGTH := 2.1
@@ -2752,6 +2753,24 @@ func _spawn_hold(event: Dictionary, event_index: int, song_time: float) -> void:
 	end_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hold.add_child(end_marker)
 
+	# A hold must read as a complete action, not as an unexplained neon line.
+	# The familiar footprint is the entry instruction, two slim rails give the
+	# sustained path a physical frame, and the existing marker closes the action.
+	for rail_side in [-1.0, 1.0]:
+		var rail := MeshInstance3D.new()
+		rail.name = "HoldRailLeft" if rail_side < 0.0 else "HoldRailRight"
+		var rail_mesh := BoxMesh.new()
+		rail_mesh.size = Vector3(0.055, 0.035, HOLD_STRIP_MIN_LENGTH)
+		rail.mesh = rail_mesh
+		rail.position.x = rail_side * HOLD_STRIP_WIDTH * 0.52
+		rail.position.y = 0.022
+		rail.material_override = _create_hold_rail_material(color)
+		rail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		hold.add_child(rail)
+
+	var start_pad := _create_hold_start_pad(lane, color)
+	hold.add_child(start_pad)
+
 	notes_root.add_child(hold)
 	active_holds.append(hold)
 	_update_hold_geometry(hold, song_time, 1.0)
@@ -3463,7 +3482,10 @@ func _wall_lanes(event: Dictionary) -> Array[int]:
 
 
 func _wall_center_x(event: Dictionary) -> float:
-	return -2.0 if String(event.get("type", "")) == "wall_left" else 2.0
+	# Leave a visible safety seam between the wall volume and the inner edge of
+	# the open half. This accounts for the 1.84 m footprint frame, not only the
+	# mathematical lane center, so a valid target never appears embedded in glass.
+	return -WALL_CENTER_OFFSET_X if String(event.get("type", "")) == "wall_left" else WALL_CENTER_OFFSET_X
 
 
 func _wall_color(event: Dictionary) -> Color:
