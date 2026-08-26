@@ -469,29 +469,32 @@ func _weighted_pick(weights: Dictionary, rng: RandomNumberGenerator) -> String:
 
 
 func _update_music_reaction(_delta: float, state: Dictionary) -> void:
-	var has_started_beats := int(state.get("beat_index", -1)) >= 0
+	var beat_index := _state_index(state, "beat_index")
+	var phrase_index := _state_index(state, "phrase_index")
+	var count8_index := _state_index(state, "count8_index")
+	var count32_index := _state_index(state, "count32_index")
+	var has_started_beats := beat_index >= 0
 	var action_only := _is_action_only_visuals()
 	if config.audio_reactive_visuals_enabled and not action_only and has_started_beats and bool(state.get("beat_changed", false)):
 		neon_material_controller.trigger_beat(config.beat_reaction_strength, bool(state.get("downbeat_changed", false)))
 		if _diagnostics:
 			print("TUNNEL_BEAT beat=%d downbeat=%s phrase=%d count8=%d count32=%d" % [
-				int(state.get("beat_index", -1)),
+				beat_index,
 				str(state.get("downbeat", false)),
-				int(state.get("phrase_index", -1)),
-				int(state.get("count8_index", -1)),
-				int(state.get("count32_index", -1)),
+				phrase_index,
+				count8_index,
+				count32_index,
 			])
 
 	if has_started_beats and bool(state.get("count8_changed", false)):
-		_variation_epoch = int(state.get("count8_index", 0))
+		_variation_epoch = maxi(0, count8_index)
 		ring_manager.set_variation_epoch(_variation_epoch)
 		if _diagnostics:
-			print("TUNNEL_VARIATION count8=%d epoch=%d" % [int(state.get("count8_index", -1)), _variation_epoch])
+			print("TUNNEL_VARIATION count8=%d epoch=%d" % [count8_index, _variation_epoch])
 
 	if has_started_beats and bool(state.get("phrase_changed", false)):
-		var phrase_index := int(state.get("phrase_index", 0))
 		var phrase_rng := RandomNumberGenerator.new()
-		phrase_rng.seed = config.deterministic_seed + phrase_index * 32452843
+		phrase_rng.seed = config.deterministic_seed + maxi(0, phrase_index) * 32452843
 		if phrase_rng.randf() <= config.phrase_change_probability:
 			_generation_phrase = phrase_index
 			if _diagnostics:
@@ -499,10 +502,10 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 
 	if bool(state.get("count32_changed", false)) or bool(state.get("section_changed", false)):
 		if _visual_stage_enabled():
-			var section_direction := -1.0 if posmod(int(state.get("count32_index", 0)), 2) == 0 else 1.0
+			var section_direction := -1.0 if posmod(maxi(0, count32_index), 2) == 0 else 1.0
 			camera_motion_controller.trigger_section_transition(section_direction)
 		if _is_directed_level():
-			_set_level_phase(int(state.get("count32_index", 0)))
+			_set_level_phase(maxi(0, count32_index))
 		else:
 			var target := _choose_preset_for_state(state)
 			if target != null and target != _current_preset:
@@ -512,7 +515,7 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 					target.style_id,
 					_current_theme.theme_name,
 					String(state.get("section_role", "groove")),
-					int(state.get("count32_index", -1)),
+					count32_index,
 				])
 
 	var section_role := String(state.get("section_role", "groove")).to_lower()
@@ -521,7 +524,18 @@ func _update_music_reaction(_delta: float, state: Dictionary) -> void:
 	if config.audio_reactive_visuals_enabled and not action_only and drop_boundary:
 		neon_material_controller.trigger_drop(2.9 if _is_directed_level() else 2.6)
 		atmosphere_controller.trigger_drop()
-		print("TUNNEL_DROP section=%s energy=%s beat=%d" % [section_role, energy_role, int(state.get("beat_index", -1))])
+		print("TUNNEL_DROP section=%s energy=%s beat=%d" % [section_role, energy_role, beat_index])
+
+
+func _state_index(state: Dictionary, key: String, fallback: int = -1) -> int:
+	var value = state.get(key, fallback)
+	match typeof(value):
+		TYPE_INT:
+			return value
+		TYPE_FLOAT:
+			return roundi(value)
+		_:
+			return fallback
 
 
 func _update_frame_reaction(delta: float, _state: Dictionary) -> void:
@@ -584,7 +598,9 @@ func _choose_preset_for_state(state: Dictionary) -> TunnelLevelPreset:
 	else:
 		names = ["Cyber Blue", "Neon Purple", "Toxic Green", "Ice Cyber"]
 	var rng := RandomNumberGenerator.new()
-	rng.seed = config.deterministic_seed + int(state.get("count32_index", 0)) * 49979687 + int(state.get("section_index", 0)) * 67867967
+	rng.seed = config.deterministic_seed \
+		+ maxi(0, _state_index(state, "count32_index", 0)) * 49979687 \
+		+ maxi(0, _state_index(state, "section_index", 0)) * 67867967
 	var chosen_name := names[rng.randi_range(0, names.size() - 1)]
 	return _preset_by_name(chosen_name)
 
@@ -807,12 +823,12 @@ func _update_debug_overlay(delta: float, state: Dictionary) -> void:
 		spectrum_controller.source_mode() if spectrum_controller != null else "off",
 		spectrum_controller.band_count() if spectrum_controller != null else 0,
 		spectrum_controller.anchor_mode() if spectrum_controller != null else "off",
-		int(state.get("beat_index", -1)),
+		_state_index(state, "beat_index"),
 		beat_state,
-		int(state.get("phrase_index", -1)),
-		int(state.get("count8_index", -1)),
-		int(state.get("count8_in_phrase", -1)),
-		int(state.get("count32_index", -1)),
+		_state_index(state, "phrase_index"),
+		_state_index(state, "count8_index"),
+		_state_index(state, "count8_in_phrase"),
+		_state_index(state, "count32_index"),
 	]
 
 

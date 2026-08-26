@@ -32,7 +32,6 @@ REFERENCE_AUDIO = PROJECT_DIR / "assets" / "audio" / "Iron & Ash.mp3"
 REFERENCE_MOVIE = PROJECT_DIR / "assets" / "images" / "background" / "reference_fullhd.mp4"
 WALL_VISUAL_CONFIG = PROJECT_DIR / "assets" / "models" / "wall_visual_config.json"
 DEFAULT_GODOT = r"C:\Users\BAZA\Documents\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe"
-DEFAULT_FFPROBE = PROJECT_DIR / "third_party" / "ffmpeg" / "ffmpeg-master-latest-win64-lgpl" / "bin" / "ffprobe.exe"
 LANE_COUNT = 4
 LANE_NAMES = ["left_outer", "left_inner", "right_inner", "right_outer"]
 SCHEMA_BEATMAP = "neon_music.beatmap.v3"
@@ -1060,67 +1059,108 @@ def _validate_clock_smoke(godot: Path) -> None:
     print("Frame-clock smoke: OK (two runs matched exactly)")
 
 
-def _validate_wall_movie_smoke(godot: Path) -> None:
-    smoke_path = PROJECT_DIR / "output" / "renders" / "wall_preview_smoke.avi"
-    movie_log_path = PROJECT_DIR / ".validator_movie_hit_diag.log"
-    smoke_path.parent.mkdir(parents=True, exist_ok=True)
-    if smoke_path.exists():
-        smoke_path.unlink()
-    if movie_log_path.exists():
-        movie_log_path.unlink()
+def _validate_wall_lifecycle_smoke(godot: Path) -> None:
+    """Exercise every synthetic wall/hold through retirement without a GPU movie."""
+    log_path = PROJECT_DIR / ".validator_wall_lifecycle_diag.log"
+    log_path.unlink(missing_ok=True)
     command = [
         str(godot),
-        "--rendering-driver",
-        "opengl3",
+        "--headless",
         "--path",
         str(PROJECT_DIR),
-        "--write-movie",
-        str(smoke_path),
+        "--quit-after",
+        "900",
+        "--",
+        "--wall-preview",
+        "--wall-preview-heights=3.2,4.8,5.8",
+        "--render-clock=frame",
+        "--clock-fps=60",
+        "--clock-diagnostic=11.5",
+        f"--clock-diagnostic-file=res://{log_path.name}",
+        "--clock-stop-after=11.5",
+    ]
+    result = _run_command(command, PROJECT_DIR)
+    output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
+    if result.returncode != 0:
+        _fail(f"Wall lifecycle smoke failed with exit code {result.returncode}.\n{output}")
+    for marker in ("ERROR:", "Parse Error", "SCRIPT ERROR", "CrashHandlerException"):
+        if marker in output:
+            _fail(f"Wall lifecycle smoke reported {marker!r}.\n{output}")
+    if not log_path.is_file():
+        _fail("Wall lifecycle smoke did not produce diagnostics.")
+    log_text = log_path.read_text(encoding="utf-8")
+    _validate_hit_timing_log(log_text, 60.0, "wall lifecycle smoke", {"tap"})
+    expected = {
+        "spawn_wall": 3,
+        "clear_wall": 3,
+        "spawn_hold": 2,
+        "clear_hold": 2,
+    }
+    for event_name, expected_count in expected.items():
+        actual_count = sum(
+            _clock_diag_fields(line).get("event") == event_name
+            for line in log_text.splitlines()
+            if line.startswith("CLOCK_DIAG ")
+        )
+        if actual_count != expected_count:
+            _fail(
+                f"Wall lifecycle smoke expected {expected_count} {event_name} events, "
+                f"got {actual_count}."
+            )
+    log_path.unlink(missing_ok=True)
+    print("Wall lifecycle smoke: OK (3/3 walls and 2/2 holds retired)")
+
+
+def _validate_wall_visual_smoke(godot: Path) -> None:
+    """Capture real Forward+ frames without Godot 4.7's unstable AVI writer."""
+    frames_path = PROJECT_DIR / "output" / "renders" / "wall_preview_frames_smoke"
+    visual_log_path = PROJECT_DIR / ".validator_visual_hit_diag.log"
+    frames_root = (PROJECT_DIR / "output" / "renders").resolve()
+    if frames_path.resolve().parent != frames_root:
+        _fail(f"Unsafe wall visual smoke directory: {frames_path}")
+    if frames_path.exists():
+        shutil.rmtree(frames_path)
+    frames_path.mkdir(parents=True, exist_ok=True)
+    visual_log_path.unlink(missing_ok=True)
+    command = [
+        str(godot),
+        "--path",
+        str(PROJECT_DIR),
         "--fixed-fps",
         "30",
         "--",
         "--wall-preview",
         "--wall-preview-heights=3.2,4.8,5.8",
         "--no-background-video",
+        "--frame-sequence-dir=output/renders/wall_preview_frames_smoke",
         "--render-clock=frame",
         "--clock-fps=30",
-        "--clock-diagnostic=28",
-        f"--clock-diagnostic-file=res://{movie_log_path.name}",
-        "--clock-stop-after=28",
+        "--clock-diagnostic=0.9",
+        f"--clock-diagnostic-file=res://{visual_log_path.name}",
+        "--clock-stop-after=0.9",
     ]
     result = _run_command(command, PROJECT_DIR)
-    movie_output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
-    if not smoke_path.is_file() or smoke_path.stat().st_size <= 1024:
-        _fail(f"Wall movie smoke did not produce a non-empty movie file; exit code {result.returncode}.\n{movie_output}")
-    if not movie_log_path.is_file() or not movie_log_path.read_text(encoding="utf-8").strip():
-        _fail(f"Wall movie smoke did not produce hit timing diagnostics.\n{movie_output}")
-    movie_log_text = movie_log_path.read_text(encoding="utf-8")
-    _validate_hit_timing_log(movie_log_text, 30.0, "wall movie smoke", {"tap"})
-    if "kind=hold_release" in movie_log_text:
-        _fail("wall/hold movie smoke must not emit hold_release hit diagnostics.")
-    movie_log_path.unlink(missing_ok=True)
-    if not DEFAULT_FFPROBE.is_file():
-        _fail(f"Missing ffprobe for wall movie smoke verification: {DEFAULT_FFPROBE}")
-    probe = _run_command([
-        str(DEFAULT_FFPROBE),
-        "-v", "error",
-        "-select_streams", "v:0",
-        "-show_entries", "stream=nb_frames,duration,avg_frame_rate,width,height",
-        "-of", "json",
-        str(smoke_path),
-    ], PROJECT_DIR)
-    if probe.returncode != 0:
-        _fail(f"ffprobe failed on wall movie smoke.\n{probe.stdout}\n{probe.stderr}")
-    payload = json.loads(probe.stdout)
-    streams = payload.get("streams", []) if isinstance(payload, dict) else []
-    if not streams:
-        _fail("Wall movie smoke has no video stream.")
-    stream = streams[0]
-    duration = float(stream.get("duration", 0.0))
-    frames = int(stream.get("nb_frames", 0) or 0)
-    if duration < 9.0 or frames < 250:
-        _fail(f"Wall movie smoke is too short: duration={duration}, frames={frames}.\n{movie_output}")
-    print(f"Wall movie smoke: OK ({smoke_path.relative_to(PROJECT_DIR)}, {duration:.3f}s, {frames} frames, {smoke_path.stat().st_size} bytes)")
+    visual_output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
+    crash_markers = ("CrashHandlerException", "Program crashed", "SIGSEGV", "signal 11")
+    if result.returncode != 0 or any(marker in visual_output for marker in crash_markers):
+        _fail(
+            "Wall Forward+ visual smoke crashed or exited unsuccessfully "
+            f"(exit code {result.returncode}).\n{visual_output}"
+        )
+    if not visual_log_path.is_file() or not visual_log_path.read_text(encoding="utf-8").strip():
+        _fail(f"Wall Forward+ visual smoke did not produce hit diagnostics.\n{visual_output}")
+    visual_log_text = visual_log_path.read_text(encoding="utf-8")
+    _validate_hit_timing_log(visual_log_text, 30.0, "wall Forward+ visual smoke", {"tap"})
+    frames = sorted(frames_path.glob("frame_*.jpg"))
+    if len(frames) < 20:
+        _fail(f"Wall Forward+ visual smoke produced only {len(frames)} frames.\n{visual_output}")
+    for frame in (frames[0], frames[-1]):
+        payload = frame.read_bytes()
+        if len(payload) <= 1024 or not payload.startswith(b"\xff\xd8") or not payload.endswith(b"\xff\xd9"):
+            _fail(f"Wall Forward+ visual smoke produced an invalid JPEG: {frame}")
+    shutil.rmtree(frames_path)
+    visual_log_path.unlink(missing_ok=True)
+    print(f"Wall Forward+ visual smoke: OK ({len(frames)} production-renderer frames)")
 
 
 def main() -> int:
@@ -1170,7 +1210,8 @@ def main() -> int:
     _validate_deterministic_regeneration(audio_value)
     godot = _resolve_godot(args.godot or None)
     _validate_clock_smoke(godot)
-    _validate_wall_movie_smoke(godot)
+    _validate_wall_lifecycle_smoke(godot)
+    _validate_wall_visual_smoke(godot)
     print("Validator: PASS")
     return 0
 

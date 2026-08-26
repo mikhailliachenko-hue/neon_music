@@ -267,7 +267,12 @@ func _warmup_tunnel_before_playback() -> void:
 	add_child(cover_layer)
 	await get_tree().process_frame
 	await tunnel_generator.warmup_render_pipelines()
-	await AUDIO_SAFE_GAMEPLAY_WARMUP.run(self, HIT_EFFECT_SCENE, HIT_PARTICLE_SCENE)
+	# Movie Writer already routes gameplay impacts through the mesh-only
+	# _spawn_movie_safe_hit_effect() path. Instantiating the GPUParticles3D
+	# warm-up scene here can crash Godot 4.7 before the first rendered hit,
+	# while providing no benefit to the recorded movie.
+	if not _movie_writer_is_active():
+		await AUDIO_SAFE_GAMEPLAY_WARMUP.run(self, HIT_EFFECT_SCENE, HIT_PARTICLE_SCENE)
 	# Wait for both GPU specialization and the FPS moving average to settle. A
 	# slightly longer explicit loading beat is preferable to exposing a one-second
 	# hitch as soon as the player sees the corridor.

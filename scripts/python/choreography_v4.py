@@ -599,6 +599,9 @@ REFERENCE_RECOVERY_MOVEMENTS = {
 def _retarget_sequence_item(item: dict[str, Any], movement_id: str, cell_function: str) -> None:
     meta = MOVEMENTS[movement_id]
     duration = int(item.get("duration_beats", 4))
+    # Component overrides belong to the old movement. Keeping them while
+    # retargeting can silently turn a bilateral action into one renderer note.
+    item.pop("internal_hit_components", None)
     item.update({
         "movement": movement_id,
         "body_side": meta["side"],
@@ -623,6 +626,98 @@ def _reference_sequence_item(
     item["dynamic_role"] = dynamic_role
     _retarget_sequence_item(item, movement_id, cell_function)
     return item
+
+
+def _shape_partial_final_phrase(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    director_plan: dict[str, Any],
+    total_beats: int,
+) -> dict[str, Any]:
+    """Finish a partial tail without cutting a longer directional movement.
+
+    Candidate phrases are authored as complete 32-beat units. A song can end
+    inside the last unit, though, and merely filtering items by their start beat
+    leaves the final movement extending beyond the music. Reserve the final
+    complete four-beat window for one centred two-hand accent. It reads as a
+    deliberate finish, keeps left/right load balanced and never overlaps the
+    end of the canonical grid.
+    """
+    summary = {
+        "applied": False,
+        "phrase_index": -1,
+        "section_role": "",
+        "remaining_beats": 0,
+        "trimmed_overflow_items": 0,
+        "suppressed_by_wall": False,
+    }
+    if total_beats <= 0 or not selected_sequences:
+        return summary
+    phrase_index = min(len(selected_sequences) - 1, (total_beats - 1) // 32)
+    phrase_start = phrase_index * 32
+    remaining_beats = total_beats - phrase_start
+    summary.update({
+        "phrase_index": phrase_index,
+        "section_role": str(phrase_contexts[phrase_index].get("section_role", "")) if phrase_index < len(phrase_contexts) else "",
+        "remaining_beats": remaining_beats,
+    })
+    if remaining_beats >= 32:
+        return summary
+
+    phrase = selected_sequences[phrase_index]
+    fitted = [
+        item for item in phrase
+        if int(item.get("start_beat", 0)) < total_beats
+        and int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0)) <= total_beats
+    ]
+    summary["trimmed_overflow_items"] = len(phrase) - len(fitted)
+    if remaining_beats < 4:
+        selected_sequences[phrase_index] = fitted
+        return summary
+
+    accent_start = total_beats - 4
+    directive = (
+        director_plan.get("directives", [])[phrase_index]
+        if phrase_index < len(director_plan.get("directives", []))
+        else {}
+    )
+    wall_overlap = any(
+        int(window.get("start_beat", 0)) < total_beats
+        and int(window.get("end_beat", 0)) > accent_start
+        for window in directive.get("reserved_wall_windows", [])
+        if isinstance(window, dict)
+    )
+    # If an irregular song tail makes the last four beats start inside an
+    # 8-count, clear that entire cell before the centred accent. Otherwise a
+    # preceding foot/combo movement and the final hands cue would share one
+    # instruction cell and become unreadable.
+    accent_cell_start = phrase_start + ((accent_start - phrase_start) // 8) * 8
+    kept = [
+        item for item in fitted
+        if int(item.get("start_beat", 0)) + int(item.get("duration_beats", 0)) <= accent_cell_start
+    ]
+    if wall_overlap:
+        selected_sequences[phrase_index] = kept
+        summary["suppressed_by_wall"] = True
+        return summary
+
+    template = copy.deepcopy(phrase[-1]) if phrase else {
+        "start_beat": accent_start,
+        "duration_beats": 4,
+        "dynamic_role": "PAYOFF",
+        "cell_function": "CALLBACK_FINAL_DOUBLE_HANDS",
+    }
+    final_accent = _reference_sequence_item(
+        template,
+        "DOUBLE_PUNCH",
+        accent_start,
+        4,
+        "CALLBACK_FINAL_DOUBLE_HANDS",
+        "PAYOFF",
+    )
+    selected_sequences[phrase_index] = [*kept, final_accent]
+    summary["applied"] = True
+    return summary
 
 
 def _replace_reference_window(
@@ -1906,6 +2001,12 @@ def build_choreography(
         profile=profile,
         director_plan=director_plan,
     )
+    partial_final_phrase = _shape_partial_final_phrase(
+        selected_sequences,
+        phrase_contexts,
+        director_plan,
+        len(beats),
+    )
     post_process_familiarity = {"MARCH_IN_PLACE", "IDLE_BOUNCE", "WEIGHT_SHIFT"}
     for phrase_index, phrase in enumerate(selected_sequences):
         selected_id = selected_candidate_ids[phrase_index]
@@ -1948,13 +2049,6 @@ def build_choreography(
         post_process_familiarity.update(item["movement"] for item in phrase)
 
     sequence = [item for phrase in selected_sequences for item in phrase if item["start_beat"] < len(beats)]
-    if (
-        sequence
-        and profile != WARMUP_PROFILE
-        and sequence[-1]["movement"] != "STEP_TOUCH_RIGHT"
-    ):
-        final_step_meta = MOVEMENTS["STEP_TOUCH_RIGHT"]
-        sequence[-1] = {**sequence[-1], "movement": "STEP_TOUCH_RIGHT", "body_side": final_step_meta["side"], "mirror_mode": False, "internal_hit_offsets": [0, 2], "cell_function": "CALLBACK_FINAL_STEP"}
     movement_events, base_events, obstacles = [], [], []
     interval = float(grid["beat_interval"])
     for index, item in enumerate(sequence):
@@ -2152,8 +2246,8 @@ def build_choreography(
         "schema": BEATMAP_SCHEMA, "source_schema": legacy_beatmap.get("schema", "unknown"), "audio": legacy_beatmap.get("audio", grid.get("audio", {})),
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
-        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.7",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
+        "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.8",
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "partial_final_phrase": partial_final_phrase, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
         "phrase_plan": phrase_plan, "director_plan": director_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],
@@ -2261,7 +2355,11 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
         if obstacle.get("sustained") and parent["family"] != "pose":
             errors.append("hold_requires_sustained_movement")
     previous_event = None
+    canonical_beat_count = len(grid.get("canonical_beats", []))
     for event in movements:
+        event_end_beat = int(event.get("canonical_beat_index", 0)) + int(event.get("duration_beats", 0))
+        if canonical_beat_count and event_end_beat > canonical_beat_count:
+            errors.append(f"movement_exceeds_track:{event.get('id', '')}")
         if abs(float(event["hit_time"]) - float(event["canonical_beat_time"])) > FRAME_30:
             errors.append("mandatory_hit_error_exceeds_one_frame")
         bounds = event.get("cue_bounds_normalized", {})
@@ -2444,11 +2542,14 @@ def validate_v4(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]
 
 
 def audit_legacy(grid: dict[str, Any], beatmap: dict[str, Any]) -> dict[str, Any]:
-    raw = _numbers(grid.get("detected_beats", []))
-    canonical = _numbers(grid.get("beat_grid", []))
-    notes = beatmap.get("notes", [])
-    movements = beatmap.get("movement_events", grid.get("movement_events", []))
-    events = beatmap.get("events", [])
+    raw = _numbers(grid.get("raw_detected_beats", grid.get("detected_beats", [])))
+    canonical = _numbers(grid.get("canonical_beats", grid.get("beat_grid", [])))
+    notes = beatmap.get("legacy_notes", beatmap.get("notes", []))
+    movements = beatmap.get(
+        "legacy_movement_events",
+        beatmap.get("movement_events", grid.get("movement_events", [])),
+    )
+    events = beatmap.get("legacy_events", beatmap.get("events", []))
     duration = float(grid.get("duration", 0.0))
     residuals = [min(abs(value - beat) for beat in canonical) for value in raw] if canonical else []
     note_deltas = [abs(float(note.get("beat_delta", min((abs(float(note.get("time", 0)) - beat) for beat in canonical), default=0.0)))) for note in notes]
