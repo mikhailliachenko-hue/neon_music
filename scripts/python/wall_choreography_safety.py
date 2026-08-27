@@ -242,6 +242,9 @@ def prepare_runtime_wall_events(
         "wall_dance_cross_steps": 0,
         "wall_dance_hand_sides": {"left": 0, "right": 0},
         "wall_dance_phase_counts": {phase: 0 for phase in WALL_DANCE_PHASES},
+        "authored_wall_combo_count": 0,
+        "authored_wall_note_count": 0,
+        "authored_wall_invalid_discarded": 0,
     }
     pending_patterns: list[tuple[list[dict[str, Any]], dict[str, Any]]] = []
     last_accepted_type = ""
@@ -271,7 +274,13 @@ def prepare_runtime_wall_events(
 
         raw_event_type = str(event["type"])
         event_type = raw_event_type
-        if last_accepted_type:
+        authored_for_raw_side = [
+            note for note in adjusted_notes
+            if bool(note.get("authored_for_wall", False))
+            and str(note.get("wall_event_type", "")) == raw_event_type
+            and window_start <= float(note.get("time", note.get("hit_time", 0.0))) <= window_end
+        ]
+        if last_accepted_type and not authored_for_raw_side:
             event_type = "wall_right" if last_accepted_type == "wall_left" else "wall_left"
             if event_type != raw_event_type:
                 diagnostics["side_redirected"] += 1
@@ -283,6 +292,11 @@ def prepare_runtime_wall_events(
             for note in adjusted_notes
             if window_start <= float(note.get("time", note.get("hit_time", 0.0))) <= window_end
         ]
+        safe_lanes = set(int(value) for value in event.get("safe_lanes", []))
+        authored_notes = [note for note in active_notes if bool(note.get("authored_for_wall", False))]
+        if any(not _note_lanes(note) or not _note_lanes(note) <= safe_lanes for note in authored_notes):
+            diagnostics["authored_wall_invalid_discarded"] += 1
+            continue
         if any(
             _note_is_fixed_movement(note)
             and _note_conflicts_with_wall(note, event_type, window_start, window_end)
@@ -292,6 +306,11 @@ def prepare_runtime_wall_events(
             continue
         redirected_count = 0
         for note in active_notes:
+            # Удалить когда станет неактуально: non-authored notes from old JSON
+            # still need post-hoc lane redirection. New analyzer output already
+            # owns its safe-side lane composition.
+            if bool(note.get("authored_for_wall", False)):
+                continue
             if _note_conflicts_with_wall(note, event_type, window_start, window_end):
                 _redirect_note_to_safe_half(note, event_type, start)
                 redirected_count += 1
@@ -300,16 +319,24 @@ def prepare_runtime_wall_events(
         # The player is already shifting laterally, so turn three existing safe
         # hits into a compact dance phrase: both feet plus one hand. Reusing hits
         # preserves musical density and avoids random notes inside a dodge.
-        pattern_notes = _spread_three(_eligible_wall_dance_notes(
-            adjusted_notes,
-            start - anticipation * 0.5,
-            min(window_end, end + 0.65),
-        ))
-        if len(pattern_notes) < WALL_DANCE_MIN_ACTIONS:
-            diagnostics["wall_dance_insufficient_skipped"] += 1
+        if authored_notes:
+            combo_ids = sorted({str(note.get("spectacle_combo_id", "")) for note in authored_notes if note.get("spectacle_combo_id")})
+            event["dance_pattern"] = combo_ids[0] if combo_ids else "authored_safe_side_combo"
+            event["dance_actions"] = [str(note.get("movement", "")) for note in authored_notes]
+            event["safety_resolution"] = "authored_safe_side_combo"
+            diagnostics["authored_wall_combo_count"] += 1
+            diagnostics["authored_wall_note_count"] += len(authored_notes)
         else:
-            pending_patterns.append((pattern_notes, event))
-        event["safety_resolution"] = "short_cues_redirected_to_safe_half" if redirected_count else "original_side_clear"
+            pattern_notes = _spread_three(_eligible_wall_dance_notes(
+                adjusted_notes,
+                start - anticipation * 0.5,
+                min(window_end, end + 0.65),
+            ))
+            if len(pattern_notes) < WALL_DANCE_MIN_ACTIONS:
+                diagnostics["wall_dance_insufficient_skipped"] += 1
+            else:
+                pending_patterns.append((pattern_notes, event))
+            event["safety_resolution"] = "short_cues_redirected_to_safe_half" if redirected_count else "original_side_clear"
         accepted.append(event)
         last_accepted_type = event_type
 

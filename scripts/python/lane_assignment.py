@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from choreography_combo_director import DEFAULT_COMBO_INTENSITY, normalize_combo_intensity
+
 LANE_COUNT = 4
 MIN_TIME_BETWEEN_NOTES = 0.5
 LANE_NAMES = ["left_outer", "left_inner", "right_inner", "right_outer"]
@@ -33,6 +35,7 @@ DEFAULT_HOLD_MIN_GAP = 1.35
 DEFAULT_REFERENCE_HAND_HOLDS_ENABLED = True
 DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES = 4
 DEFAULT_SPECTACLE_COMBOS_ENABLED = True
+DEFAULT_WALL_SAFE_COMBOS_ENABLED = True
 DIFFICULTY_PROFILES: dict[str, dict[str, float]] = {
     "Calm": {
         "min_time_between_notes": 0.68,
@@ -212,6 +215,8 @@ def build_generation_settings(
     reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     spectacle_combos_enabled: bool = DEFAULT_SPECTACLE_COMBOS_ENABLED,
+    wall_safe_combos_enabled: bool = DEFAULT_WALL_SAFE_COMBOS_ENABLED,
+    combo_intensity: str = DEFAULT_COMBO_INTENSITY,
     lane_layout: str = DEFAULT_LANE_LAYOUT,
 ) -> dict[str, Any]:
     profile_name = normalize_difficulty_name(difficulty)
@@ -277,7 +282,9 @@ def build_generation_settings(
         },
         "spectacle_combos": {
             "enabled": bool(spectacle_combos_enabled),
-            "strategy": "music_ranked_reference_doubles_and_triples",
+            "wall_safe_enabled": bool(wall_safe_combos_enabled),
+            "intensity": normalize_combo_intensity(combo_intensity),
+            "strategy": "music_ranked_reference_combo_director",
         },
     }
 

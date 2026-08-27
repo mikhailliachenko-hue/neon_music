@@ -17,6 +17,12 @@ from choreography_v4 import (  # noqa: E402
 )
 from generate_choreography_v4 import attach_runtime_wall_projection, synchronize_grid_projection  # noqa: E402
 from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
+from choreography_combo_director import (  # noqa: E402
+    SPECTACLE_COMBO_PATTERNS,
+    WALL_SAFE_COMBO_PATTERNS,
+    combo_target_count,
+    safe_lane_map,
+)
 
 
 APPROVED_BURST_BREATH_MASKS = {
@@ -669,6 +675,7 @@ def test_grounded_double_steps_are_short_paired_and_vary_stance():
     events = [
         event for event in beatmap["movement_events"]
         if event["movement"] == "DOUBLE_STEP_TOGETHER"
+        and not event.get("authored_for_wall")
     ]
     assert len(events) >= 2
     notes_by_event = {
@@ -692,7 +699,7 @@ def test_grounded_double_steps_are_short_paired_and_vary_stance():
     assert stances == {"wide", "narrow"}
 
 
-def test_spectacle_combo_library_exports_readable_doubles_and_triples():
+def test_spectacle_combo_library_exports_readable_two_to_four_accent_scenes():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     grid.setdefault("generation_settings", {})["spectacle_combos"] = {"enabled": True}
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
@@ -700,9 +707,12 @@ def test_spectacle_combo_library_exports_readable_doubles_and_triples():
     assert combo["enabled"]
     assert len(combo["applied"]) >= 3
     assert len({value["combo_id"] for value in combo["applied"]}) >= 2
-    events = [event for event in beatmap["movement_events"] if event.get("spectacle_combo_id")]
+    events = [
+        event for event in beatmap["movement_events"]
+        if event.get("spectacle_combo_id") and not event.get("authored_for_wall")
+    ]
     assert events
-    assert {int(event["spectacle_combo_size"]) for event in events} <= {2, 3}
+    assert {int(event["spectacle_combo_size"]) for event in events} <= {2, 3, 4}
     assert all(1 <= int(event["spectacle_combo_step"]) <= int(event["spectacle_combo_size"]) for event in events)
     notes = [note for note in beatmap["notes"] if note.get("spectacle_combo_id")]
     assert notes
@@ -713,6 +723,74 @@ def test_spectacle_combo_library_exports_readable_doubles_and_triples():
         and str(note.get("movement", "")).startswith("STEP_TOUCH_")
     )
     assert max(foot_notes_by_time.values(), default=0) <= 2
+
+
+def test_spectacle_combo_library_contains_all_approved_patterns():
+    combo_ids = {str(value["id"]) for value in SPECTACLE_COMBO_PATTERNS}
+    assert len(combo_ids) == 15
+    assert {
+        "quick_feet_run",
+        "center_wide_center",
+        "left_right_double",
+        "side_travel",
+        "running_man_lite",
+        "step_punch_switch",
+        "double_single_double",
+        "zigzag_sprint",
+        "dodge_and_answer",
+        "finale_cascade",
+    } <= combo_ids
+    assert len({str(value["id"]) for value in WALL_SAFE_COMBO_PATTERNS}) == 6
+    assert combo_target_count(24, "Calm") < combo_target_count(24, "Dynamic") < combo_target_count(24, "Wild")
+
+
+def test_wall_safe_combos_keep_feet_ordered_and_allow_cross_lane_hands():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {})["spectacle_combos"] = {
+        "enabled": True,
+        "wall_safe_enabled": True,
+        "intensity": "Wild",
+    }
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    wall_combo = beatmap["settings"]["reference_wall_safe_combos"]
+    assert wall_combo["enabled"]
+    assert wall_combo["applied"]
+    notes = [note for note in beatmap["notes"] if note.get("authored_for_wall")]
+    assert notes
+    assert all(int(note["lane"]) in set(note["wall_safe_lanes"]) for note in notes)
+    cross_hand_seen = False
+    foot_counts = Counter()
+    for note in notes:
+        movement = str(note["movement"])
+        side = str(note.get("body_side", note.get("lane_side", "center")))
+        safe_lanes = sorted(int(value) for value in note["wall_safe_lanes"])
+        if movement.startswith("STEP_TOUCH_"):
+            expected = safe_lanes[0] if side == "left" else safe_lanes[1]
+            assert int(note["lane"]) == expected
+            foot_counts[round(float(note["hit_time"]), 6)] += 1
+        elif movement.startswith("PUNCH_"):
+            natural = safe_lanes[0] if side == "left" else safe_lanes[1]
+            cross_hand_seen |= int(note["lane"]) != natural
+    assert max(foot_counts.values(), default=0) <= 2
+    assert cross_hand_seen
+    assert not validate_v4(grid, beatmap)["hard_errors"]
+
+
+def test_wall_safe_lane_map_separates_limb_side_from_world_lane():
+    right_escape = safe_lane_map("wall_left", [2, 3], "cross")
+    assert right_escape == {
+        "left_foot": 2,
+        "right_foot": 3,
+        "left_hand": 3,
+        "right_hand": 2,
+    }
+    left_escape = safe_lane_map("wall_right", [0, 1], "natural")
+    assert left_escape == {
+        "left_foot": 0,
+        "right_foot": 1,
+        "left_hand": 0,
+        "right_hand": 1,
+    }
 
 
 def test_spectacle_combo_library_can_be_disabled():
@@ -892,6 +970,22 @@ def test_standalone_projection_preserves_runtime_wall_bridge():
     assert projected["legacy_notes"] == source["legacy_notes"]
     assert projected["legacy_events"] == source["legacy_events"]
     assert projected["legacy_movement_events"] == source["legacy_movement_events"]
+
+
+def test_standalone_projection_prefers_current_wall_generation_over_stale_runtime_walls():
+    grid, beatmap = products()
+    current_walls = copy.deepcopy(grid.get("wall_generation", {}).get("events", []))
+    assert len(current_walls) > 1
+    source = {
+        "independent_wall_events": [copy.deepcopy(current_walls[0])],
+        "events": [copy.deepcopy(current_walls[0])],
+    }
+    projected, _ = attach_runtime_wall_projection(
+        copy.deepcopy(grid),
+        copy.deepcopy(beatmap),
+        source,
+    )
+    assert projected["wall_runtime_safety"]["input"] == len(current_walls)
 
 
 def test_motif_memory_rewards_recognizable_variation_not_exact_copy():

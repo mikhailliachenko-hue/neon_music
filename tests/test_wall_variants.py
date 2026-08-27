@@ -346,6 +346,74 @@ def test_runtime_safety_keeps_warning_and_recovery_windows_clear() -> None:
     assert diagnostics["note_lane_redirected"] == 2
 
 
+def test_runtime_safety_preserves_authored_wall_combo_without_legacy_rewrite() -> None:
+    wall = _wall("wall_left", LOW_CORRIDOR)
+    notes = [
+        {
+            "time": 16.0,
+            "lane": 2,
+            "lanes": [2],
+            "movement": "STEP_TOUCH_LEFT",
+            "duration": 0.0,
+            "authored_for_wall": True,
+            "wall_event_type": "wall_left",
+            "wall_safe_lanes": [2, 3],
+            "spectacle_combo_id": "wall_cross_punches",
+        },
+        {
+            "time": 17.0,
+            "lane": 3,
+            "lanes": [3],
+            "movement": "PUNCH_LEFT",
+            "duration": 0.0,
+            "authored_for_wall": True,
+            "wall_event_type": "wall_left",
+            "wall_safe_lanes": [2, 3],
+            "spectacle_combo_id": "wall_cross_punches",
+        },
+        {
+            "time": 18.0,
+            "lane": 2,
+            "lanes": [2],
+            "movement": "PUNCH_RIGHT",
+            "duration": 0.0,
+            "authored_for_wall": True,
+            "wall_event_type": "wall_left",
+            "wall_safe_lanes": [2, 3],
+            "spectacle_combo_id": "wall_cross_punches",
+        },
+    ]
+    accepted, adjusted_notes, diagnostics = prepare_runtime_wall_events(
+        [wall], notes, [], recovery_window=0.85,
+    )
+    assert len(accepted) == 1
+    assert [note["lane"] for note in adjusted_notes] == [2, 3, 2]
+    assert accepted[0]["dance_pattern"] == "wall_cross_punches"
+    assert diagnostics["authored_wall_combo_count"] == 1
+    assert diagnostics["authored_wall_note_count"] == 3
+    assert diagnostics["note_lane_redirected"] == 0
+    assert diagnostics["wall_dance_rewritten_notes"] == 0
+
+
+def test_runtime_safety_rejects_invalid_authored_wall_lane() -> None:
+    wall = _wall("wall_left", LOW_CORRIDOR)
+    invalid = [{
+        "time": 17.0,
+        "lane": 0,
+        "lanes": [0],
+        "movement": "PUNCH_LEFT",
+        "duration": 0.0,
+        "authored_for_wall": True,
+        "wall_event_type": "wall_left",
+        "wall_safe_lanes": [2, 3],
+    }]
+    accepted, _notes, diagnostics = prepare_runtime_wall_events(
+        [wall], invalid, [], recovery_window=0.85,
+    )
+    assert accepted == []
+    assert diagnostics["authored_wall_invalid_discarded"] == 1
+
+
 def test_runtime_wall_dance_reuses_hits_for_both_feet_and_one_hand() -> None:
     wall = _wall("wall_left", LOW_CORRIDOR)
     notes = [

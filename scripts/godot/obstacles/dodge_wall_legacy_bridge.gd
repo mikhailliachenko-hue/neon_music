@@ -13,6 +13,7 @@ static func apply(walls: Array, notes: Array, movements: Array, recovery_window:
 	var adjusted_notes: Array = notes.duplicate(true)
 	var discarded := 0
 	var redirected := 0
+	var authored_safe_notes := 0
 	for raw_wall in walls:
 		if not raw_wall is Dictionary:
 			continue
@@ -25,13 +26,23 @@ static func apply(walls: Array, notes: Array, movements: Array, recovery_window:
 			discarded += 1
 			continue
 		var blocked := [0, 1] if String(wall.get("type", "")) == "wall_left" else [2, 3]
+		var safe_lanes := [2, 3] if String(wall.get("type", "")) == "wall_left" else [0, 1]
 		var fixed_conflict := false
 		for raw_note in adjusted_notes:
 			if not raw_note is Dictionary:
 				continue
 			var note := raw_note as Dictionary
 			var note_time := float(note.get("time", note.get("hit_time", 0.0)))
-			if note_time < window_start or note_time > window_end or not blocked.has(int(note.get("lane", -1))):
+			if note_time < window_start or note_time > window_end:
+				continue
+			var note_lane := int(note.get("lane", -1))
+			if bool(note.get("authored_for_wall", false)):
+				if not safe_lanes.has(note_lane):
+					fixed_conflict = true
+					break
+				authored_safe_notes += 1
+				continue
+			if not blocked.has(note_lane):
 				continue
 			if _fixed_note(note):
 				fixed_conflict = true
@@ -47,6 +58,10 @@ static func apply(walls: Array, notes: Array, movements: Array, recovery_window:
 			var lane := int(note.get("lane", -1))
 			if note_time < window_start or note_time > window_end or not blocked.has(lane):
 				continue
+			# Удалить когда станет неактуально: only old JSON without authored
+			# wall-safe lanes should reach this post-hoc redirection path.
+			if bool(note.get("authored_for_wall", false)):
+				continue
 			var safe_lane := lane + 2 if lane < 2 else lane - 2
 			note["wall_original_lane"] = lane
 			note["lane"] = safe_lane
@@ -61,6 +76,7 @@ static func apply(walls: Array, notes: Array, movements: Array, recovery_window:
 		"accepted": safe_walls.size(),
 		"discarded": discarded,
 		"note_lane_redirected": redirected,
+		"authored_safe_notes": authored_safe_notes,
 	}
 
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from canonical_timing import canonical_span_for_times
+from canonical_timing import canonical_position_for_time, canonical_span_for_times
 
 
 DIRECTOR_SCHEMA = "neon_music.choreography_director.v1"
@@ -77,13 +77,24 @@ def _wall_windows(grid: dict[str, Any]) -> list[dict[str, Any]]:
                 active_start - anticipation,
                 active_end + default_recovery,
             )
+            active_start_beat = canonical_position_for_time(canonical, active_start)
+            active_end_beat = min(len(canonical), active_start_beat + duration)
+        else:
+            active_start_beat, active_end_beat = raw_start, raw_start + duration
         if start < 0:
             continue
+        event_type = str(event.get("type", ""))
+        safe_lanes = event.get("safe_lanes")
+        if not isinstance(safe_lanes, list) or len(safe_lanes) != 2:
+            safe_lanes = [2, 3] if event_type == "wall_left" else [0, 1]
         windows.append({
             "start_beat": start,
             "end_beat": end,
+            "active_start_beat": active_start_beat,
+            "active_end_beat": active_end_beat,
             "source_beat_index": raw_start,
-            "type": str(event.get("type", "")),
+            "type": event_type,
+            "safe_lanes": [int(value) for value in safe_lanes],
             "visual_variant": str(event.get("visual_variant", "low_corridor")),
         })
     return windows

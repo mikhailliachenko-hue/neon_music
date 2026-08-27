@@ -23,9 +23,9 @@ def attach_runtime_wall_projection(
 
     The standalone V4 command used to preserve wall candidates in Beat Grid V2
     while dropping `independent_wall_events` from the new Beatmap V4. Godot then
-    saw a runtime count mismatch. Prefer already accepted source walls, fall
-    back to source renderer events, and finally use the canonical wall-analysis
-    candidates retained in the grid.
+    saw a runtime count mismatch. Prefer the canonical wall-analysis candidates
+    retained in the current grid; fall back to accepted/source renderer events
+    only for older artifacts that do not carry that list.
     """
     accepted_source = source_beatmap.get("independent_wall_events", [])
     if not isinstance(accepted_source, list):
@@ -33,18 +33,17 @@ def attach_runtime_wall_projection(
     source_events = source_beatmap.get("events", [])
     if not isinstance(source_events, list):
         source_events = []
+    wall_generation = grid.get("wall_generation", {})
+    candidates = wall_generation.get("events", []) if isinstance(wall_generation, dict) else []
+    if not isinstance(candidates, list):
+        candidates = []
+    # Current analysis candidates are canonical. Accepted/source walls are a
+    # compatibility fallback only when an older grid has no wall list.
+    wall_source = candidates if candidates else (accepted_source or source_events)
     wall_events = [
-        event for event in (accepted_source or source_events)
+        event for event in wall_source
         if isinstance(event, dict) and str(event.get("type", "")) in WALL_EVENT_TYPES
     ]
-    wall_generation = grid.get("wall_generation", {})
-    if not wall_events and isinstance(wall_generation, dict):
-        candidates = wall_generation.get("events", [])
-        if isinstance(candidates, list):
-            wall_events = [
-                event for event in candidates
-                if isinstance(event, dict) and str(event.get("type", "")) in WALL_EVENT_TYPES
-            ]
 
     movement_events = list(beatmap.get("movement_events", []))
     generation_settings = grid.get("generation_settings", {})

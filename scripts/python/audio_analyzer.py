@@ -36,6 +36,7 @@ from lane_assignment import (
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_SPECTACLE_COMBOS_ENABLED,
+    DEFAULT_WALL_SAFE_COMBOS_ENABLED,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -54,6 +55,7 @@ from lane_assignment import (
     assign_lanes,
     build_generation_settings,
 )
+from choreography_combo_director import COMBO_INTENSITIES, DEFAULT_COMBO_INTENSITY
 from wall_variant_assignment import (
     assign_visual_variants,
     normalize_visual_variant,
@@ -1387,6 +1389,8 @@ def analyze_with_metadata(
     reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     spectacle_combos_enabled: bool = DEFAULT_SPECTACLE_COMBOS_ENABLED,
+    wall_safe_combos_enabled: bool = DEFAULT_WALL_SAFE_COMBOS_ENABLED,
+    combo_intensity: str = DEFAULT_COMBO_INTENSITY,
     bass_audio_path: Path | None = None,
     drums_audio_path: Path | None = None,
     music_audio_path: Path | None = None,
@@ -1425,6 +1429,8 @@ def analyze_with_metadata(
         reference_hand_holds_enabled=reference_hand_holds_enabled,
         reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
         spectacle_combos_enabled=spectacle_combos_enabled,
+        wall_safe_combos_enabled=wall_safe_combos_enabled,
+        combo_intensity=combo_intensity,
         lane_layout=lane_layout,
     )
 
@@ -1608,6 +1614,8 @@ def analyze(
     reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     spectacle_combos_enabled: bool = DEFAULT_SPECTACLE_COMBOS_ENABLED,
+    wall_safe_combos_enabled: bool = DEFAULT_WALL_SAFE_COMBOS_ENABLED,
+    combo_intensity: str = DEFAULT_COMBO_INTENSITY,
     phrase_length_beats: int = 32,
     subphrase_length_beats: int = 8,
     manual_downbeat_offset_seconds: float = 0.0,
@@ -1644,6 +1652,8 @@ def analyze(
         reference_hand_holds_enabled=reference_hand_holds_enabled,
         reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
         spectacle_combos_enabled=spectacle_combos_enabled,
+        wall_safe_combos_enabled=wall_safe_combos_enabled,
+        combo_intensity=combo_intensity,
         phrase_length_beats=phrase_length_beats,
         subphrase_length_beats=subphrase_length_beats,
         manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
@@ -1710,6 +1720,8 @@ def main() -> int:
     parser.add_argument("--reference-hand-holds", action=argparse.BooleanOptionalAction, default=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
     parser.add_argument("--reference-hand-hold-rate-phrases", type=int, default=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
     parser.add_argument("--spectacle-combos", action=argparse.BooleanOptionalAction, default=DEFAULT_SPECTACLE_COMBOS_ENABLED)
+    parser.add_argument("--wall-safe-combos", action=argparse.BooleanOptionalAction, default=DEFAULT_WALL_SAFE_COMBOS_ENABLED)
+    parser.add_argument("--combo-intensity", choices=COMBO_INTENSITIES, default=DEFAULT_COMBO_INTENSITY)
     parser.add_argument("--beatmap", type=Path, default=output_dir / "beatmap.json")
     parser.add_argument("--metadata", type=Path, default=output_dir / "beat_grid.json")
     parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt", help=argparse.SUPPRESS)
@@ -1760,6 +1772,8 @@ def main() -> int:
             reference_hand_holds_enabled=args.reference_hand_holds,
             reference_hand_hold_rate_phrases=args.reference_hand_hold_rate_phrases,
             spectacle_combos_enabled=args.spectacle_combos,
+            wall_safe_combos_enabled=args.wall_safe_combos,
+            combo_intensity=args.combo_intensity,
             bass_audio_path=stems["bass"],
             drums_audio_path=stems["drums"],
             music_audio_path=args.audio,

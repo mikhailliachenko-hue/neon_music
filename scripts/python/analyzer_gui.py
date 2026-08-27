@@ -30,6 +30,7 @@ from lane_assignment import (
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
     DEFAULT_SPECTACLE_COMBOS_ENABLED,
+    DEFAULT_WALL_SAFE_COMBOS_ENABLED,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -45,6 +46,7 @@ from lane_assignment import (
     DEFAULT_WALL_REST_WINDOW,
     DIFFICULTY_PROFILES,
 )
+from choreography_combo_director import COMBO_INTENSITIES, DEFAULT_COMBO_INTENSITY
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 WALL_VISUAL_CONFIG = PROJECT_DIR / "assets" / "models" / "wall_visual_config.json"
@@ -171,6 +173,8 @@ class AnalyzerApp(tk.Tk):
         self.reference_hand_holds_enabled_var = tk.BooleanVar(value=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
         self.reference_hand_hold_rate_phrases_var = tk.IntVar(value=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
         self.spectacle_combos_enabled_var = tk.BooleanVar(value=DEFAULT_SPECTACLE_COMBOS_ENABLED)
+        self.wall_safe_combos_enabled_var = tk.BooleanVar(value=DEFAULT_WALL_SAFE_COMBOS_ENABLED)
+        self.combo_intensity_var = tk.StringVar(value=DEFAULT_COMBO_INTENSITY)
         self.phrase_length_beats_var = tk.IntVar(value=32)
         self.subphrase_length_beats_var = tk.IntVar(value=8)
         self.manual_downbeat_offset_seconds_var = tk.DoubleVar(value=0.0)
@@ -288,6 +292,10 @@ class AnalyzerApp(tk.Tk):
         ttk.Label(parent, text="Hard safety cap: never three step targets at one hit.", style="SectionBody.TLabel").grid(row=4, column=1, sticky="w", pady=(0, 4))
         self._spin(parent, 5, "Wall density brake", self.wall_density_multiplier_var, 1.0, 5.0, 0.05, "x")
         ttk.Checkbutton(parent, text="Spectacle combo choreography", variable=self.spectacle_combos_enabled_var).grid(row=6, column=1, sticky="w", pady=4)
+        ttk.Checkbutton(parent, text="Combos during side dodge", variable=self.wall_safe_combos_enabled_var).grid(row=7, column=1, sticky="w", pady=4)
+        intensity_row = self._grid_row(parent, 8, "Combo intensity")
+        for value in COMBO_INTENSITIES:
+            ttk.Radiobutton(intensity_row, text=value, value=value, variable=self.combo_intensity_var).pack(side="left", padx=(0, 12))
         parent.columnconfigure(1, weight=1)
 
     def _build_wall_timing(self, parent) -> None:
@@ -480,6 +488,8 @@ class AnalyzerApp(tk.Tk):
             "reference_hand_holds_enabled": bool(self.reference_hand_holds_enabled_var.get()),
             "reference_hand_hold_rate_phrases": int(self.reference_hand_hold_rate_phrases_var.get()),
             "spectacle_combos_enabled": bool(self.spectacle_combos_enabled_var.get()),
+            "wall_safe_combos_enabled": bool(self.wall_safe_combos_enabled_var.get()),
+            "combo_intensity": self.combo_intensity_var.get(),
             "phrase_length_beats": int(self.phrase_length_beats_var.get()), "subphrase_length_beats": int(self.subphrase_length_beats_var.get()),
             "manual_downbeat_offset_seconds": float(self.manual_downbeat_offset_seconds_var.get()),
             "allow_crooked_phrase": bool(self.allow_crooked_phrase_var.get()), "lane_layout": self.lane_layout_var.get(),
@@ -514,6 +524,8 @@ class AnalyzerApp(tk.Tk):
                     reference_hand_holds_enabled=options["reference_hand_holds_enabled"],
                     reference_hand_hold_rate_phrases=options["reference_hand_hold_rate_phrases"],
                     spectacle_combos_enabled=options["spectacle_combos_enabled"],
+                    wall_safe_combos_enabled=options["wall_safe_combos_enabled"],
+                    combo_intensity=options["combo_intensity"],
                     phrase_length_beats=options["phrase_length_beats"], subphrase_length_beats=options["subphrase_length_beats"],
                     manual_downbeat_offset_seconds=options["manual_downbeat_offset_seconds"], allow_crooked_phrase=options["allow_crooked_phrase"],
                     bass_audio_path=stems["bass"],
