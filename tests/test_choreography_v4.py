@@ -692,6 +692,38 @@ def test_grounded_double_steps_are_short_paired_and_vary_stance():
     assert stances == {"wide", "narrow"}
 
 
+def test_spectacle_combo_library_exports_readable_doubles_and_triples():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {})["spectacle_combos"] = {"enabled": True}
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    combo = beatmap["settings"]["reference_spectacle_combos"]
+    assert combo["enabled"]
+    assert len(combo["applied"]) >= 3
+    assert len({value["combo_id"] for value in combo["applied"]}) >= 2
+    events = [event for event in beatmap["movement_events"] if event.get("spectacle_combo_id")]
+    assert events
+    assert {int(event["spectacle_combo_size"]) for event in events} <= {2, 3}
+    assert all(1 <= int(event["spectacle_combo_step"]) <= int(event["spectacle_combo_size"]) for event in events)
+    notes = [note for note in beatmap["notes"] if note.get("spectacle_combo_id")]
+    assert notes
+    foot_notes_by_time = Counter(
+        round(float(note["hit_time"]), 6)
+        for note in notes
+        if note.get("lane_side") in {"left", "right"}
+        and str(note.get("movement", "")).startswith("STEP_TOUCH_")
+    )
+    assert max(foot_notes_by_time.values(), default=0) <= 2
+
+
+def test_spectacle_combo_library_can_be_disabled():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    grid.setdefault("generation_settings", {})["spectacle_combos"] = {"enabled": False}
+    beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    assert not beatmap["settings"]["reference_spectacle_combos"]["enabled"]
+    assert beatmap["settings"]["reference_spectacle_combos"]["applied"] == []
+    assert not any(event.get("spectacle_combo_id") for event in beatmap["movement_events"])
+
+
 def test_hand_phrases_teach_call_response_before_bilateral_payoff():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_full_track(grid, copy.deepcopy(LEGACY_MAP))

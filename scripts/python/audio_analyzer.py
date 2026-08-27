@@ -35,6 +35,7 @@ from lane_assignment import (
     DEFAULT_HIGH_WALL_TARGET_RATIO,
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
+    DEFAULT_SPECTACLE_COMBOS_ENABLED,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -1385,6 +1386,7 @@ def analyze_with_metadata(
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
     reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
+    spectacle_combos_enabled: bool = DEFAULT_SPECTACLE_COMBOS_ENABLED,
     bass_audio_path: Path | None = None,
     drums_audio_path: Path | None = None,
     music_audio_path: Path | None = None,
@@ -1422,6 +1424,7 @@ def analyze_with_metadata(
         hold_min_gap=hold_min_gap,
         reference_hand_holds_enabled=reference_hand_holds_enabled,
         reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
+        spectacle_combos_enabled=spectacle_combos_enabled,
         lane_layout=lane_layout,
     )
 
@@ -1604,6 +1607,7 @@ def analyze(
     hold_min_gap: float = DEFAULT_HOLD_MIN_GAP,
     reference_hand_holds_enabled: bool = DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     reference_hand_hold_rate_phrases: int = DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
+    spectacle_combos_enabled: bool = DEFAULT_SPECTACLE_COMBOS_ENABLED,
     phrase_length_beats: int = 32,
     subphrase_length_beats: int = 8,
     manual_downbeat_offset_seconds: float = 0.0,
@@ -1639,6 +1643,7 @@ def analyze(
         hold_min_gap=hold_min_gap,
         reference_hand_holds_enabled=reference_hand_holds_enabled,
         reference_hand_hold_rate_phrases=reference_hand_hold_rate_phrases,
+        spectacle_combos_enabled=spectacle_combos_enabled,
         phrase_length_beats=phrase_length_beats,
         subphrase_length_beats=subphrase_length_beats,
         manual_downbeat_offset_seconds=manual_downbeat_offset_seconds,
@@ -1704,6 +1709,7 @@ def main() -> int:
     parser.add_argument("--hold-min-gap", type=float, default=DEFAULT_HOLD_MIN_GAP)
     parser.add_argument("--reference-hand-holds", action=argparse.BooleanOptionalAction, default=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
     parser.add_argument("--reference-hand-hold-rate-phrases", type=int, default=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
+    parser.add_argument("--spectacle-combos", action=argparse.BooleanOptionalAction, default=DEFAULT_SPECTACLE_COMBOS_ENABLED)
     parser.add_argument("--beatmap", type=Path, default=output_dir / "beatmap.json")
     parser.add_argument("--metadata", type=Path, default=output_dir / "beat_grid.json")
     parser.add_argument("--subtitles", type=Path, default=output_dir / "combo.srt", help=argparse.SUPPRESS)
@@ -1753,6 +1759,7 @@ def main() -> int:
             hold_min_gap=args.hold_min_gap,
             reference_hand_holds_enabled=args.reference_hand_holds,
             reference_hand_hold_rate_phrases=args.reference_hand_hold_rate_phrases,
+            spectacle_combos_enabled=args.spectacle_combos,
             bass_audio_path=stems["bass"],
             drums_audio_path=stems["drums"],
             music_audio_path=args.audio,

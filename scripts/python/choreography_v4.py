@@ -887,7 +887,7 @@ def _apply_reference_grounded_double_steps(
     excluded = excluded_phrase_indices or set()
     directives = director_plan.get("directives", [])
     strong_roles = {"build", "chorus", "drop", "peak", "finale"}
-    candidates: list[tuple[tuple[int, int, int, int], int, int]] = []
+    candidates: list[tuple[tuple[int, int, int, int, int], int, int, bool]] = []
     for phrase_index, phrase in enumerate(selected_sequences):
         if (
             phrase_index == 0
@@ -953,6 +953,165 @@ def _apply_reference_grounded_double_steps(
             "setup_side": "left" if setup_movement.endswith("LEFT") else "right",
         })
         used_phrases.add(phrase_index)
+    return sorted(applied, key=lambda value: int(value["start_beat"]))
+
+
+SPECTACLE_COMBO_PATTERNS: tuple[dict[str, Any], ...] = (
+    {
+        "id": "feet_left_right_left",
+        "family": "feet",
+        "steps": (("STEP_TOUCH_LEFT", 2), ("STEP_TOUCH_RIGHT", 2), ("STEP_TOUCH_LEFT", 4)),
+    },
+    {
+        "id": "feet_right_left_right",
+        "family": "feet",
+        "steps": (("STEP_TOUCH_RIGHT", 2), ("STEP_TOUCH_LEFT", 2), ("STEP_TOUCH_RIGHT", 4)),
+    },
+    {
+        "id": "hands_left_right_together",
+        "family": "hands",
+        "steps": (("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("DOUBLE_PUNCH", 4)),
+    },
+    {
+        "id": "feet_out_in",
+        "family": "feet",
+        "steps": (("DOUBLE_STEP_TOGETHER", 4), ("DOUBLE_STEP_TOGETHER", 4)),
+        "stances": ("wide", "narrow"),
+    },
+    {
+        "id": "feet_in_out",
+        "family": "feet",
+        "steps": (("DOUBLE_STEP_TOGETHER", 4), ("DOUBLE_STEP_TOGETHER", 4)),
+        "stances": ("narrow", "wide"),
+    },
+)
+
+
+def _apply_reference_spectacle_combos(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    director_plan: dict[str, Any],
+    profile: str,
+    excluded_phrase_indices: set[int] | None = None,
+) -> list[dict[str, Any]]:
+    """Author reference-style doubles and triples as readable 8-count scenes."""
+    if profile == WARMUP_PROFILE:
+        return []
+    excluded = excluded_phrase_indices or set()
+    directives = director_plan.get("directives", [])
+    candidates: list[tuple[tuple[int, int, int, int], int, int]] = []
+    for phrase_index, phrase in enumerate(selected_sequences):
+        if (
+            phrase_index == 0
+            or phrase_index in excluded
+            or phrase_index >= len(selected_sequences) - 1
+            or not _reference_phrase_is_complete(phrase, phrase_index)
+        ):
+            continue
+        context = phrase_contexts[phrase_index] if phrase_index < len(phrase_contexts) else {}
+        role = str(context.get("section_role", "")).lower()
+        intensity = float(context.get("target_intensity", context.get("energy", 0.0)) or 0.0)
+        directive = directives[phrase_index] if phrase_index < len(directives) else {}
+        wall_windows = directive.get("reserved_wall_windows", [])
+        for cell_index in (3, 2, 1):
+            start_beat = phrase_index * 32 + cell_index * 8
+            wall_conflict = any(
+                start_beat < int(window.get("end_beat", 0))
+                and int(window.get("start_beat", 0)) < start_beat + 8
+                for window in wall_windows
+                if isinstance(window, dict)
+            )
+            candidates.append(((
+                0 if wall_conflict else 1,
+                1 if role in {"build", "chorus", "drop", "peak", "finale"} else 0,
+                int(round(intensity * 1000.0)),
+                cell_index,
+                -phrase_index,
+            ), phrase_index, cell_index, wall_conflict))
+
+    target_count = min(5, max(3, len(selected_sequences) // 3)) if candidates else 0
+    applied: list[dict[str, Any]] = []
+    used_phrases: set[int] = set()
+    for _, phrase_index, cell_index, wall_conflict in sorted(candidates, reverse=True):
+        if len(applied) >= target_count:
+            break
+        if phrase_index in used_phrases:
+            continue
+        phrase = selected_sequences[phrase_index]
+        start_beat = phrase_index * 32 + cell_index * 8
+        # Rotate patterns deterministically, then try the remaining patterns if
+        # the phrase's existing movement vocabulary makes the first unreadable.
+        pattern_offset = (phrase_index + cell_index + len(applied)) % len(SPECTACLE_COMBO_PATTERNS)
+        patterns = (
+            SPECTACLE_COMBO_PATTERNS[pattern_offset:]
+            + SPECTACLE_COMBO_PATTERNS[:pattern_offset]
+        )
+        existing_families = {
+            str(MOVEMENTS.get(str(item.get("movement", "")), {}).get("family", ""))
+            for item in phrase
+            if start_beat <= int(item.get("start_beat", 0)) < start_beat + 8
+        }
+        preferred_family = (
+            "hands"
+            if existing_families and existing_families <= {"boxing", "upper_body"}
+            else "feet"
+            if existing_families and existing_families <= {"base_groove", "rhythm_runner", "lateral"}
+            else ""
+        )
+        if preferred_family:
+            patterns = tuple(sorted(
+                patterns,
+                key=lambda value: 0 if value.get("family") == preferred_family else 1,
+            ))
+        for pattern in patterns:
+            original_phrase = copy.deepcopy(phrase)
+            replacements = [
+                (
+                    movement_id,
+                    duration,
+                    "REFERENCE_COMBO_%s_%d" % (str(pattern["id"]).upper(), step_index + 1),
+                    "PAYOFF" if step_index == len(pattern["steps"]) - 1 else "LIFT",
+                )
+                for step_index, (movement_id, duration) in enumerate(pattern["steps"])
+            ]
+            if not _replace_reference_window(phrase, start_beat, start_beat + 8, replacements):
+                phrase[:] = original_phrase
+                continue
+            cursor = start_beat
+            stances = tuple(pattern.get("stances", ()))
+            for step_index, (_, duration) in enumerate(pattern["steps"]):
+                item = next(
+                    value for value in phrase
+                    if int(value.get("start_beat", -1)) == cursor
+                    and str(value.get("cell_function", "")).startswith("REFERENCE_COMBO_")
+                )
+                item["spectacle_combo_id"] = str(pattern["id"])
+                item["spectacle_combo_step"] = step_index + 1
+                item["spectacle_combo_size"] = len(pattern["steps"])
+                if step_index < len(stances):
+                    item["double_step_stance"] = stances[step_index]
+                cursor += duration
+            if phrase_readability_violations(phrase, MOVEMENTS):
+                phrase[:] = original_phrase
+                continue
+            applied.append({
+                "phrase_index": phrase_index,
+                "cell_index": cell_index,
+                "start_beat": start_beat,
+                "combo_id": str(pattern["id"]),
+                "size": len(pattern["steps"]),
+                "reclaimed_wall": wall_conflict,
+            })
+            if wall_conflict and phrase_index < len(directives):
+                directive = directives[phrase_index]
+                reserved_windows = directive.get("reserved_wall_windows", [])
+                if reserved_windows:
+                    directive.setdefault("reclaimed_wall_windows_for_spectacle_combo", []).extend(
+                        copy.deepcopy(reserved_windows)
+                    )
+                    directive["reserved_wall_windows"] = []
+            used_phrases.add(phrase_index)
+            break
     return sorted(applied, key=lambda value: int(value["start_beat"]))
 
 
@@ -2161,6 +2320,24 @@ def build_choreography(
         int(value["phrase_index"])
         for value in reference_grounded_double_steps
     }
+    spectacle_combo_config = grid.get("generation_settings", {}).get("spectacle_combos", {})
+    if not isinstance(spectacle_combo_config, dict):
+        spectacle_combo_config = {}
+    reference_spectacle_combos = _apply_reference_spectacle_combos(
+        selected_sequences,
+        phrase_contexts,
+        director_plan,
+        profile,
+        excluded_phrase_indices=(
+            set(hand_hold_phrase_indices)
+            | set(reference_jump_repeat_phrase_indices)
+            | reference_grounded_double_step_phrase_indices
+        ) if bool(spectacle_combo_config.get("enabled", True)) else set(range(len(selected_sequences))),
+    )
+    reference_spectacle_combo_phrase_indices = {
+        int(value["phrase_index"])
+        for value in reference_spectacle_combos
+    }
     reference_hand_call_rewrites = _apply_reference_hand_call_response(selected_sequences, profile)
     # Holds now live only inside hand-only 8-counts. Injecting a foot recovery
     # after them was the source of an unreadable mid-block family switch.
@@ -2169,13 +2346,21 @@ def build_choreography(
         selected_sequences,
         phrase_contexts,
         profile,
-        excluded_phrase_indices=wall_phrase_indices | reference_grounded_double_step_phrase_indices,
+        excluded_phrase_indices=(
+            wall_phrase_indices
+            | reference_grounded_double_step_phrase_indices
+            | reference_spectacle_combo_phrase_indices
+        ),
     )
     reference_finale_callback_phrase_index = _apply_reference_finale_callback(
         selected_sequences,
         profile,
         len(beats),
-        excluded_phrase_indices=wall_phrase_indices | reference_grounded_double_step_phrase_indices,
+        excluded_phrase_indices=(
+            wall_phrase_indices
+            | reference_grounded_double_step_phrase_indices
+            | reference_spectacle_combo_phrase_indices
+        ),
     )
     rhythm_ornaments = apply_rhythm_ornaments(
         selected_sequences,
@@ -2294,6 +2479,9 @@ def build_choreography(
             "readability_weight": meta.get("readability_weight", 0.7),
             "compound_grammar": copy.deepcopy(COMPOUND_GRAMMAR.get(item["movement"])),
             "double_step_stance": item.get("double_step_stance", ""),
+            "spectacle_combo_id": item.get("spectacle_combo_id", ""),
+            "spectacle_combo_step": int(item.get("spectacle_combo_step", 0)),
+            "spectacle_combo_size": int(item.get("spectacle_combo_size", 0)),
             "phrase_id": f"phrase_{beat_index // 32:03d}", "phrase_index": beat_index // 32, "count8_index": beat_index // 8,
             "familiarity_state": "taught" if item["cell_function"] == "TEACH" else "mirrored" if item["cell_function"] == "MIRROR" else "combined" if item["cell_function"] in {"COMBINE", "SIGNATURE"} else "practiced",
             "lead_beats": lead_beats, "judgment_error": 0.0, "judgment_plane": "receptor_hit_z",
@@ -2348,6 +2536,7 @@ def build_choreography(
             "reference_hand_hold_accent": phrase_index in hand_hold_phrase_indices,
             "reference_jump_repeat_challenge": phrase_index in reference_jump_repeat_phrase_indices,
             "reference_grounded_double_step": phrase_index in reference_grounded_double_step_phrase_indices,
+            "reference_spectacle_combo": phrase_index in reference_spectacle_combo_phrase_indices,
             "reference_finale_callback": phrase_index == reference_finale_callback_phrase_index,
             "motif_memory": {
                 key: value
@@ -2429,6 +2618,12 @@ def build_choreography(
                 optional_renderer_metadata["rail_trajectory"] = rail_trajectory
             if event["movement"] == "DOUBLE_STEP_TOGETHER":
                 optional_renderer_metadata["paired_step_stance"] = str(event.get("double_step_stance", "narrow"))
+            if event.get("spectacle_combo_id"):
+                optional_renderer_metadata.update({
+                    "spectacle_combo_id": str(event["spectacle_combo_id"]),
+                    "spectacle_combo_step": int(event.get("spectacle_combo_step", 0)),
+                    "spectacle_combo_size": int(event.get("spectacle_combo_size", 0)),
+                })
             # Terminal gloves are sorted/spawned with the start of the long
             # volume but keep their real later hit_time. Godot therefore shows
             # both caps from the first frame without inflating global lookahead.
@@ -2442,7 +2637,7 @@ def build_choreography(
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
         "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.8",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_grounded_double_steps": {"applied": reference_grounded_double_steps, "visual_language": "short_paired_footprints", "stances": ["wide", "narrow"]}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "partial_final_phrase": partial_final_phrase, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_grounded_double_steps": {"applied": reference_grounded_double_steps, "visual_language": "short_paired_footprints", "stances": ["wide", "narrow"]}, "reference_spectacle_combos": {"enabled": bool(spectacle_combo_config.get("enabled", True)), "applied": reference_spectacle_combos, "library": [str(value["id"]) for value in SPECTACLE_COMBO_PATTERNS]}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "partial_final_phrase": partial_final_phrase, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
         "phrase_plan": phrase_plan, "director_plan": director_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],

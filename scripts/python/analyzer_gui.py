@@ -29,6 +29,7 @@ from lane_assignment import (
     DEFAULT_HIGH_WALL_TARGET_RATIO,
     DEFAULT_REFERENCE_HAND_HOLDS_ENABLED,
     DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES,
+    DEFAULT_SPECTACLE_COMBOS_ENABLED,
     DEFAULT_RAMP_DURATION,
     DEFAULT_RAMP_STRENGTH,
     DEFAULT_WALL_ANTICIPATION,
@@ -169,6 +170,7 @@ class AnalyzerApp(tk.Tk):
         self.hold_min_gap_var = tk.DoubleVar(value=DEFAULT_HOLD_MIN_GAP)
         self.reference_hand_holds_enabled_var = tk.BooleanVar(value=DEFAULT_REFERENCE_HAND_HOLDS_ENABLED)
         self.reference_hand_hold_rate_phrases_var = tk.IntVar(value=DEFAULT_REFERENCE_HAND_HOLD_RATE_PHRASES)
+        self.spectacle_combos_enabled_var = tk.BooleanVar(value=DEFAULT_SPECTACLE_COMBOS_ENABLED)
         self.phrase_length_beats_var = tk.IntVar(value=32)
         self.subphrase_length_beats_var = tk.IntVar(value=8)
         self.manual_downbeat_offset_seconds_var = tk.DoubleVar(value=0.0)
@@ -285,6 +287,7 @@ class AnalyzerApp(tk.Tk):
         self._spin(parent, 3, "Simultaneous feet", self.max_simultaneous_feet_var, 1, 2, 1, "max")
         ttk.Label(parent, text="Hard safety cap: never three step targets at one hit.", style="SectionBody.TLabel").grid(row=4, column=1, sticky="w", pady=(0, 4))
         self._spin(parent, 5, "Wall density brake", self.wall_density_multiplier_var, 1.0, 5.0, 0.05, "x")
+        ttk.Checkbutton(parent, text="Spectacle combo choreography", variable=self.spectacle_combos_enabled_var).grid(row=6, column=1, sticky="w", pady=4)
         parent.columnconfigure(1, weight=1)
 
     def _build_wall_timing(self, parent) -> None:
@@ -476,6 +479,7 @@ class AnalyzerApp(tk.Tk):
             "hold_max_duration": float(self.hold_max_duration_var.get()), "hold_min_gap": float(self.hold_min_gap_var.get()),
             "reference_hand_holds_enabled": bool(self.reference_hand_holds_enabled_var.get()),
             "reference_hand_hold_rate_phrases": int(self.reference_hand_hold_rate_phrases_var.get()),
+            "spectacle_combos_enabled": bool(self.spectacle_combos_enabled_var.get()),
             "phrase_length_beats": int(self.phrase_length_beats_var.get()), "subphrase_length_beats": int(self.subphrase_length_beats_var.get()),
             "manual_downbeat_offset_seconds": float(self.manual_downbeat_offset_seconds_var.get()),
             "allow_crooked_phrase": bool(self.allow_crooked_phrase_var.get()), "lane_layout": self.lane_layout_var.get(),
@@ -509,6 +513,7 @@ class AnalyzerApp(tk.Tk):
                     hold_max_duration=options["hold_max_duration"], hold_min_gap=options["hold_min_gap"],
                     reference_hand_holds_enabled=options["reference_hand_holds_enabled"],
                     reference_hand_hold_rate_phrases=options["reference_hand_hold_rate_phrases"],
+                    spectacle_combos_enabled=options["spectacle_combos_enabled"],
                     phrase_length_beats=options["phrase_length_beats"], subphrase_length_beats=options["subphrase_length_beats"],
                     manual_downbeat_offset_seconds=options["manual_downbeat_offset_seconds"], allow_crooked_phrase=options["allow_crooked_phrase"],
                     bass_audio_path=stems["bass"],

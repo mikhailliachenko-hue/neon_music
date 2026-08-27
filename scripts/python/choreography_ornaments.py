@@ -12,6 +12,7 @@ from typing import Any
 
 PROTECTED_MOVEMENTS = {
     "DOUBLE_FOOT_PULSE",
+    "DOUBLE_STEP_TOGETHER",
     "DOUBLE_PUNCH",
     "DOUBLE_HAND_HOLD",
     "HAND_HOLD_LEFT",
