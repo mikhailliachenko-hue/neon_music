@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_ring_corridor_preview.gd" id="1_preview"]
+[ext_resource type="Script" path="res://scripts/godot/tunnel/standalone_level_preview.gd" id="1_preview"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/neon_ring_corridor.tscn" id="2_level"]
 
 [sub_resource type="Environment" id="Environment_preview"]
@@ -22,6 +22,9 @@ ssr_enabled = true
 
 [node name="NeonRingCorridorPreview" type="Node3D"]
 script = ExtResource("1_preview")
+generator_path = NodePath("NeonRingCorridor")
+preview_label = "NEON_RING_CORRIDOR"
+preview_seed = 290029
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_preview")

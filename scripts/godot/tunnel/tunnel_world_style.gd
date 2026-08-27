@@ -30,6 +30,8 @@ class_name TunnelWorldStyle
 @export_group("Authored GLB Material")
 @export var architecture_surface_color := Color(0.072, 0.082, 0.105, 1.0)
 @export_range(0.0, 1.0, 0.01) var authored_color_mix := 0.46
+@export_range(0.0, 1.0, 0.01) var authored_hue_mix := 0.22
+@export_range(0.0, 1.0, 0.01) var authored_emission_color_mix := 0.0
 @export_range(0.0, 1.0, 0.01) var authored_accent_influence := 0.44
 @export_range(0.0, 1.0, 0.01) var floor_authored_color_mix := 0.08
 @export_range(0.0, 2.0, 0.01) var architecture_emission_scale := 1.0
@@ -45,6 +47,7 @@ class_name TunnelWorldStyle
 
 @export_group("Action Wave")
 @export var action_wave_enabled := false
+@export var preserve_authored_frame_palette := false
 @export_range(0.0, 1.5, 0.01) var action_wave_body_glow := 0.18
 @export var action_wave_gradient_start := Color(0.0, 0.0, 0.0, 0.0)
 @export var action_wave_gradient_mid := Color(0.0, 0.0, 0.0, 0.0)

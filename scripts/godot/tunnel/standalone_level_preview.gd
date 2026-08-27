@@ -2,7 +2,11 @@ extends Node3D
 
 const BEAT_INTERVAL := 0.5
 
-@onready var generator: NeonTunnelGenerator = $NeonRingCorridor
+@export var generator_path: NodePath
+@export var preview_label := "TUNNEL_LEVEL"
+@export var preview_seed := 0
+
+@onready var generator: NeonTunnelGenerator = get_node(generator_path)
 @onready var camera: Camera3D = $Camera3D
 @onready var world_environment: WorldEnvironment = $WorldEnvironment
 
@@ -23,15 +27,13 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	generator.configure_runtime(camera, world_environment.environment)
-	print("NEON_RING_CORRIDOR_PREVIEW seed=290029 speed=14.0")
+	print("%s_PREVIEW seed=%d speed=14.0" % [preview_label, preview_seed])
 
 
 func _process(delta: float) -> void:
 	_preview_time += maxf(delta, 0.0)
 	var beat := floori(_preview_time / BEAT_INTERVAL)
 	var beat_changed := beat != _last_beat
-	var count8 := floori(float(beat) / 8.0)
-	var count32 := floori(float(beat) / 32.0)
 	var state := {
 		"song_time": _preview_time,
 		"beat_index": beat,
@@ -39,14 +41,14 @@ func _process(delta: float) -> void:
 		"beat_changed": beat_changed,
 		"downbeat": posmod(beat, 4) == 0,
 		"downbeat_changed": beat_changed and posmod(beat, 4) == 0,
-		"count8_index": count8,
+		"count8_index": floori(float(beat) / 8.0),
 		"count8_changed": beat_changed and posmod(beat, 8) == 0,
-		"count32_index": count32,
+		"count32_index": floori(float(beat) / 32.0),
 		"count32_changed": beat_changed and posmod(beat, 32) == 0,
 		"section_role": "groove",
 		"energy_role": "stable_groove",
 	}
-	if beat_changed and posmod(beat, 8) in [0, 4]:
+	if beat_changed and beat > 0 and posmod(beat, 8) in [0, 4]:
 		generator.trigger_action_camera_impact("STEP", 0.92, 0.0)
 	generator.sync_to_song_time(_preview_time, state)
 	_last_beat = beat
@@ -62,7 +64,8 @@ func _capture_preview() -> void:
 	if output_path.begins_with("res://") or output_path.begins_with("user://"):
 		output_path = ProjectSettings.globalize_path(output_path)
 	var result := image.save_png(output_path)
-	print("NEON_RING_CORRIDOR_CAPTURE path=%s result=%d assets=%s" % [
+	print("%s_CAPTURE path=%s result=%d assets=%s" % [
+		preview_label,
 		output_path,
 		result,
 		str(generator.get_runtime_stats().get("active_assets", PackedStringArray())),

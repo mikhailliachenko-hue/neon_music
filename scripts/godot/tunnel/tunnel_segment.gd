@@ -395,9 +395,10 @@ func apply_visual_state(
 			var material_accent := accent
 			var material_emission := architecture_emission
 			var authored_mix := _active_world_style.authored_color_mix if _active_world_style != null else 0.46
+			var authored_hue_mix := _active_world_style.authored_hue_mix if _active_world_style != null else 0.22
+			var authored_emission_color_mix := _active_world_style.authored_emission_color_mix if _active_world_style != null else 0.0
 			var authored_accent_influence := _active_world_style.authored_accent_influence if _active_world_style != null else 0.44
 			var body_glow := _active_world_style.architecture_body_glow if _active_world_style != null else 0.0
-			body_glow = maxf(body_glow, calm_readability_glow)
 			var material_override_mix := _active_world_style.architecture_material_override_mix if _active_world_style != null else 0.0
 			var material_metallic := _active_world_style.architecture_metallic if _active_world_style != null else 0.35
 			var material_roughness := _active_world_style.architecture_roughness if _active_world_style != null else 0.45
@@ -425,6 +426,7 @@ func apply_visual_state(
 				and slot_name in ["Rings", "Arches"]:
 				material_surface = Color(0.012, 0.016, 0.024, 1.0)
 				material_emission *= 1.5
+				body_glow = maxf(body_glow, calm_readability_glow)
 				# Rhythm-frame worlds deliberately keep their authored per-style mix
 				# and rest glow. A former hard-coded 0.46 glow flattened red gates
 				# into a solid luminous slab and bypassed the palette contract.
@@ -435,6 +437,8 @@ func apply_visual_state(
 				themed.set_shader_parameter("theme_accent", material_accent)
 				themed.set_shader_parameter("theme_emission", material_emission)
 				themed.set_shader_parameter("authored_mix", authored_mix)
+				themed.set_shader_parameter("authored_hue_mix", authored_hue_mix)
+				themed.set_shader_parameter("authored_emission_color_mix", authored_emission_color_mix)
 				themed.set_shader_parameter("authored_accent_influence", authored_accent_influence)
 				themed.set_shader_parameter("theme_body_glow", body_glow)
 				themed.set_shader_parameter("material_override_mix", material_override_mix)
@@ -531,10 +535,11 @@ func apply_frame_reaction(
 				# Resting color is spatially stable. Musical beats must not shift every
 				# frame at once; only an action wave changes this gradient over time.
 				var gradient_phase := 0.5 + 0.5 * sin(depth * 0.105)
-				var base_color := ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
-					_frame_primary, resting_mid, _frame_accent,
-					smoothstep(0.08, 0.92, gradient_phase)
-				)
+				var base_color := _frame_accent if _active_world_style.preserve_authored_frame_palette else \
+					ARCHITECTURE_WAVE_RESPONSE.three_color_gradient(
+						_frame_primary, resting_mid, _frame_accent,
+						smoothstep(0.08, 0.92, gradient_phase)
+					)
 				var wave_amount := 0.0
 				var wave_color := base_color
 				var wave_count := mini(wave_ages.size(), mini(wave_strengths.size(), wave_color_phases.size()))

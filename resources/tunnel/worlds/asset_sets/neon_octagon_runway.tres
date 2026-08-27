@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/blender_modules/neon_octagon_runway_shell.glb" id="2_shell"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/blender_modules/neon_octagon_runway_frame.glb" id="3_frame"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "neon_octagon_runway"
+display_name = "Neon Octagon Runway"
+shell_assets = Array[PackedScene]([ExtResource("2_shell")])
+ring_assets = Array[PackedScene]([ExtResource("3_frame")])
+shell_clearance_verified = true
+shell_inner_half_width = 4.75
+shell_floor_top_y = -2.08
+shell_ceiling_bottom_y = 5.78
+gameplay_clearance_verified = true
+frame_instances_per_segment = 8
+frame_inner_half_width = 4.8
+frame_opening_bottom_y = -2.05
+frame_opening_top_y = 5.45
+frame_target_width = 12.7
+frame_target_height = 7.8
+frame_target_depth = 0.34
+frame_target_center_y = 1.75
+frame_wraps_below_road = false

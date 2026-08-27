@@ -9,6 +9,7 @@ const EXCLUSIVE_NEW_WORLDS := [
 	"pinterest_prism_gold_master",
 	"glass_block_chamber",
 	"neon_ring_corridor",
+	"neon_octagon_runway",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -35,6 +36,7 @@ const WORLD_CASES := [
 	{"level": "QUANTUM MIRROR", "world": "pinterest_prism", "asset_terms": ["Pinterest Prism", "Road"]},
 	{"level": "GLASS BLOCK CHAMBER", "world": "glass_block_chamber", "asset_terms": ["Glass Block Chamber Shell", "Gold Master", "Road"]},
 	{"level": "NEON RING CORRIDOR", "world": "neon_ring_corridor", "asset_terms": ["Neon Ring Corridor"]},
+	{"level": "NEON OCTAGON RUNWAY", "world": "neon_octagon_runway", "asset_terms": ["Neon Octagon Runway"]},
 ]
 
 

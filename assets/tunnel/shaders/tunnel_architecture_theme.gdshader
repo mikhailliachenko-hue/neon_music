@@ -27,6 +27,8 @@ uniform vec4 theme_primary : source_color = vec4(0.0, 0.8, 1.0, 1.0);
 uniform vec4 theme_accent : source_color = vec4(0.7, 0.15, 1.0, 1.0);
 uniform float theme_emission = 0.25;
 uniform float authored_mix : hint_range(0.0, 1.0) = 0.46;
+uniform float authored_hue_mix : hint_range(0.0, 1.0) = 0.22;
+uniform float authored_emission_color_mix : hint_range(0.0, 1.0) = 0.0;
 uniform float authored_accent_influence : hint_range(0.0, 1.0) = 0.44;
 uniform float theme_body_glow : hint_range(0.0, 4.0) = 0.0;
 uniform float theme_rim_strength : hint_range(0.0, 1.0) = 0.0;
@@ -50,14 +52,16 @@ void fragment() {
 	// Keep enough of the authored palette and value structure for a building,
 	// road or machine to remain recognizable. Hue is deliberately desaturated:
 	// the Theme colors the world without flattening every GLB into one neon slab.
-	vec3 authored_neutral = mix(vec3(luminance), authored.rgb, 0.22);
+	vec3 authored_neutral = mix(vec3(luminance), authored.rgb, authored_hue_mix);
 	vec3 body_color = mix(theme_surface.rgb, authored_neutral, authored_mix);
 	body_color = mix(body_color, theme_primary.rgb * 0.36, authored_highlight * 0.10);
 	body_color = mix(body_color, theme_accent.rgb * 0.52, authored_accent * authored_accent_influence);
 	ALBEDO = body_color * mix(0.62, 1.34, detail);
 
 	float glow_mask = authored_accent * 0.72 + authored_highlight * 0.075;
-	vec3 glow_color = mix(theme_primary.rgb, theme_accent.rgb, authored_accent);
+	vec3 themed_glow_color = mix(theme_primary.rgb, theme_accent.rgb, authored_accent);
+	vec3 authored_glow_color = authored.rgb / max(high_channel, 0.001);
+	vec3 glow_color = mix(themed_glow_color, authored_glow_color, authored_emission_color_mix);
 	EMISSION = glow_color * glow_mask * theme_emission;
 	// Very dark authored GLB materials still need a faint silhouette between
 	// action waves. A small floor keeps the frame readable without flattening

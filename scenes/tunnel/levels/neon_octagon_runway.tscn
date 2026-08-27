@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/tunnel/neon_tunnel.tscn" id="1_base"]
+[ext_resource type="Resource" path="res://resources/tunnel/levels/neon_octagon_runway.tres" id="2_config"]
+
+[node name="NeonOctagonRunway" instance=ExtResource("1_base")]
+config = ExtResource("2_config")
+
+[node name="LevelKeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -12, 0)
+light_color = Color(0.30, 0.20, 0.60, 1)
+light_energy = 0.36
+shadow_enabled = false

@@ -136,10 +136,10 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 29 Dance Mode levels. Their production mapping resolves
-  to seven curated world families: Pinterest Prism, Rhythm Frames, Rhythm Circle
+  data-driven library of 30 Dance Mode levels. Their production mapping resolves
+  to eight curated world families: Pinterest Prism, Rhythm Frames, Rhythm Circle
   Frames, Rhythm Square Frames, Rhythm Tall Frames, Rhythm Star Frames and the
-  dedicated Neon Ring Corridor family.
+  dedicated Neon Ring Corridor and Neon Octagon Runway families.
   Pinterest Prism is the primary reference-directed family: a regular octagonal
   wrapper built from ready-made Quaternius rail modules, fitted around rather
   than on top of the gameplay road. The existing Track tuning GUI
@@ -150,7 +150,7 @@ Runtime renderer scripts.
   consistent exposure without one global brightness multiplier.
 - `tunnel/tunnel_world_style.gd`, `tunnel/tunnel_world_asset_set.gd` and
   `resources/tunnel/worlds/` - data-only spatial profiles and explicit modular
-  GLB sets. The six production families use thin fitted frame silhouettes, a
+  GLB sets. The eight production families use thin fitted frame silhouettes, a
   clean modular GLB floor and a dark glossy shell. Procedural guide rails,
   floor-line effects and wallpaper/background planes are disabled in these
   worlds; opaque colour, fog and sparse reflections come from the environment.
@@ -248,6 +248,23 @@ Runtime renderer scripts.
   Forward+ `calm`, `action` and `finale` evidence lives under
   `output/diagnostics/glass_block_chamber/` and is not committed.
 
+#### Neon Octagon Runway
+
+- `NEON OCTAGON RUNWAY` is preset 30 and a Blender-authored interpretation of
+  Pinterest pin `990229036795324372`: thin violet octagons, paired magenta wall
+  bars, white ceiling lights and cyan zigzag runway edges over a dark reflective
+  road. The editable source is `source_assets/blender/neon_octagon_runway.blend`.
+- Runtime uses one continuous shell GLB and one repeated frame GLB through the
+  existing eight-segment pool. The shell and frame openings keep the same
+  verified `4.4 m` gameplay clearance; no decorative transform reaches notes,
+  receptors or the canonical road.
+- Authored Blender hues and white light values are preserved by opt-in material
+  controls. Other worlds retain their existing neutralized theme behavior, while
+  gameplay actions may still send a restrained distant wave through the portals.
+- L1 geometry coverage lives in `neon_octagon_runway_asset_smoke_test.gd`;
+  Forward+ calm/action evidence lives under
+  `output/diagnostics/neon_octagon_runway/` and is not committed.
+
 #### Ideal Dance Mode level formula
 
 This contract is the acceptance gate for every production world, independent of
@@ -294,7 +311,7 @@ which GLB wrapper or theme it uses:
   side rays otherwise enter the near receptor plane.
 
 `resources/tunnel/presets/` is the legacy standalone-preview library. It is not
-part of the canonical 29-level production selector and must not be mixed into the
+part of the canonical 30-level production selector and must not be mixed into the
 production visual audit unless that legacy path is explicitly being migrated.
 - `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
   GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and
