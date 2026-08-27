@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_ring_corridor_preview.gd" id="1_preview"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/neon_ring_corridor.tscn" id="2_level"]
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.004, 0.001, 0.018, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.09, 0.015, 0.15, 1)
+ambient_light_energy = 0.42
+tonemap_mode = 3
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.78
+glow_strength = 0.88
+glow_bloom = 0.065
+fog_enabled = true
+fog_light_color = Color(0.08, 0.008, 0.14, 1)
+fog_density = 0.0009
+ssr_enabled = true
+
+[node name="NeonRingCorridorPreview" type="Node3D"]
+script = ExtResource("1_preview")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_preview")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 2.3, 7.25)
+current = true
+fov = 63.0
+
+[node name="NeonRingCorridor" parent="." instance=ExtResource("2_level")]

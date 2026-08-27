@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "NeonRingCorridor"
+emission_color = Color(0.02, 0.82, 1.0, 1)
+accent_color = Color(1.0, 0.08, 0.78, 1)
+background_color = Color(0.006, 0.001, 0.022, 1)
+fog_color = Color(0.08, 0.008, 0.14, 1)
+fog_density = 0.0011
+glow_intensity = 0.92
+emission_energy = 8.4
+floor_color = Color(0.022, 0.003, 0.055, 1)
+floor_emission = 1.1
+ambient_color = Color(0.10, 0.012, 0.16, 1)
+ambient_energy = 0.34
+ring_probability_scale = 1.4
+decoration_probability_scale = 0.0
+layout_weights = {"Ring": 1.0}

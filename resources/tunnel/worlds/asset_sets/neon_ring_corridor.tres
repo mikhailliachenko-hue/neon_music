@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TunnelWorldAssetSet" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_asset_set.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/blender_modules/neon_ring_corridor_shell.glb" id="2_shell"]
+[ext_resource type="PackedScene" path="res://assets/tunnel/blender_modules/neon_ring_corridor_ring.glb" id="3_ring"]
+
+[resource]
+script = ExtResource("1_script")
+asset_set_id = "neon_ring_corridor"
+display_name = "Neon Ring Corridor"
+shell_assets = Array[PackedScene]([ExtResource("2_shell")])
+ring_assets = Array[PackedScene]([ExtResource("3_ring")])
+shell_clearance_verified = true
+shell_inner_half_width = 4.8
+shell_floor_top_y = -2.08
+shell_ceiling_bottom_y = 5.6
+gameplay_clearance_verified = true
+frame_instances_per_segment = 8
+frame_inner_half_width = 4.8
+frame_opening_bottom_y = -2.05
+frame_opening_top_y = 5.6
+frame_target_width = 15.0
+frame_target_height = 13.4
+frame_target_depth = 0.34
+frame_target_center_y = 2.0
+frame_wraps_below_road = true
+frame_target_outer_bottom_y = -4.7

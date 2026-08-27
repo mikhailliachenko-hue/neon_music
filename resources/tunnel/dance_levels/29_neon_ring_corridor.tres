@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/neon_ring_corridor.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/neon_ring_corridor.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "NEON RING CORRIDOR"
+description = "Плотный cyan-magenta коридор из световых колец с тёмным тоннелем и отражающей дорожкой."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.02, 0.82, 1.0, 1, 1.0, 0.08, 0.78, 1, 0.008, 0.002, 0.028, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.06, "amount_scale": 0.06}
+lighting_settings = {"glow_intensity": 0.78, "glow_strength": 0.88, "bloom": 0.065, "frame_rest_glow": 0.34, "frame_rest_emission_scale": 1.22, "ambient_energy": 0.42, "scene_brightness": 1.08, "road_reflections_enabled": true}
+fog_settings = {"density": 0.0009}
+camera_settings = {"step_impact": 0.46, "step_duration": 0.23, "fov_pulse": 0.38}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.24, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "wave_speed": 67.0, "wave_width": 12.0, "wave_lifetime": 2.05, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.48}
+preset_name = "NEON RING CORRIDOR"
+style_id = "NeonRingCorridor"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 290029
+ring_density = 1.5
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.72
+glow_strength = 0.94
+camera_motion = 0.18
+speed_multiplier = 1.0
+atmosphere_density = 0.08
+floor_pattern = "None"
+layout_weight_scale = {"Ring": 4.0}
+level_id = "29_neon_ring_corridor"
+segment_sequence = PackedStringArray("Ring")

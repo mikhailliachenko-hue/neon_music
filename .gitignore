@@ -31,3 +31,7 @@ third_party/ffmpeg/*
 addons/ffmpeg/
 assets/audio/*
 !assets/audio/.gitkeep
+assets/tunnel/blender/
+assets/tunnel/blender_runtime/
+source_assets/blender/*_draft.glb
+source_assets/blender/*.blend1

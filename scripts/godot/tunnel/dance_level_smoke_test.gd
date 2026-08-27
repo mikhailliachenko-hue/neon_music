@@ -9,13 +9,14 @@ const EXPECTED_NAMES := [
 	"CYAN APEX", "VIOLET CIRCUIT", "DEEP ORBIT", "GOLDEN STARLINE",
 	"ICE PORTAL", "REDLINE SURGE", "TOXIC HALO", "SUNSET APEX",
 	"WHITE WAVELINE", "SPECTRUM HALO", "SOLAR SKYRAIL", "QUANTUM MIRROR",
-	"GLASS BLOCK CHAMBER",
+	"GLASS BLOCK CHAMBER", "NEON RING CORRIDOR",
 ]
 const MINIMAL_FRAME_LEVEL_IDS := {
 	"16_cyan_apex": true, "17_violet_circuit": true, "18_deep_orbit": true,
 	"19_golden_starline": true, "20_ice_portal": true, "21_redline_surge": true,
 	"22_toxic_halo": true, "23_sunset_apex": true, "24_white_waveline": true,
 	"25_spectrum_halo": true,
+	"29_neon_ring_corridor": true,
 }
 
 
