@@ -36,6 +36,8 @@ const DOUBLE_FOOT_RAIL_MIN_LENGTH := 10.0
 const DOUBLE_FOOT_RAIL_TARGET_Z := 0.30
 const DOUBLE_FOOT_RAIL_CURVE_SEGMENTS := 10
 const HAND_HOLD_BODY_SCALE := 1.08
+const CAMERA_PASS_CLEARANCE := 2.2
+const DEFAULT_CAMERA_Z := 6.5
 
 var hit_time := 0.0
 var lane := 0
@@ -84,7 +86,7 @@ func _ready() -> void:
 	_configure_visuals()
 
 
-func sync_to_song_time(song_time: float, speed: float) -> bool:
+func sync_to_song_time(song_time: float, speed: float, camera_z: float = DEFAULT_CAMERA_Z) -> bool:
 	position.z = -(hit_time - song_time) * speed
 	if _is_hand_hold_cue():
 		_sync_hand_hold_geometry(speed)
@@ -119,6 +121,11 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 		return position.z >= maxf(12.0, _double_foot_rail_length - 2.0)
 	if _is_hand_hold_cue():
 		return position.z >= _hand_hold_length + 2.0
+	# Duck gates are physical overhead obstacles, not hit markers. Keep the full
+	# container moving through the judgment plane and retire it only after its
+	# rear edge has cleared the camera, matching the pooled floor-laser pass-by.
+	if _is_duck_pass_through_cue():
+		return position.z > camera_z + CAMERA_PASS_CLEARANCE
 	if position.z >= 0.0:
 		position.z = 0.0
 		return true
@@ -126,9 +133,10 @@ func sync_to_song_time(song_time: float, speed: float) -> bool:
 
 
 func continues_past_hit() -> bool:
-	# Long rails pass the judgment plane until their terminal target reaches the
-	# player. This preserves the authored hit -> travel -> hit rhythm.
-	return _is_double_foot_cue() or _is_hand_hold_cue()
+	# Long rails and architectural duck gates pass the judgment plane. Rails keep
+	# their authored hit -> travel -> hit rhythm; gates remain solid until the
+	# player has visibly travelled underneath them.
+	return _is_double_foot_cue() or _is_hand_hold_cue() or _is_duck_pass_through_cue()
 
 
 func supports_hit_shatter() -> bool:
@@ -268,6 +276,10 @@ func _is_center_wide_cue() -> bool:
 		or cue_archetype == "LOW_CLEARANCE_GATE"
 		or cue_archetype == "OVERHEAD_BAR"
 	)
+
+
+func _is_duck_pass_through_cue() -> bool:
+	return cue_archetype == "LOW_CLEARANCE_GATE" or cue_archetype == "OVERHEAD_BAR"
 
 
 func _is_double_foot_cue() -> bool:

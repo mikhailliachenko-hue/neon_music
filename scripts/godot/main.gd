@@ -458,7 +458,7 @@ func _process(delta: float) -> void:
 
 	for index in range(active_notes.size() - 1, -1, -1):
 		var note := active_notes[index]
-		var ready_to_retire := note.sync_to_song_time(song_time, scroll_speed)
+		var ready_to_retire := note.sync_to_song_time(song_time, scroll_speed, camera.global_position.z)
 		var hit_triggered := bool(note.get_meta("hit_triggered", false))
 		if not hit_triggered and song_time >= _hit_trigger_time(note.hit_time):
 			_trigger_hit_event(
@@ -3062,7 +3062,7 @@ func _trigger_hit_event(
 			var lane_bias := (float(clamped_lane) - 1.5) / 1.5
 			var action_scale := 1.0
 			match camera_action:
-				"JUMP": action_scale = 0.82
+				"JUMP": action_scale = 0.96
 				"DUCK": action_scale = 0.62
 				"HAND", "PUNCH": action_scale = 0.34
 				"HOLD": action_scale = 0.46

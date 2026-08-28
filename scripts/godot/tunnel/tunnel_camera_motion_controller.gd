@@ -71,7 +71,7 @@ func trigger_action_impact(action: String, strength: float, lane_bias: float) ->
 	_step_impact_strength = maxf(_step_impact_strength * 0.45, clampf(strength, 0.45, 1.6))
 	_action_kind = next_action
 	match _action_kind:
-		"JUMP": _action_duration = clampf(_step_duration * 2.15, 0.42, 0.64)
+		"JUMP": _action_duration = clampf(_step_duration * 2.65, 0.52, 0.72)
 		"DUCK": _action_duration = clampf(_step_duration * 1.18, 0.18, 0.40)
 		"HAND", "PUNCH": _action_duration = clampf(_step_duration * 0.82, 0.12, 0.28)
 		"HOLD": _action_duration = clampf(_step_duration * 1.05, 0.16, 0.36)
@@ -106,19 +106,19 @@ func apply(song_time: float, _pulse: float, _drop_pulse: float) -> void:
 				# motion is authored around the action callback, never around the beat,
 				# so it sells the player's jump without turning the tunnel into shake.
 				var jump_arc := sin(step_t * PI) * _step_impact_strength * _step_scale
-				var landing_t := clampf((step_t - 0.62) / 0.38, 0.0, 1.0)
+				var landing_t := clampf((step_t - 0.64) / 0.36, 0.0, 1.0)
 				var landing := sin(landing_t * PI) * _step_impact_strength * _step_scale
 				step_position = Vector3(
-					_step_lane_bias * jump_arc * 0.010,
-					jump_arc * 0.180 - landing * 0.028,
-					-jump_arc * 0.034 + landing * 0.010
+					_step_lane_bias * jump_arc * 0.012,
+					jump_arc * 0.420 - landing * 0.055,
+					-jump_arc * 0.070 + landing * 0.016
 				)
 				step_rotation = Vector3(
-					-jump_arc * 0.92 + landing * 0.30,
+					-jump_arc * 1.34 + landing * 0.42,
 					0.0,
-					_step_lane_bias * jump_arc * 0.10
+					_step_lane_bias * jump_arc * 0.12
 				)
-				action_fov = jump_arc * 0.72
+				action_fov = jump_arc * 0.92
 			"DUCK":
 				step_position = Vector3(_step_lane_bias * absf(wave) * 0.006, -absf(wave) * 0.024, -absf(wave) * 0.014)
 				step_rotation = Vector3(wave * 0.24, 0.0, _step_lane_bias * absf(wave) * 0.06)

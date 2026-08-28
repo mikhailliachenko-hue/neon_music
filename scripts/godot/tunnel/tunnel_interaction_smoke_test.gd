@@ -106,8 +106,10 @@ func _run() -> void:
 	quiet_motion.apply(3.24, 0.0, 0.0)
 	var jump_lift := quiet_camera.position.y - 1.0
 	var jump_pitch := absf(quiet_camera.rotation_degrees.x + 4.0)
-	if jump_lift < 0.075 or jump_pitch < 0.35:
+	if jump_lift < 0.18 or jump_pitch < 0.48:
 		failures.append("jump camera arc is too weak: lift=%.3f pitch=%.3f" % [jump_lift, jump_pitch])
+	if jump_lift > 0.38 or jump_pitch > 1.35:
+		failures.append("jump camera arc is too aggressive: lift=%.3f pitch=%.3f" % [jump_lift, jump_pitch])
 	quiet_motion.apply(3.80, 0.0, 0.0)
 	if not quiet_camera.position.is_equal_approx(Vector3(0.0, 1.0, 3.0)) or not is_equal_approx(quiet_camera.fov, 67.0):
 		failures.append("jump camera arc did not settle back to baseline")

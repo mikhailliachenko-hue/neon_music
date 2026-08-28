@@ -24,6 +24,7 @@ func _run() -> void:
 	_test_step_readability_frame(stage, failures)
 	_test_jump_container(stage, failures)
 	_test_duck_container(stage, failures)
+	_test_duck_pass_through_lifecycle(stage, failures)
 	await process_frame
 	await process_frame
 	if failures.is_empty():
@@ -335,3 +336,20 @@ func _test_duck_container(stage: Node3D, failures: Array[String]) -> void:
 	var bottom := gate.position.y + beam.position.y - size.y * 0.5
 	if bottom < 0.85:
 		failures.append("duck container enters the standing face safety envelope")
+
+
+func _test_duck_pass_through_lifecycle(stage: Node3D, failures: Array[String]) -> void:
+	var note := NOTE_SCENE.instantiate() as RhythmNote
+	if note == null:
+		failures.append("duck pass-through fixture did not instantiate as RhythmNote")
+		return
+	note.setup(1, 2.0, -20.0, "LOW_CLEARANCE_GATE")
+	stage.add_child(note)
+	if not note.continues_past_hit():
+		failures.append("duck gate is still removed at the judgment plane")
+	if note.sync_to_song_time(2.0, 20.0, 6.5):
+		failures.append("duck gate retired at contact instead of passing the player")
+	if note.sync_to_song_time(2.42, 20.0, 6.5):
+		failures.append("duck gate retired before clearing the camera")
+	if not note.sync_to_song_time(2.45, 20.0, 6.5):
+		failures.append("duck gate remained active after fully passing the camera")
