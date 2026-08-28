@@ -727,7 +727,7 @@ def test_spectacle_combo_library_exports_readable_two_to_four_accent_scenes():
 
 def test_spectacle_combo_library_contains_all_approved_patterns():
     combo_ids = {str(value["id"]) for value in SPECTACLE_COMBO_PATTERNS}
-    assert len(combo_ids) == 15
+    assert len(combo_ids) == 21
     assert {
         "quick_feet_run",
         "center_wide_center",
@@ -739,7 +739,14 @@ def test_spectacle_combo_library_contains_all_approved_patterns():
         "zigzag_sprint",
         "dodge_and_answer",
         "finale_cascade",
+        "left_double_right",
+        "right_double_left",
+        "knee_drive_double",
+        "knee_drive_run",
+        "boxing_four",
+        "boxing_double_echo",
     } <= combo_ids
+    assert all(sum(int(duration) for _, duration in pattern["steps"]) == 8 for pattern in SPECTACLE_COMBO_PATTERNS)
     assert len({str(value["id"]) for value in WALL_SAFE_COMBO_PATTERNS}) == 6
     assert combo_target_count(24, "Calm") < combo_target_count(24, "Dynamic") < combo_target_count(24, "Wild")
 

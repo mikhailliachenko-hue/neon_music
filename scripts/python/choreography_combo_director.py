@@ -23,7 +23,7 @@ def normalize_combo_intensity(value: str) -> str:
     )
 
 
-# Five previously approved patterns plus ten new patterns. ``steps`` always
+# Twenty-one approved patterns. ``steps`` always
 # cover one complete 8-count; a pattern with three entries is three sequential
 # accents, never three simultaneous feet.
 SPECTACLE_COMBO_PATTERNS: tuple[dict[str, Any], ...] = (
@@ -139,6 +139,51 @@ SPECTACLE_COMBO_PATTERNS: tuple[dict[str, Any], ...] = (
         "stances": ("", "", "wide", ""),
         "preferred_roles": ("drop", "peak", "finale"),
         "energy": 0.98,
+    },
+    {
+        "id": "left_double_right",
+        "family": "feet",
+        "steps": (("STEP_TOUCH_LEFT", 2), ("DOUBLE_STEP_TOGETHER", 2), ("STEP_TOUCH_RIGHT", 4)),
+        "stances": ("", "wide", ""),
+        "preferred_roles": ("verse", "chorus", "build"),
+        "energy": 0.64,
+    },
+    {
+        "id": "right_double_left",
+        "family": "feet",
+        "steps": (("STEP_TOUCH_RIGHT", 2), ("DOUBLE_STEP_TOGETHER", 2), ("STEP_TOUCH_LEFT", 4)),
+        "stances": ("", "wide", ""),
+        "preferred_roles": ("verse", "chorus", "build"),
+        "energy": 0.64,
+    },
+    {
+        "id": "knee_drive_double",
+        "family": "feet",
+        "steps": (("KNEE_PULL_LEFT", 2), ("KNEE_PULL_RIGHT", 2), ("DOUBLE_STEP_TOGETHER", 4)),
+        "stances": ("", "", "wide"),
+        "preferred_roles": ("chorus", "build", "drop"),
+        "energy": 0.74,
+    },
+    {
+        "id": "knee_drive_run",
+        "family": "feet",
+        "steps": (("KNEE_PULL_LEFT", 2), ("KNEE_PULL_RIGHT", 2), ("RUN_BURST", 4)),
+        "preferred_roles": ("build", "drop", "peak"),
+        "energy": 0.90,
+    },
+    {
+        "id": "boxing_four",
+        "family": "hands",
+        "steps": (("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2)),
+        "preferred_roles": ("verse", "chorus", "build"),
+        "energy": 0.68,
+    },
+    {
+        "id": "boxing_double_echo",
+        "family": "hands",
+        "steps": (("DOUBLE_PUNCH", 2), ("PUNCH_LEFT", 2), ("PUNCH_RIGHT", 2), ("DOUBLE_PUNCH", 2)),
+        "preferred_roles": ("chorus", "drop", "finale"),
+        "energy": 0.84,
     },
 )
 
