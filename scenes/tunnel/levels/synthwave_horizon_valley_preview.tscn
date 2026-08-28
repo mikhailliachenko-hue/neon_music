@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/standalone_level_preview.gd" id="1_preview"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/synthwave_horizon_valley.tscn" id="2_level"]
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.002, 0.001, 0.014, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.08, 0.012, 0.12, 1)
+ambient_light_energy = 0.42
+tonemap_mode = 3
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.80
+glow_strength = 0.90
+glow_bloom = 0.070
+fog_enabled = true
+fog_light_color = Color(0.18, 0.006, 0.20, 1)
+fog_density = 0.00035
+ssr_enabled = true
+
+[node name="SynthwaveHorizonValleyPreview" type="Node3D"]
+script = ExtResource("1_preview")
+generator_path = NodePath("SynthwaveHorizonValley")
+preview_label = "SYNTHWAVE_HORIZON_VALLEY"
+preview_seed = 330033
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_preview")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 1.95, 7.25)
+current = true
+fov = 65.0
+
+[node name="SynthwaveHorizonValley" parent="." instance=ExtResource("2_level")]

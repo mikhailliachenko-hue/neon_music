@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/split_glow_arcade.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/split_glow_arcade.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "SPLIT GLOW ARCADE"
+description = "Округлый зеркальный коридор с холодным cyan-светом слева и горячим pink-orange светом справа."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.03, 0.78, 1.0, 1, 1.0, 0.04, 0.48, 1, 0.006, 0.002, 0.018, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.035, "amount_scale": 0.035}
+lighting_settings = {"glow_intensity": 0.80, "glow_strength": 0.90, "bloom": 0.072, "frame_rest_glow": 0.34, "frame_rest_emission_scale": 1.24, "ambient_energy": 0.40, "scene_brightness": 1.08, "road_reflections_enabled": true}
+fog_settings = {"density": 0.0009}
+camera_settings = {"step_impact": 0.44, "step_duration": 0.23, "fov_pulse": 0.36}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.24, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "wave_speed": 67.0, "wave_width": 12.0, "wave_lifetime": 2.0, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.40}
+preset_name = "SPLIT GLOW ARCADE"
+style_id = "SplitGlowArcade"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 310031
+ring_density = 1.5
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.64
+glow_strength = 0.96
+camera_motion = 0.14
+speed_multiplier = 1.0
+atmosphere_density = 0.06
+floor_pattern = "None"
+layout_weight_scale = {"Ring": 4.0}
+level_id = "31_split_glow_arcade"
+segment_sequence = PackedStringArray("Ring")

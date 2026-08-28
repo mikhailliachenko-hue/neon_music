@@ -103,6 +103,14 @@ func _run() -> void:
 		hold.queue_free()
 		await process_frame
 
+	for index in range(generator.level_presets().size() - 1, -1, -1):
+		var wave_preset := generator.level_presets()[index]
+		if wave_preset.world_style != null \
+			and wave_preset.world_style.action_wave_enabled \
+			and wave_preset.world_style.asset_set != null \
+			and not wave_preset.world_style.asset_set.ring_assets.is_empty():
+			generator.select_level_by_index(index, 740000 + index)
+			break
 	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
 	generator.sync_to_song_time(song_time + 0.1, {})
 	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:

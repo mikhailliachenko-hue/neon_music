@@ -10,6 +10,9 @@ const EXCLUSIVE_NEW_WORLDS := [
 	"glass_block_chamber",
 	"neon_ring_corridor",
 	"neon_octagon_runway",
+	"split_glow_arcade",
+	"infinite_neon_portal",
+	"synthwave_horizon_valley",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -37,6 +40,9 @@ const WORLD_CASES := [
 	{"level": "GLASS BLOCK CHAMBER", "world": "glass_block_chamber", "asset_terms": ["Glass Block Chamber Shell", "Gold Master", "Road"]},
 	{"level": "NEON RING CORRIDOR", "world": "neon_ring_corridor", "asset_terms": ["Neon Ring Corridor"]},
 	{"level": "NEON OCTAGON RUNWAY", "world": "neon_octagon_runway", "asset_terms": ["Neon Octagon Runway"]},
+	{"level": "SPLIT GLOW ARCADE", "world": "split_glow_arcade", "asset_terms": ["Split Glow Arcade"]},
+	{"level": "INFINITE NEON PORTAL", "world": "infinite_neon_portal", "asset_terms": ["Infinite Neon Portal"]},
+	{"level": "SYNTHWAVE HORIZON VALLEY", "world": "synthwave_horizon_valley", "asset_terms": ["Synthwave Horizon Valley"]},
 ]
 
 

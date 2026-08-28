@@ -136,10 +136,11 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 30 Dance Mode levels. Their production mapping resolves
+  data-driven library of 33 Dance Mode levels. Their production mapping resolves
   to eight curated world families: Pinterest Prism, Rhythm Frames, Rhythm Circle
   Frames, Rhythm Square Frames, Rhythm Tall Frames, Rhythm Star Frames and the
-  dedicated Neon Ring Corridor and Neon Octagon Runway families.
+  dedicated Neon Ring Corridor, Neon Octagon Runway, Split Glow Arcade,
+  Infinite Neon Portal and Synthwave Horizon Valley families.
   Pinterest Prism is the primary reference-directed family: a regular octagonal
   wrapper built from ready-made Quaternius rail modules, fitted around rather
   than on top of the gameplay road. The existing Track tuning GUI
@@ -265,6 +266,21 @@ Runtime renderer scripts.
   Forward+ calm/action evidence lives under
   `output/diagnostics/neon_octagon_runway/` and is not committed.
 
+#### Pinterest Tunnel Pack
+
+- Presets 31-33 are Blender-authored interpretations of the three Pinterest tabs
+  captured on 2026-08-29: `SPLIT GLOW ARCADE`, `INFINITE NEON PORTAL`, and
+  `SYNTHWAVE HORIZON VALLEY`.
+- Editable sources live under `source_assets/blender/`; runtime GLBs live under
+  `assets/tunnel/blender_modules/`. The synthwave star/sun background is generated
+  by the same Blender build script and is not copied from the reference image.
+- The two enclosed corridors preserve the verified 4.4 m portal opening and use
+  eight repeated frames per 18 m segment. The open valley keeps the road and wire
+  mountains in the decorative shell while the single horizon remains a backdrop.
+- Shared L1 geometry coverage lives in
+  `pinterest_tunnel_pack_asset_smoke_test.gd`; Forward+ evidence lives under
+  `output/diagnostics/pinterest_tunnel_pack/` and is not committed.
+
 #### Ideal Dance Mode level formula
 
 This contract is the acceptance gate for every production world, independent of
@@ -311,7 +327,7 @@ which GLB wrapper or theme it uses:
   side rays otherwise enter the near receptor plane.
 
 `resources/tunnel/presets/` is the legacy standalone-preview library. It is not
-part of the canonical 30-level production selector and must not be mixed into the
+part of the canonical 33-level production selector and must not be mixed into the
 production visual audit unless that legacy path is explicitly being migrated.
 - `tunnel/tunnel_asset_registry.gd`, `tunnel/tunnel_asset_library.gd` - recursive
   GLB/GLTF/TSCN intake, metadata/category filtering, bounded runtime shortlist and

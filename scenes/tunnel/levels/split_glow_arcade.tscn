@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/tunnel/neon_tunnel.tscn" id="1_base"]
+[ext_resource type="Resource" path="res://resources/tunnel/levels/split_glow_arcade.tres" id="2_config"]
+
+[node name="SplitGlowArcade" instance=ExtResource("1_base")]
+config = ExtResource("2_config")
+
+[node name="LevelKeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-50, -16, 0)
+light_color = Color(0.36, 0.14, 0.52, 1)
+light_energy = 0.40
+shadow_enabled = false

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "InfiniteNeonPortal"
+emission_color = Color(0.02, 0.95, 1.0, 1)
+accent_color = Color(0.68, 0.04, 1.0, 1)
+background_color = Color(0.002, 0.004, 0.028, 1)
+fog_color = Color(0.016, 0.025, 0.14, 1)
+fog_density = 0.0008
+glow_intensity = 0.94
+emission_energy = 9.4
+floor_color = Color(0.004, 0.010, 0.055, 1)
+floor_emission = 0.88
+ambient_color = Color(0.018, 0.035, 0.16, 1)
+ambient_energy = 0.40
+ring_probability_scale = 1.5
+decoration_probability_scale = 0.0
+layout_weights = {"Ring": 1.0}

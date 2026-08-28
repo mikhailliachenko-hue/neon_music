@@ -10,6 +10,7 @@ const EXPECTED_NAMES := [
 	"ICE PORTAL", "REDLINE SURGE", "TOXIC HALO", "SUNSET APEX",
 	"WHITE WAVELINE", "SPECTRUM HALO", "SOLAR SKYRAIL", "QUANTUM MIRROR",
 	"GLASS BLOCK CHAMBER", "NEON RING CORRIDOR", "NEON OCTAGON RUNWAY",
+	"SPLIT GLOW ARCADE", "INFINITE NEON PORTAL", "SYNTHWAVE HORIZON VALLEY",
 ]
 const MINIMAL_FRAME_LEVEL_IDS := {
 	"16_cyan_apex": true, "17_violet_circuit": true, "18_deep_orbit": true,
@@ -18,6 +19,8 @@ const MINIMAL_FRAME_LEVEL_IDS := {
 	"25_spectrum_halo": true,
 	"29_neon_ring_corridor": true,
 	"30_neon_octagon_runway": true,
+	"31_split_glow_arcade": true,
+	"32_infinite_neon_portal": true,
 }
 
 

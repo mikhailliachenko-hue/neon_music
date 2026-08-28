@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=40 format=3]
+[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_config.gd" id="1_config"]
 [ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/entrance_segment.tscn" id="2_entrance"]
@@ -39,6 +39,9 @@
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/28_glass_block_chamber.tres" id="37_level_28"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/29_neon_ring_corridor.tres" id="38_level_29"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/30_neon_octagon_runway.tres" id="39_level_30"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/31_split_glow_arcade.tres" id="40_level_31"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/32_infinite_neon_portal.tres" id="41_level_32"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/33_synthwave_horizon_valley.tres" id="42_level_33"]
 
 [resource]
 script = ExtResource("1_config")
@@ -81,4 +84,4 @@ step_camera_duration = 0.24
 initial_theme = "CyberBlue"
 themes = Array[TunnelTheme]([ExtResource("9_theme")])
 initial_preset = "CYBER AWAKENING"
-presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14"), ExtResource("24_level_15"), ExtResource("25_level_16"), ExtResource("26_level_17"), ExtResource("27_level_18"), ExtResource("28_level_19"), ExtResource("29_level_20"), ExtResource("30_level_21"), ExtResource("31_level_22"), ExtResource("32_level_23"), ExtResource("33_level_24"), ExtResource("34_level_25"), ExtResource("35_level_26"), ExtResource("36_level_27"), ExtResource("37_level_28"), ExtResource("38_level_29"), ExtResource("39_level_30")])
+presets = Array[TunnelLevelPreset]([ExtResource("10_level_01"), ExtResource("11_level_02"), ExtResource("12_level_03"), ExtResource("13_level_04"), ExtResource("14_level_05"), ExtResource("15_level_06"), ExtResource("16_level_07"), ExtResource("17_level_08"), ExtResource("18_level_09"), ExtResource("19_level_10"), ExtResource("20_level_11"), ExtResource("21_level_12"), ExtResource("22_level_13"), ExtResource("23_level_14"), ExtResource("24_level_15"), ExtResource("25_level_16"), ExtResource("26_level_17"), ExtResource("27_level_18"), ExtResource("28_level_19"), ExtResource("29_level_20"), ExtResource("30_level_21"), ExtResource("31_level_22"), ExtResource("32_level_23"), ExtResource("33_level_24"), ExtResource("34_level_25"), ExtResource("35_level_26"), ExtResource("36_level_27"), ExtResource("37_level_28"), ExtResource("38_level_29"), ExtResource("39_level_30"), ExtResource("40_level_31"), ExtResource("41_level_32"), ExtResource("42_level_33")])

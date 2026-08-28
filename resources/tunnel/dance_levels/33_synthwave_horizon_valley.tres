@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/synthwave_horizon_valley.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/synthwave_horizon_valley.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/synthwave_horizon_valley.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "SYNTHWAVE HORIZON VALLEY"
+description = "Открытая cyan-сетка между проволочными горами, звёздным небом и огромным magenta-солнцем."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.02, 0.95, 1.0, 1, 1.0, 0.03, 0.66, 1, 0.002, 0.001, 0.014, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Straight")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 0.0}
+particle_settings = {"density": 0.025, "amount_scale": 0.025}
+lighting_settings = {"glow_intensity": 0.80, "glow_strength": 0.90, "bloom": 0.070, "frame_rest_glow": 0.24, "frame_rest_emission_scale": 1.08, "ambient_energy": 0.42, "scene_brightness": 1.06, "road_reflections_enabled": true}
+fog_settings = {"density": 0.00035}
+camera_settings = {"step_impact": 0.38, "step_duration": 0.22, "fov_pulse": 0.28}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.26, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "wave_speed": 62.0, "wave_width": 14.0, "wave_lifetime": 2.2, "wave_near_fade_distance": 30.0, "wave_emission_strength": 0.30}
+preset_name = "SYNTHWAVE HORIZON VALLEY"
+style_id = "SynthwaveHorizonValley"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 330033
+ring_density = 0.0
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.28
+glow_strength = 0.92
+camera_motion = 0.10
+speed_multiplier = 1.0
+atmosphere_density = 0.03
+floor_pattern = "None"
+layout_weight_scale = {"Straight": 4.0}
+level_id = "33_synthwave_horizon_valley"
+segment_sequence = PackedStringArray("Straight")
