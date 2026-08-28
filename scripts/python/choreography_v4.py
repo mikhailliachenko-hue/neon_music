@@ -213,6 +213,8 @@ MOVEMENTS: dict[str, dict[str, Any]] = {
     "DOUBLE_FOOT_PULSE": _movement("DOUBLE_FOOT_PULSE", "base_groove", "DOUBLE_FOOT_PADS", duration=(4,), hits=(0,), impact="medium", difficulty_tier=2, coordination_cost=.34),
     "DOUBLE_STEP_TOGETHER": _movement("DOUBLE_STEP_TOGETHER", "base_groove", "DOUBLE_FOOT_PADS", duration=(4,), hits=(0,), impact="medium", difficulty_tier=2, coordination_cost=.30),
     "SIDE_STEP_CLAP": _movement("SIDE_STEP_CLAP", "composite", "DOUBLE_TARGET", duration=(4,), hits=(0, 2)),
+    "SIDE_STEP_CLAP_LEFT": _movement("SIDE_STEP_CLAP_LEFT", "composite", "DOUBLE_TARGET", side="left", duration=(4,), hits=(0, 2), mirror="SIDE_STEP_CLAP_RIGHT"),
+    "SIDE_STEP_CLAP_RIGHT": _movement("SIDE_STEP_CLAP_RIGHT", "composite", "DOUBLE_TARGET", side="right", duration=(4,), hits=(0, 2), mirror="SIDE_STEP_CLAP_LEFT"),
     "SQUAT_REACH": _movement("SQUAT_REACH", "composite", "OVERHEAD_BAR", duration=(4,), hits=(0, 2), low_impact="SIDE_REACH_LEFT"),
     "KNEE_PULL_LEFT": _movement("KNEE_PULL_LEFT", "rhythm_runner", "FOOT_PAD_LEFT", side="left", mirror="KNEE_PULL_RIGHT"),
     "KNEE_PULL_RIGHT": _movement("KNEE_PULL_RIGHT", "rhythm_runner", "FOOT_PAD_RIGHT", side="right", mirror="KNEE_PULL_LEFT"),
@@ -229,6 +231,8 @@ COMPOSITE_HITS = {
     "STEP_CROSS_PUNCH_LEFT": [(0, "STEP_TOUCH_LEFT"), (2, "PUNCH_RIGHT")],
     "STEP_CROSS_PUNCH_RIGHT": [(0, "STEP_TOUCH_RIGHT"), (2, "PUNCH_LEFT")],
     "SIDE_STEP_CLAP": [(0, "STEP_TOUCH_LEFT"), (2, "CLAP")],
+    "SIDE_STEP_CLAP_LEFT": [(0, "STEP_TOUCH_LEFT"), (2, "CLAP")],
+    "SIDE_STEP_CLAP_RIGHT": [(0, "STEP_TOUCH_RIGHT"), (2, "CLAP")],
     "SQUAT_REACH": [(0, "SHALLOW_SQUAT"), (2, "SIDE_REACH_LEFT")],
     "LEAN_PUNCH_LEFT": [(0, "LEAN_LEFT"), (2, "PUNCH_LEFT")],
     "LEAN_PUNCH_RIGHT": [(0, "LEAN_RIGHT"), (2, "PUNCH_RIGHT")],
@@ -281,11 +285,18 @@ def migrate_beat_grid_v1(source: dict[str, Any]) -> dict[str, Any]:
             residuals.append(min(abs(value - beat) for beat in canonical_times))
     coverage_end = raw[-1] if raw else 0.0
     fallback_start = coverage_end + interval * 1.5
+    neural_meter = source.get("neural_meter", {})
+    trusted_neural_meter = bool(
+        isinstance(neural_meter, dict)
+        and neural_meter.get("used")
+        and legacy_grid
+        and any(isinstance(row, dict) and row.get("downbeat") for row in legacy_grid)
+    )
     canonical = []
     for index, value in enumerate(canonical_times):
         extrapolated = bool(raw and value > fallback_start)
         source_row = legacy_grid[index] if index < len(legacy_grid) and isinstance(legacy_grid[index], dict) else {}
-        source_index = int(source_row.get("index", index))
+        source_index = int(source_row.get("source_index", source_row.get("index", index)))
         canonical.append({
             "index": index, "time": round(value, 6), "source": "controlled_extrapolation" if extrapolated else "observed_fit",
             "source_index": source_index,
@@ -295,19 +306,33 @@ def migrate_beat_grid_v1(source: dict[str, Any]) -> dict[str, Any]:
         })
 
     phase_scores = []
-    for phase in range(4):
-        phase_res = [min(abs(value - beat) for beat in canonical_times[phase::4]) for value in raw] if canonical_times[phase::4] and raw else [interval]
-        fit = max(0.0, 1.0 - statistics.fmean(phase_res) / interval)
-        downbeat = max(0.0, 1.0 - statistics.median(phase_res) / interval)
-        coverage = min(1.0, coverage_end / duration) if duration else 0.0
-        section = 0.5 + (0.03 if phase == 0 else 0.0)
-        score = 0.45 * fit + 0.25 * downbeat + 0.2 * coverage + 0.1 * section
-        phase_scores.append({
-            "bpm": round(bpm, 6), "phase": phase, "score": round(score, 6),
-            "beat_fit_score": round(fit, 6), "downbeat_score": round(downbeat, 6),
-            "section_alignment_score": round(section, 6), "coverage_score": round(coverage, 6),
-            "confidence": round(score * coverage, 6),
-        })
+    coverage = min(1.0, coverage_end / duration) if duration else 0.0
+    if trusted_neural_meter:
+        neural_confidence = float(source.get("anchor", {}).get("confidence", 0.9))
+        for phase in range(4):
+            score = neural_confidence if phase == 0 else max(0.0, neural_confidence - 0.35 - phase * 0.03)
+            phase_scores.append({
+                "bpm": round(bpm, 6), "phase": phase, "score": round(score, 6),
+                "beat_fit_score": round(neural_confidence, 6),
+                "downbeat_score": round(1.0 if phase == 0 else 0.0, 6),
+                "section_alignment_score": round(1.0 if phase == 0 else 0.5, 6),
+                "coverage_score": round(coverage, 6),
+                "confidence": round(neural_confidence * coverage, 6),
+                "source": "madmom_joint_beat_downbeat",
+            })
+    else:
+        for phase in range(4):
+            phase_res = [min(abs(value - beat) for beat in canonical_times[phase::4]) for value in raw] if canonical_times[phase::4] and raw else [interval]
+            fit = max(0.0, 1.0 - statistics.fmean(phase_res) / interval)
+            downbeat = max(0.0, 1.0 - statistics.median(phase_res) / interval)
+            section = 0.5 + (0.03 if phase == 0 else 0.0)
+            score = 0.45 * fit + 0.25 * downbeat + 0.2 * coverage + 0.1 * section
+            phase_scores.append({
+                "bpm": round(bpm, 6), "phase": phase, "score": round(score, 6),
+                "beat_fit_score": round(fit, 6), "downbeat_score": round(downbeat, 6),
+                "section_alignment_score": round(section, 6), "coverage_score": round(coverage, 6),
+                "confidence": round(score * coverage, 6),
+            })
     phase_scores.sort(key=lambda value: value["score"], reverse=True)
     tempo_bpms = list(dict.fromkeys(round(value, 6) for value in (bpm / 2, bpm, bpm * 2, bpm * 0.98, bpm * 1.02)))
     tempo_hypotheses = []
@@ -318,12 +343,12 @@ def migrate_beat_grid_v1(source: dict[str, Any]) -> dict[str, Any]:
     tempo_hypotheses.sort(key=lambda value: value["score"], reverse=True)
     margin = phase_scores[0]["score"] - phase_scores[1]["score"]
     warnings = []
-    if margin < 0.02:
+    if margin < 0.02 and not trusted_neural_meter:
         warnings.append("downbeat_phase_ambiguous")
     if fallback_start < duration:
         warnings.append("unobserved_tail_controlled_extrapolation")
     confidence = min(phase_scores[0]["confidence"], float(source.get("anchor", {}).get("confidence", 1.0)))
-    if confidence < 0.6:
+    if confidence < 0.6 and not trusted_neural_meter:
         warnings.append("low_confidence_manual_review_required")
     sections = analyze_sections(source, canonical)
     beat_features = source.get("beat_features", [])
@@ -340,7 +365,7 @@ def migrate_beat_grid_v1(source: dict[str, Any]) -> dict[str, Any]:
         "audio": source.get("audio", {}), "duration": duration, "bpm": bpm, "beat_interval": interval,
         "raw_detected_beats": [{"time": value, "source": "legacy_detected_beats"} for value in raw],
         "beat_hypotheses": tempo_hypotheses, "downbeat_hypotheses": phase_scores,
-        "downbeat_selection": {"best_score": phase_scores[0]["score"], "second_best_score": phase_scores[1]["score"], "score_margin": round(margin, 6), "confidence": round(confidence, 6), "manual_review_required": bool(margin < 0.02 or confidence < 0.6)},
+        "downbeat_selection": {"best_score": phase_scores[0]["score"], "second_best_score": phase_scores[1]["score"], "score_margin": round(margin, 6), "confidence": round(confidence, 6), "manual_review_required": bool(not trusted_neural_meter and (margin < 0.02 or confidence < 0.6)), "source": "madmom_joint_beat_downbeat" if trusted_neural_meter else "signal_phase_hypothesis"},
         "canonical_beats": canonical,
         "local_tempo_segments": _tempo_segments(raw, bpm, duration),
         "confidence_regions": [{"start_time": 0.0, "end_time": round(min(duration, fallback_start), 6), "confidence": round(confidence, 6), "source": "observed"}],

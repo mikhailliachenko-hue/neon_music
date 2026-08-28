@@ -260,6 +260,29 @@ def _beatmap_events(beatmap: object) -> list[dict[str, object]]:
     return []
 
 
+def _assignment_note_projection(
+    assignment: dict[str, object],
+    two_cell_layout: bool,
+) -> tuple[list[int], str, str, bool, bool]:
+    """Project one analyzer assignment without reopening a reserved wall side."""
+    lane = int(assignment["lane"])
+    energy_class = str(assignment.get("energy_class", "normal"))
+    strength = float(assignment.get("strength", 0.0))
+    music_accent = float(assignment.get("music_accent", 0.0))
+    beat_phase = int(assignment.get("beat_phase", 0))
+    two_cell_accent = two_cell_layout and (
+        energy_class in {"jump", "heavy"}
+        or music_accent >= 0.78
+        or (beat_phase == 0 and strength >= 0.72)
+    )
+    full_width_accent = energy_class == "jump" or two_cell_accent
+    wall_full_width_downgraded = bool(assignment.get("wall_event")) and full_width_accent
+    lanes = [0, 3] if full_width_accent and not wall_full_width_downgraded else [lane]
+    note_type = "jump" if len(lanes) > 1 else "note"
+    projected_energy_class = "heavy" if wall_full_width_downgraded else energy_class
+    return lanes, note_type, projected_energy_class, two_cell_accent, wall_full_width_downgraded
+
+
 def _attach_v4_projection(
     beatmap: dict[str, object],
     timing: dict[str, object],
@@ -1528,26 +1551,30 @@ def analyze_with_metadata(
     for assignment in lane_assignments:
         onset_time = float(assignment["time"])
         lane = int(assignment["lane"])
-        energy_class = str(assignment.get("energy_class", "normal"))
-        strength = float(assignment.get("strength", 0.0))
-        music_accent = float(assignment.get("music_accent", 0.0))
-        beat_phase = int(assignment.get("beat_phase", 0))
-        two_cell_accent = two_cell_layout and (
-            energy_class in {"jump", "heavy"}
-            or music_accent >= 0.78
-            or (beat_phase == 0 and strength >= 0.72)
+        (
+            lanes,
+            note_type,
+            projected_energy_class,
+            two_cell_accent,
+            wall_full_width_downgraded,
+        ) = _assignment_note_projection(
+            assignment,
+            two_cell_layout,
         )
-        lanes = [0, 3] if energy_class == "jump" or two_cell_accent else [lane]
-        note_type = "jump" if len(lanes) > 1 else "note"
+        if wall_full_width_downgraded:
+            lane_summary["diagnostics"]["wall_full_width_downgraded_notes"] += 1
         notes.append(
             {
                 "type": note_type,
                 "time": _round_time(onset_time),
                 "lane": 0 if len(lanes) > 1 else lane,
                 "lanes": lanes,
-                "energy_class": energy_class,
+                "energy_class": projected_energy_class,
                 "lane_mode": str(assignment.get("lane_mode", "inner")),
-                "two_cell_accent": bool(two_cell_accent),
+                "two_cell_accent": bool(two_cell_accent and not wall_full_width_downgraded),
+                "requested_two_cell_accent": bool(two_cell_accent),
+                "wall_full_width_downgraded": wall_full_width_downgraded,
+                "wall_phase": str(assignment.get("wall_phase", "")),
                 "stem_energy": {
                     "bass": float(assignment.get("bass_energy", 0.0)),
                     "drums": float(assignment.get("drum_energy", 0.0)),
@@ -1819,7 +1846,11 @@ def main() -> int:
     events = _beatmap_events(beatmap)
     wall_events = [event for event in events if str(event.get("type", "")) in WALL_EVENT_TYPES]
     hold_events = [event for event in events if str(event.get("type", "")) == "hold"]
-    print(f"Detected {len(notes)} notes, {len(wall_events)} wall events, and {len(hold_events)} hold events.")
+    print(
+        "Runtime projection: "
+        f"{len(notes)} notes, {len(wall_events)} accepted wall events, "
+        f"and {len(hold_events)} hold events."
+    )
     diagnostics = timing.get("lane_assignment", {}).get("diagnostics", {})
     grid_beats = timing.get("canonical_beats", timing.get("beat_grid", []))
     print(f"BPM {timing['bpm']} with {len(grid_beats)} grid beats.")

@@ -15,7 +15,7 @@ from choreography_v4 import (  # noqa: E402
     _repair_director_wall_candidates,
     _apply_reference_jump_repeat_challenges,
 )
-from generate_choreography_v4 import attach_runtime_wall_projection, synchronize_grid_projection  # noqa: E402
+from generate_choreography_v4 import attach_runtime_wall_projection, embed_v4_projection, synchronize_grid_projection  # noqa: E402
 from choreography_ornaments import apply_rhythm_ornaments  # noqa: E402
 from choreography_combo_director import (  # noqa: E402
     SPECTACLE_COMBO_PATTERNS,
@@ -993,6 +993,39 @@ def test_standalone_projection_prefers_current_wall_generation_over_stale_runtim
         source,
     )
     assert projected["wall_runtime_safety"]["input"] == len(current_walls)
+
+
+def test_standalone_v4_uses_same_nested_envelope_as_audio_analyzer():
+    grid, beatmap = products()
+    source = {
+        "schema": "neon_music.beatmap.v3",
+        "audio": "assets/audio/audio.wav",
+        "notes": [{"id": "stale-runtime-note"}],
+        "events": [],
+        "choreography_config": {"difficulty": "Active"},
+    }
+    projected, _ = attach_runtime_wall_projection(
+        copy.deepcopy(grid),
+        copy.deepcopy(beatmap),
+        source,
+    )
+    envelope = embed_v4_projection(source, projected)
+
+    assert envelope["schema"] == "neon_music.beatmap.v3"
+    assert envelope["notes"] == projected["notes"]
+    assert envelope["movement_events"] == projected["movement_events"]
+    assert envelope["choreography_v4"]["schema"] == "neon_music.beatmap.v4"
+    assert envelope["choreography_config"] == source["choreography_config"]
+
+    normalized_again = embed_v4_projection(projected, projected)
+    assert normalized_again["schema"] == "neon_music.beatmap.v3"
+    assert normalized_again["choreography_v4"] == projected
+
+
+def test_directional_step_clap_combo_stays_phrase_balanced():
+    grid, beatmap = products()
+    report = validate_v4(grid, beatmap)
+    assert not any(value.startswith("phrase_side_asymmetry:") for value in report["warnings"])
 
 
 def test_motif_memory_rewards_recognizable_variation_not_exact_copy():

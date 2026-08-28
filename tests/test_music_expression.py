@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts" / "python"))
 
 from choreography_v3 import _metrics, _pattern  # noqa: E402
-from audio_analyzer import _attach_v4_projection  # noqa: E402
+from choreography_v4 import migrate_beat_grid_v1  # noqa: E402
+from audio_analyzer import _assignment_note_projection, _attach_v4_projection  # noqa: E402
 from lane_assignment import assign_lanes, build_generation_settings  # noqa: E402
 from music_expression import analyze_music_expression, apply_neural_meter  # noqa: E402
 from reference_corpus import add_corpus_positions, profile_samples, summarize_profiles  # noqa: E402
@@ -57,6 +58,39 @@ def test_neural_meter_replaces_grid_without_octave_change():
     assert timing["anchor"]["kind"] == "neural_downbeat"
     assert any(beat["source"] == "madmom_joint_beat_downbeat" for beat in timing["beat_grid"])
     assert all(beat["downbeat"] == (beat["index"] % 4 == 0) for beat in timing["beat_grid"])
+
+
+def test_neural_meter_reconciles_well_observed_triplet_subdivision_alias():
+    timing = _timing(24.0, interval=60.0 / 148.0)
+    beats = [
+        {
+            "time": round(0.2 + index * (60.0 / 111.0), 6),
+            "position": index % 4 + 1,
+            "downbeat": index % 4 == 0,
+        }
+        for index in range(44)
+    ]
+    evidence = {
+        "available": True,
+        "used": False,
+        "bpm": 111.0,
+        "meter": 4,
+        "coverage_start": beats[0]["time"],
+        "coverage_end": beats[-1]["time"],
+        "beats": beats,
+    }
+
+    assert apply_neural_meter(timing, evidence)
+    assert timing["bpm"] == 111.0
+    assert evidence["tempo_reconciliation"] == "neural_quarter_over_signal_triplet_subdivision"
+    assert timing["beat_grid"][0]["downbeat"]
+    assert timing["beat_grid"][0]["index"] == 0
+
+    migrated = migrate_beat_grid_v1(timing)
+    assert migrated["downbeat_selection"]["source"] == "madmom_joint_beat_downbeat"
+    assert not migrated["downbeat_selection"]["manual_review_required"]
+    assert "downbeat_phase_ambiguous" not in migrated["warnings"]
+    assert "low_confidence_manual_review_required" not in migrated["warnings"]
 
 
 def test_analyzer_active_difficulty_uses_normal_v4_profile():
@@ -192,3 +226,34 @@ def test_lane_assignment_uses_variable_grid_and_music_density():
     assert assignments[0]["beat_index"] == 1
     assert assignments[0]["music_accent_type"] == "kick"
     assert assignments[0]["music_interval_multiplier"] < 1.0
+
+
+def test_wall_window_downgrades_full_width_jump_to_safe_lane():
+    wall_assignment = {
+        "lane": 1,
+        "energy_class": "jump",
+        "strength": 0.95,
+        "music_accent": 0.95,
+        "beat_phase": 0,
+        "wall_event": "wall_right",
+        "wall_phase": "active",
+    }
+    lanes, note_type, energy_class, two_cell_accent, downgraded = _assignment_note_projection(
+        wall_assignment,
+        two_cell_layout=False,
+    )
+    assert lanes == [1]
+    assert note_type == "note"
+    assert energy_class == "heavy"
+    assert not two_cell_accent
+    assert downgraded
+
+    clear_assignment = {**wall_assignment, "wall_event": "", "wall_phase": ""}
+    clear_lanes, clear_type, clear_energy, _, clear_downgraded = _assignment_note_projection(
+        clear_assignment,
+        two_cell_layout=False,
+    )
+    assert clear_lanes == [0, 3]
+    assert clear_type == "jump"
+    assert clear_energy == "jump"
+    assert not clear_downgraded

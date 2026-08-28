@@ -143,13 +143,33 @@ def apply_neural_meter(timing: dict[str, Any], evidence: dict[str, Any]) -> bool
     neural_bpm = float(evidence.get("bpm", 0.0))
     if legacy_bpm <= 0.0 or neural_bpm <= 0.0:
         return False
-    # Reject octave errors and genuinely conflicting estimates.  The signal
-    # fallback remains preferable to silently changing the choreography speed.
+    # Reject octave errors and genuinely conflicting estimates. A 4:3 ratio is
+    # the common exception: onset autocorrelation can lock to the triplet
+    # subdivision of a clear quarter-note pulse. Accept it only with long,
+    # observed neural coverage; short or weak evidence still keeps the signal
+    # fallback rather than silently changing choreography speed.
     relative_error = abs(neural_bpm - legacy_bpm) / legacy_bpm
-    if relative_error > 0.08:
+    tempo_ratio = max(neural_bpm, legacy_bpm) / min(neural_bpm, legacy_bpm)
+    duration = float(timing.get("duration", 0.0))
+    coverage_start = float(evidence.get("coverage_start", 0.0))
+    coverage_end = float(evidence.get("coverage_end", 0.0))
+    coverage_ratio = (
+        max(0.0, coverage_end - coverage_start) / duration
+        if duration > 0.0
+        else 0.0
+    )
+    common_triplet_alias = (
+        legacy_bpm > neural_bpm
+        and abs(tempo_ratio - (4.0 / 3.0)) <= 0.025
+        and len(beats) >= 32
+        and coverage_ratio >= 0.80
+    )
+    if relative_error > 0.08 and not common_triplet_alias:
         evidence["reason"] = "tempo_conflict_with_rhythm_grid"
         evidence["relative_bpm_error"] = round(relative_error, 6)
         return False
+    if common_triplet_alias:
+        evidence["tempo_reconciliation"] = "neural_quarter_over_signal_triplet_subdivision"
 
     meter = int(evidence.get("meter", 4))
     times = np.asarray([float(item["time"]) for item in beats], dtype=float)
@@ -198,6 +218,25 @@ def apply_neural_meter(timing: dict[str, Any], evidence: dict[str, Any]) -> bool
             "confidence": 0.9 if observed else 0.4,
         })
 
+    # Gameplay phrases are array-position based. Keep the controlled lead-in,
+    # but begin that array on the first available downbeat so phrase beat 0 can
+    # never be an upbeat. Preserve the neural coordinate for diagnostics.
+    first_grid_downbeat = next(
+        (row_index for row_index, row in enumerate(canonical) if int(row["index"]) % meter == 0),
+        0,
+    )
+    canonical = canonical[first_grid_downbeat:]
+    for row_index, row in enumerate(canonical):
+        row["source_index"] = int(row["index"])
+        row["index"] = row_index
+        row["bar_phase"] = row_index % meter
+        row["beat_in_bar"] = row_index % meter + 1
+        row["downbeat"] = row_index % meter == 0
+
+    if not canonical:
+        evidence["reason"] = "no_nonnegative_neural_downbeat"
+        return False
+
     timing["bpm"] = round(neural_bpm, 3)
     timing["beat_interval"] = _round(interval)
     timing["beat_grid"] = canonical
@@ -215,7 +254,7 @@ def apply_neural_meter(timing: dict[str, Any], evidence: dict[str, Any]) -> bool
     previous_anchor = timing.get("anchor", {})
     timing["anchor"] = {
         **(previous_anchor if isinstance(previous_anchor, dict) else {}),
-        "time": _round(anchor_time),
+        "time": _round(float(canonical[0]["time"])),
         "observed_beat_index": int(first_downbeat),
         "kind": "neural_downbeat",
         "confidence": 0.9,

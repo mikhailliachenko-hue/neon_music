@@ -13,6 +13,55 @@ from wall_choreography_safety import prepare_runtime_wall_events
 
 ROOT = Path(__file__).resolve().parents[2]
 
+RUNTIME_PROJECTION_KEYS = (
+    "notes",
+    "events",
+    "movement_events",
+    "independent_wall_events",
+    "wall_runtime_safety",
+    "runtime_choreography_source",
+    "runtime_note_count",
+    "runtime_event_count",
+    "runtime_movement_event_count",
+    "legacy_notes",
+    "legacy_events",
+    "legacy_movement_events",
+    "legacy_note_count",
+    "legacy_event_count",
+    "legacy_movement_event_count",
+)
+
+
+def embed_v4_projection(
+    source_beatmap: dict[str, object],
+    v4_beatmap: dict[str, object],
+) -> dict[str, object]:
+    """Return the same stable outer contract produced by Audio Analyzer.
+
+    Audio Analyzer keeps a V3-compatible renderer envelope and embeds the
+    authoritative V4 plan under ``choreography_v4``.  The standalone generator
+    previously replaced that envelope with a direct V4 document, so running the
+    two supported entry points alternated the JSON shape.  Normalize direct V4
+    inputs too, which makes repeated standalone runs idempotent.
+    """
+    if str(source_beatmap.get("schema", "")) == "neon_music.beatmap.v4":
+        envelope: dict[str, object] = {
+            "schema": "neon_music.beatmap.v3",
+            "audio": copy.deepcopy(source_beatmap.get("audio", "")),
+            "bpm": source_beatmap.get("bpm", 120.0),
+            "beat_interval": source_beatmap.get("beat_interval", 0.5),
+            "lane_layout": source_beatmap.get("lane_layout", "4_lanes"),
+        }
+    else:
+        envelope = copy.deepcopy(source_beatmap)
+        envelope.pop("choreography_v4", None)
+
+    for key in RUNTIME_PROJECTION_KEYS:
+        if key in v4_beatmap:
+            envelope[key] = copy.deepcopy(v4_beatmap[key])
+    envelope["choreography_v4"] = copy.deepcopy(v4_beatmap)
+    return envelope
+
 
 def attach_runtime_wall_projection(
     grid: dict[str, object],
@@ -146,11 +195,12 @@ def main() -> int:
     beatmap["validation_summary"] = report["summary"]
     beatmap, grid = attach_runtime_wall_projection(grid, beatmap, legacy_map)
     grid = synchronize_grid_projection(grid, beatmap, report, args.profile)
+    projected_beatmap = embed_v4_projection(legacy_map, beatmap)
     track_end = float(grid.get("duration", 0.0)) or None
-    combo_srt = write_srt(beatmap, args.subtitles, track_end=track_end)
-    write_feedback_srt(beatmap, args.feedback_subtitles, track_end=track_end)
+    combo_srt = write_srt(projected_beatmap, args.subtitles, track_end=track_end)
+    write_feedback_srt(projected_beatmap, args.feedback_subtitles, track_end=track_end)
     dump_json(args.track, build_neon_track(
-        beatmap=beatmap,
+        beatmap=projected_beatmap,
         beat_grid=grid,
         combo_srt=combo_srt,
         source="choreography_v4",

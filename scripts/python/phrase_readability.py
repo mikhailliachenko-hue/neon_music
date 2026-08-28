@@ -100,9 +100,9 @@ COMBO_TEMPLATES = (
         (("SIGNATURE_COMBO", 8),),
     ),
     (
-        (("SIDE_STEP_CLAP", 4), ("STEP_PUNCH_LEFT", 4)),
-        (("SIDE_STEP_CLAP", 4), ("STEP_PUNCH_LEFT", 4)),
-        (("SIDE_STEP_CLAP", 4), ("STEP_PUNCH_RIGHT", 4)),
+        (("SIDE_STEP_CLAP_LEFT", 4), ("STEP_PUNCH_LEFT", 4)),
+        (("SIDE_STEP_CLAP_RIGHT", 4), ("STEP_PUNCH_RIGHT", 4)),
+        (("SIDE_STEP_CLAP_LEFT", 4), ("STEP_PUNCH_RIGHT", 4)),
         (("SIGNATURE_COMBO", 8),),
     ),
     (
