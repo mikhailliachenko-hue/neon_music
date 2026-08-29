@@ -224,9 +224,12 @@ def combo_target_count(phrase_count: int, intensity_mode: str) -> int:
     mode = normalize_combo_intensity(intensity_mode)
     if phrase_count <= 0:
         return 0
+    # A spectacle scene every few phrases is the main reference cadence. The
+    # previous five-scene cap left long tracks with the entire combo library
+    # clustered near the outro, even in Dynamic mode.
     divisors = {"Calm": 5, "Dynamic": 3, "Wild": 2}
-    caps = {"Calm": 3, "Dynamic": 5, "Wild": 8}
-    floors = {"Calm": 1, "Dynamic": 3, "Wild": 4}
+    caps = {"Calm": 4, "Dynamic": 8, "Wild": 12}
+    floors = {"Calm": 2, "Dynamic": 4, "Wild": 6}
     return min(caps[mode], max(floors[mode], phrase_count // divisors[mode]))
 
 

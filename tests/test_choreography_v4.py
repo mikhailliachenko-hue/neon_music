@@ -25,10 +25,15 @@ from choreography_combo_director import (  # noqa: E402
 )
 
 
-APPROVED_BURST_BREATH_MASKS = {
+APPROVED_SCENE_END_MASKS = {
     2: {(0, 3), (0, 4)},
     3: {(0, 1, 4), (0, 2, 4), (0, 3, 5)},
     4: {(0, 1, 3, 4), (0, 2, 3, 5), (0, 1, 4, 5)},
+}
+APPROVED_DRIVING_MASKS = {
+    2: {(0, 4), (1, 5)},
+    3: {(0, 2, 6), (0, 3, 6), (1, 4, 6)},
+    4: {(0, 1, 4, 6), (0, 2, 4, 6), (0, 2, 5, 6), (0, 2, 4, 7)},
 }
 
 legacy_grid_path = ROOT / "output/beat_grid.json"
@@ -202,9 +207,13 @@ def test_music_density_ornament_pass_is_bounded_and_deterministic():
         }))
         high_masks.append(high_positions)
         low_masks.append(low_positions)
-        assert high_positions in APPROVED_BURST_BREATH_MASKS[4]
-        assert low_positions in APPROVED_BURST_BREATH_MASKS[2]
-        assert 6 not in high_positions and 7 not in high_positions
+        expected_high = APPROVED_SCENE_END_MASKS[4] if block == 0 else APPROVED_DRIVING_MASKS[4]
+        assert high_positions in expected_high
+        assert low_positions in APPROVED_SCENE_END_MASKS[2]
+        if block == 0:
+            assert 6 not in high_positions and 7 not in high_positions
+        else:
+            assert 6 in high_positions or 7 in high_positions
         assert 6 not in low_positions and 7 not in low_positions
         assert not any(
             right - middle == 1 and middle - left == 1
@@ -216,6 +225,8 @@ def test_music_density_ornament_pass_is_bounded_and_deterministic():
     # Repeat and mirror must preserve the same rhythm; only body side changes.
     assert high_masks[1] == high_masks[2]
     assert low_masks[1] == low_masks[2]
+    assert summary_a["driving_blocks"] == 3
+    assert summary_a["scene_end_blocks"] == 1
 
 
 def test_warmup_profile_is_unchanged_by_reference_rhythm_shaping():
@@ -707,6 +718,12 @@ def test_spectacle_combo_library_exports_readable_two_to_four_accent_scenes():
     assert combo["enabled"]
     assert len(combo["applied"]) >= 3
     assert len({value["combo_id"] for value in combo["applied"]}) >= 2
+    pattern_families = {
+        str(pattern["id"]): str(pattern["family"])
+        for pattern in SPECTACLE_COMBO_PATTERNS
+    }
+    applied_families = {pattern_families[value["combo_id"]] for value in combo["applied"]}
+    assert len(applied_families) >= 2
     events = [
         event for event in beatmap["movement_events"]
         if event.get("spectacle_combo_id") and not event.get("authored_for_wall")

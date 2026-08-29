@@ -1026,6 +1026,29 @@ def _apply_reference_spectacle_combos(
         wall_windows = directive.get("reserved_wall_windows", [])
         for cell_index in (3, 2, 1):
             start_beat = phrase_index * 32 + cell_index * 8
+            cell_items = [
+                item for item in phrase
+                if start_beat <= int(item.get("start_beat", 0)) < start_beat + 8
+            ]
+            protected_cell = any(
+                str(item.get("movement", "")) in {
+                    "SMALL_JUMP",
+                    "JUMP",
+                    "DUCK",
+                    "SHALLOW_SQUAT",
+                    "SQUAT_REACH",
+                    "DOUBLE_HAND_HOLD",
+                    "DOUBLE_FOOT_PULSE",
+                }
+                or str(item.get("cell_function", "")).startswith((
+                    "REFERENCE_DOUBLE_STEP_",
+                    "REFERENCE_JUMP_",
+                    "REFERENCE_HAND_HOLD_",
+                ))
+                for item in cell_items
+            )
+            if protected_cell:
+                continue
             wall_conflict = any(
                 start_beat < int(window.get("end_beat", 0))
                 and int(window.get("start_beat", 0)) < start_beat + 8
@@ -1047,6 +1070,7 @@ def _apply_reference_spectacle_combos(
     applied: list[dict[str, Any]] = []
     used_phrases: set[int] = set()
     pattern_usage: Counter[str] = Counter()
+    family_usage: Counter[str] = Counter()
     for _, phrase_index, cell_index, wall_conflict in sorted(candidates, reverse=True):
         if len(applied) >= target_count:
             break
@@ -1080,6 +1104,7 @@ def _apply_reference_spectacle_combos(
         patterns = tuple(sorted(
             patterns,
             key=lambda pattern: (
+                family_usage[str(pattern.get("family", ""))],
                 pattern_usage[str(pattern["id"])],
                 ranked_positions[str(pattern["id"])],
             ),
@@ -1112,7 +1137,16 @@ def _apply_reference_spectacle_combos(
                 if step_index < len(stances):
                     item["double_step_stance"] = stances[step_index]
                 cursor += duration
-            if phrase_readability_violations(phrase, MOVEMENTS):
+            combo_violations = phrase_readability_violations(phrase, MOVEMENTS)
+            # Approved mixed patterns are the deliberate changed-context scene:
+            # a step/stance is immediately answered by a hand target. Their
+            # bounded two-to-four accents remain subject to every other phrase
+            # and concurrency rule.
+            if any(
+                violation != "mixed_action_family_inside_8_count"
+                or str(pattern.get("family", "")) != "mixed"
+                for violation in combo_violations
+            ):
                 phrase[:] = original_phrase
                 continue
             applied.append({
@@ -1127,6 +1161,7 @@ def _apply_reference_spectacle_combos(
             })
             used_phrases.add(phrase_index)
             pattern_usage[str(pattern["id"])] += 1
+            family_usage[str(pattern.get("family", ""))] += 1
             break
     return sorted(applied, key=lambda value: int(value["start_beat"]))
 
@@ -2482,7 +2517,6 @@ def build_choreography(
         excluded_phrase_indices=(
             set(hand_hold_phrase_indices)
             | set(reference_jump_repeat_phrase_indices)
-            | reference_grounded_double_step_phrase_indices
         ) if bool(spectacle_combo_config.get("enabled", True)) else set(range(len(selected_sequences))),
     )
     reference_spectacle_combo_phrase_indices = {
@@ -2586,6 +2620,14 @@ def build_choreography(
                     max_primary_families=3,
                     max_family_switches=6,
                 )
+                if value != "mixed_action_family_inside_8_count"
+            ]
+        elif phrase_index in reference_spectacle_combo_phrase_indices:
+            # The spectacle library deliberately contains short step-to-hand
+            # call-and-response scenes. They are bounded and validated when
+            # inserted; every other phrase-readability rule remains active.
+            readability_violations = [
+                value for value in readability_violations
                 if value != "mixed_action_family_inside_8_count"
             ]
         selected_debug["hard_violations"] = sorted({

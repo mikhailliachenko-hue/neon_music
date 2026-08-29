@@ -35,12 +35,18 @@ MIRRORED_COMPONENT_FAMILIES = HAND_FAMILIES | {"lateral"}
 STRONG_ROLES = {"build", "drop", "chorus", "peak", "finale"}
 CALM_ROLES = {"intro", "breakdown", "recovery", "outro"}
 
-# Short authored bursts replace the mechanically even 1-3-5-7 grid.  Every
-# approved mask keeps beats 6-7 free and never exceeds two adjacent actions.
-APPROVED_RHYTHM_MASKS: dict[int, tuple[tuple[int, ...], ...]] = {
+# Short authored bursts replace the mechanically even 1-3-5-7 grid. Scene-end
+# masks leave a breath; driving masks carry motion into the second half of an
+# active 8-count. Both vocabularies forbid runs longer than two adjacent hits.
+SCENE_END_RHYTHM_MASKS: dict[int, tuple[tuple[int, ...], ...]] = {
     2: ((0, 3), (0, 4)),
     3: ((0, 1, 4), (0, 2, 4), (0, 3, 5)),
     4: ((0, 1, 3, 4), (0, 2, 3, 5), (0, 1, 4, 5)),
+}
+DRIVING_RHYTHM_MASKS: dict[int, tuple[tuple[int, ...], ...]] = {
+    2: ((0, 4), (1, 5)),
+    3: ((0, 2, 6), (0, 3, 6), (1, 4, 6)),
+    4: ((0, 1, 4, 6), (0, 2, 4, 6), (0, 2, 5, 6), (0, 2, 4, 7)),
 }
 
 
@@ -162,9 +168,12 @@ def _choose_rhythm_mask(
     start: int,
     feature_map: dict[int, dict[str, Any]],
     context: dict[str, Any],
+    *,
+    driving: bool,
 ) -> tuple[int, ...] | None:
+    vocabulary = DRIVING_RHYTHM_MASKS if driving else SCENE_END_RHYTHM_MASKS
     candidates = [
-        mask for mask in APPROVED_RHYTHM_MASKS.get(target, ())
+        mask for mask in vocabulary.get(target, ())
         if _mask_covers_items(mask, items, start)
     ]
     if not candidates:
@@ -227,7 +236,7 @@ def apply_rhythm_ornaments(
     profile: str,
     director_plan: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Shape safe 8-counts into deterministic burst-then-breath phrases.
+    """Shape safe 8-counts into deterministic action scenes and releases.
 
     The teaching profile is intentionally unchanged.  A normal block never
     exceeds four unique hit beats and never contains a run longer than two
@@ -243,6 +252,8 @@ def apply_rhythm_ornaments(
         "eligible_blocks": 0,
         "approved_mask_blocks": 0,
         "tail_breath_blocks": 0,
+        "driving_blocks": 0,
+        "scene_end_blocks": 0,
         "approved_mask_ratio": 0.0,
         "target_distribution": {"2": 0, "3": 0, "4": 0},
     }
@@ -272,9 +283,24 @@ def apply_rhythm_ornaments(
                 summary["protected_blocks"] += 1
                 continue
             summary["eligible_blocks"] += 1
+            role = str(context.get("section_role", "")).lower()
+            # References sustain activity through develop/lift and reserve the
+            # obvious empty tail for setup or an actual scene release. Keeping
+            # beats 6-7 empty in every block made the whole track repeatedly
+            # accelerate and brake with no larger phrase-level contrast.
+            driving = role not in CALM_ROLES and block_index in {1, 2}
+            if role in STRONG_ROLES and block_index == 3:
+                driving = True
             mask = repeat_mask if block_index == 2 and repeat_mask is not None and len(repeat_mask) == target else None
             if mask is None or not _mask_covers_items(mask, items, start):
-                mask = _choose_rhythm_mask(target, items, start, feature_map, context)
+                mask = _choose_rhythm_mask(
+                    target,
+                    items,
+                    start,
+                    feature_map,
+                    context,
+                    driving=driving,
+                )
             if mask is None:
                 continue
             if block_index == 1:
@@ -286,6 +312,8 @@ def apply_rhythm_ornaments(
             summary["shaped_blocks"] += 1
             summary["approved_mask_blocks"] += 1
             summary["tail_breath_blocks"] += int(6 not in mask and 7 not in mask)
+            summary["driving_blocks"] += int(driving)
+            summary["scene_end_blocks"] += int(not driving)
             if _hit_positions(items) != before:
                 summary["ornamented_blocks"] += 1
     if summary["eligible_blocks"]:
