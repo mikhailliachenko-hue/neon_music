@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="NeonTunnelConfig" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/neon_tunnel_config.gd" id="1_config"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/entrance_segment.tscn" id="2_entrance"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/ring_segment.tscn" id="3_ring"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/energy_gate_segment.tscn" id="4_gate"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/cyber_awakening/showcase_segment.tscn" id="5_showcase"]
+[ext_resource type="Resource" path="res://resources/tunnel/default_asset_library.tres" id="6_library"]
+[ext_resource type="Resource" path="res://assets/tunnel/asset_registry.tres" id="7_registry"]
+[ext_resource type="Resource" path="res://resources/tunnel/neon_material_library.tres" id="8_materials"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/toybox_bedroom_run.tres" id="9_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/34_toybox_bedroom_run.tres" id="10_level"]
+
+[resource]
+script = ExtResource("1_config")
+enabled = true
+replace_background_video = true
+segment_count = 8
+segment_length = 18.0
+tunnel_speed = 14.0
+front_center_z = 16.0
+deterministic_seed = 340034
+segment_scene = ExtResource("2_entrance")
+segment_scenes = Array[PackedScene]([ExtResource("2_entrance"), ExtResource("3_ring"), ExtResource("4_gate"), ExtResource("5_showcase")])
+tunnel_width = 13.0
+tunnel_height = 9.0
+ring_probability = 1.0
+decoration_probability = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+phrase_change_probability = 0.0
+asset_library = ExtResource("6_library")
+asset_registry = ExtResource("7_registry")
+neon_material_library = ExtResource("8_materials")
+audio_reactive_visuals_enabled = false
+beat_reaction_strength = 0.0
+beat_decay_seconds = 0.22
+beat_speed_boost = 0.0
+downbeat_multiplier = 1.0
+theme_transition_seconds = 0.8
+fog_density = 0.00018
+glow_intensity = 0.20
+glow_bloom = 0.015
+glow_strength = 0.24
+atmosphere_density = 0.04
+spectrum_enabled = false
+camera_motion = 0.10
+step_camera_impact = 0.30
+step_camera_duration = 0.20
+initial_theme = "ToyboxBedroomRun"
+themes = Array[TunnelTheme]([ExtResource("9_theme")])
+initial_preset = "TOYBOX BEDROOM RUN"
+presets = Array[TunnelLevelPreset]([ExtResource("10_level")])

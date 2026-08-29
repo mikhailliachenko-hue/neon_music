@@ -137,7 +137,7 @@ Runtime renderer scripts.
   frames no longer scale or flash together. No wall or ceiling can enter the
   dance corridor.
 - `tunnel/tunnel_level_preset.gd` and `resources/tunnel/dance_levels/` - the
-  data-driven library of 33 Dance Mode levels. Their production mapping resolves
+  data-driven library of 34 Dance Mode levels. Their production mapping resolves
   to eleven curated world families: Pinterest Prism, Rhythm Frames, Rhythm Circle
   Frames, Rhythm Square Frames, Rhythm Tall Frames, Rhythm Star Frames and the
   dedicated Neon Ring Corridor, Neon Octagon Runway, Split Glow Arcade,
@@ -287,6 +287,23 @@ Runtime renderer scripts.
 - Shared L1 geometry coverage lives in
   `pinterest_tunnel_pack_asset_smoke_test.gd`; Forward+ evidence lives under
   `output/diagnostics/pinterest_tunnel_pack/` and is not committed.
+
+#### Toybox Bedroom Run
+
+- `TOYBOX BEDROOM RUN` is preset 34 and a Blender-authored bright bedroom
+  corridor inspired by the supplied composition: honey-maple floor, sky-blue
+  cloud wallpaper, warm-white door portals, windows, pastel storage and original
+  toy silhouettes. `tools/blender/build_toybox_bedroom_run.py` reproducibly writes
+  the editable `source_assets/blender/toybox_bedroom_run.blend` plus separate
+  continuous-shell and rhythm-frame GLBs under `assets/tunnel/blender_modules/`.
+- The room keeps a verified 4.82 m half-width gameplay opening and a 4.50 m
+  overhead opening. Four portals per 18 m segment provide the long-room cadence;
+  toys remain outside the lane. Action waves add at most a subtle 2.2% outward
+  X/Y pulse to decorative frame objects, while Z, the gameplay road, notes,
+  receptors and obstacles remain authoritative and unchanged.
+- Blender fresh-import metrics live under
+  `output/diagnostics/toybox_bedroom_run/`; Godot L1 geometry coverage is
+  `scripts/godot/tunnel/toybox_bedroom_run_asset_smoke_test.gd`.
 
 #### Ideal Dance Mode level formula
 

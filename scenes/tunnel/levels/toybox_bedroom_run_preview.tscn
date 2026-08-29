@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/standalone_level_preview.gd" id="1_preview"]
+[ext_resource type="PackedScene" path="res://scenes/tunnel/levels/toybox_bedroom_run.tscn" id="2_level"]
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.48, 0.73, 0.90, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.95, 0.87, 0.72, 1)
+ambient_light_energy = 0.68
+reflected_light_source = 2
+tonemap_mode = 3
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.16
+glow_strength = 0.20
+glow_bloom = 0.015
+fog_enabled = true
+fog_light_color = Color(0.72, 0.87, 0.96, 1)
+fog_density = 0.00018
+
+[node name="ToyboxBedroomRunPreview" type="Node3D"]
+script = ExtResource("1_preview")
+generator_path = NodePath("ToyboxBedroomRun")
+preview_label = "TOYBOX_BEDROOM_RUN"
+preview_seed = 340034
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_preview")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 2.0, 7.25)
+current = true
+fov = 62.0
+
+[node name="ToyboxBedroomRun" parent="." instance=ExtResource("2_level")]

@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="TunnelWorldStyle" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_world_style.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/asset_sets/toybox_bedroom_run.tres" id="2_assets"]
+
+[resource]
+script = ExtResource("1_script")
+world_id = "toybox_bedroom_run"
+display_name = "Toybox Bedroom Run"
+spatial_profile = "RhythmFrames"
+asset_set = ExtResource("2_assets")
+allow_registry_fallback = false
+shell_probability = 1.0
+floor_probability = 1.0
+ceiling_probability = 0.0
+wall_probability = 0.0
+ring_probability = 1.0
+arch_probability = 0.0
+decoration_scale = 0.08
+layout_weight_scale = {"Straight": 0.0, "Ring": 4.0, "DoubleRing": 0.0, "SidePanels": 0.0, "NeonGrid": 0.0, "EnergyGate": 0.0, "WideTunnel": 0.0, "NarrowTunnel": 0.0, "DecoratedTunnel": 0.0}
+show_floor_rails = false
+show_ceiling_rails = false
+floor_effects_enabled = false
+continuous_frame_rhythm = true
+background_planes_enabled = false
+authored_color_mix = 1.0
+authored_hue_mix = 1.0
+authored_emission_color_mix = 0.14
+authored_accent_influence = 0.0
+floor_authored_color_mix = 1.0
+architecture_emission_scale = 0.20
+architecture_body_glow = 0.0
+architecture_material_override_mix = 0.0
+architecture_metallic = 0.0
+architecture_roughness = 0.48
+floor_material_override_mix = 0.0
+floor_metallic = 0.0
+floor_roughness = 0.34
+action_wave_enabled = true
+preserve_authored_frame_palette = true
+action_wave_body_glow = 0.08
+action_wave_scale_impulse = 0.022
+action_wave_gradient_start = Color(0.10, 0.72, 1.0, 1.0)
+action_wave_gradient_mid = Color(1.0, 0.72, 0.18, 1.0)
+action_wave_gradient_end = Color(1.0, 0.30, 0.58, 1.0)
+side_reflection_enabled = false
+safe_lane_half_width = 4.82
+minimum_overhead_y = 4.50
+side_clearance_margin = 0.4
+camera_fov_offset = 0.0
+fog_scale = 0.12
+background_depth = 1.0

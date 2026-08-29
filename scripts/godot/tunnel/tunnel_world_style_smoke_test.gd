@@ -13,6 +13,7 @@ const EXCLUSIVE_NEW_WORLDS := [
 	"split_glow_arcade",
 	"infinite_neon_portal",
 	"synthwave_horizon_valley",
+	"toybox_bedroom_run",
 ]
 const WORLD_CASES := [
 	{"level": "CYBER AWAKENING", "world": "rhythm_frames", "asset_terms": ["Door Frame", "Road", "Light"]},
@@ -43,6 +44,7 @@ const WORLD_CASES := [
 	{"level": "SPLIT GLOW ARCADE", "world": "split_glow_arcade", "asset_terms": ["Split Glow Arcade"]},
 	{"level": "INFINITE NEON PORTAL", "world": "infinite_neon_portal", "asset_terms": ["Infinite Neon Portal"]},
 	{"level": "SYNTHWAVE HORIZON VALLEY", "world": "synthwave_horizon_valley", "asset_terms": ["Synthwave Horizon Valley"]},
+	{"level": "TOYBOX BEDROOM RUN", "world": "toybox_bedroom_run", "asset_terms": ["Toybox Bedroom Run"]},
 ]
 
 

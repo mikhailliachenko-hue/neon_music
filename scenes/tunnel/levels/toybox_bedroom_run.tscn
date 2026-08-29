@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/tunnel/neon_tunnel.tscn" id="1_base"]
+[ext_resource type="Resource" path="res://resources/tunnel/levels/toybox_bedroom_run.tres" id="2_config"]
+
+[node name="ToyboxBedroomRun" instance=ExtResource("1_base")]
+config = ExtResource("2_config")
+
+[node name="LevelKeyLight" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48, -18, 0)
+light_color = Color(1.0, 0.88, 0.72, 1)
+light_energy = 0.72
+shadow_enabled = true

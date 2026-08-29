@@ -104,7 +104,7 @@ func _run() -> void:
 		await process_frame
 
 	# Use a fresh pool with the Pinterest portal as its startup preset. The broad
-	# loop above deliberately hot-swaps all 33 worlds and is not representative of
+	# loop above deliberately hot-swaps all 34 worlds and is not representative of
 	# the normal level-launch path used by production playback.
 	var pulse_generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
 	pulse_generator.config = pulse_generator.config.duplicate(true) as NeonTunnelConfig
