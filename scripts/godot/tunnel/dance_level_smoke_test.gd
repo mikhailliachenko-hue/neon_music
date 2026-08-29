@@ -11,7 +11,7 @@ const EXPECTED_NAMES := [
 	"WHITE WAVELINE", "SPECTRUM HALO", "SOLAR SKYRAIL", "QUANTUM MIRROR",
 	"GLASS BLOCK CHAMBER", "NEON RING CORRIDOR", "NEON OCTAGON RUNWAY",
 	"SPLIT GLOW ARCADE", "INFINITE NEON PORTAL", "SYNTHWAVE HORIZON VALLEY",
-	"TOYBOX BEDROOM RUN",
+	"CLOUD BEDROOM GALLERY",
 ]
 const MINIMAL_FRAME_LEVEL_IDS := {
 	"16_cyan_apex": true, "17_violet_circuit": true, "18_deep_orbit": true,
@@ -22,7 +22,7 @@ const MINIMAL_FRAME_LEVEL_IDS := {
 	"30_neon_octagon_runway": true,
 	"31_split_glow_arcade": true,
 	"32_infinite_neon_portal": true,
-	"34_toybox_bedroom_run": true,
+	"34_cloud_bedroom_gallery": true,
 }
 
 
@@ -108,12 +108,12 @@ func _run() -> void:
 				or float(preset.lighting_settings.get("scene_brightness", 0.0)) < 1.08 \
 				or preset.world_style.architecture_body_glow < 0.24:
 				failures.append("GLASS BLOCK CHAMBER lost its calm architecture readability")
-		if preset.display_name() == "TOYBOX BEDROOM RUN":
-			_validate_authored_level(preset, "toybox_bedroom_run", "RhythmFrames", false, failures)
+		if preset.display_name() == "CLOUD BEDROOM GALLERY":
+			_validate_authored_level(preset, "cloud_bedroom_gallery", "RhythmFrames", false, failures)
 			if preset.world_style.action_wave_scale_impulse < 0.02:
-				failures.append("TOYBOX BEDROOM RUN lost its action-driven object pulse")
+				failures.append("CLOUD BEDROOM GALLERY lost its action-driven object pulse")
 			if preset.world_style.asset_set.shell_assets.is_empty():
-				failures.append("TOYBOX BEDROOM RUN lost its continuous room shell")
+				failures.append("CLOUD BEDROOM GALLERY lost its continuous room shell")
 		if preset.background_texture == null or preset.preview_texture == null:
 			failures.append("missing level background: %s" % preset.display_name())
 		else:

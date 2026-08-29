@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ccmcwuyiugcqs"
-path="res://.godot/imported/toybox_bedroom_run_shell.glb-854e7e020f4e4656006044de135b42d3.scn"
+uid="uid://bf4yoqweuhp8m"
+path="res://.godot/imported/cloud_bedroom_gallery_bay.glb-580ac31e102b35ecf1c4e4de0cf3b296.scn"
 
 [deps]
 
-source_file="res://assets/tunnel/blender_modules/toybox_bedroom_run_shell.glb"
-dest_files=["res://.godot/imported/toybox_bedroom_run_shell.glb-854e7e020f4e4656006044de135b42d3.scn"]
+source_file="res://assets/tunnel/blender_modules/cloud_bedroom_gallery_bay.glb"
+dest_files=["res://.godot/imported/cloud_bedroom_gallery_bay.glb-580ac31e102b35ecf1c4e4de0cf3b296.scn"]
 
 [params]
 

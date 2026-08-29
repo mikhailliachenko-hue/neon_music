@@ -288,22 +288,23 @@ Runtime renderer scripts.
   `pinterest_tunnel_pack_asset_smoke_test.gd`; Forward+ evidence lives under
   `output/diagnostics/pinterest_tunnel_pack/` and is not committed.
 
-#### Toybox Bedroom Run
+#### Cloud Bedroom Gallery
 
-- `TOYBOX BEDROOM RUN` is preset 34 and a Blender-authored bright bedroom
-  corridor inspired by the supplied composition: honey-maple floor, sky-blue
-  cloud wallpaper, warm-white door portals, windows, pastel storage and original
-  toy silhouettes. `tools/blender/build_toybox_bedroom_run.py` reproducibly writes
-  the editable `source_assets/blender/toybox_bedroom_run.blend` plus separate
-  continuous-shell and rhythm-frame GLBs under `assets/tunnel/blender_modules/`.
-- The room keeps a verified 4.82 m half-width gameplay opening and a 4.50 m
-  overhead opening. Four portals per 18 m segment provide the long-room cadence;
-  toys remain outside the lane. Action waves add at most a subtle 2.2% outward
-  X/Y pulse to decorative frame objects, while Z, the gameplay road, notes,
-  receptors and obstacles remain authoritative and unchanged.
-- Blender fresh-import metrics live under
-  `output/diagnostics/toybox_bedroom_run/`; Godot L1 geometry coverage is
-  `scripts/godot/tunnel/toybox_bedroom_run_asset_smoke_test.gd`.
+- `CLOUD BEDROOM GALLERY` replaces the former preset 34 and recreates Pinterest
+  pin `413064597045356561` as a Blender-authored bedroom gallery: powder-blue
+  cloud wallpaper, white wainscot, copper-honey floorboards, a walnut bed with
+  royal-blue cover, dresser, globe, red lamp, empty shelf, oval rug and yellow
+  desk. `tools/blender/build_cloud_bedroom_gallery.py` writes the editable
+  `source_assets/blender/cloud_bedroom_gallery.blend` plus separate shell and
+  furniture-bay GLBs under `assets/tunnel/blender_modules/`.
+- Large furniture remains beyond the verified 4.4 m gameplay half-width and the
+  opening keeps 4.65 m overhead clearance. Two furnished bedroom bays per 18 m
+  segment preserve reference scale without turning the tunnel into repeated
+  clutter. Action waves add at most a 2% outward X/Y pulse to the decorative bay;
+  Z, the gameplay road, notes, receptors and obstacles remain unchanged.
+- Fresh-import evidence lives under `output/diagnostics/cloud_bedroom_gallery/`;
+  L1 geometry coverage is
+  `scripts/godot/tunnel/cloud_bedroom_gallery_asset_smoke_test.gd`.
 
 #### Ideal Dance Mode level formula
 

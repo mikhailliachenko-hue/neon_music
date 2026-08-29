@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TunnelLevelPreset" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_level_preset.gd" id="1_preset"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cloud_bedroom_gallery.tres" id="2_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/worlds/styles/cloud_bedroom_gallery.tres" id="3_world"]
+[ext_resource type="Texture2D" path="res://assets/tunnel/backgrounds/neutral_graphite_fog.png" id="4_background"]
+
+[resource]
+script = ExtResource("1_preset")
+level_name = "CLOUD BEDROOM GALLERY"
+description = "Голубая детская спальня с облачными обоями, белой панелью, синей деревянной кроватью, комодом, глобусом, лампой, стеллажом и овальным ковром."
+difficulty = "Medium"
+color_palette = PackedColorArray(0.12, 0.62, 1.0, 1, 1.0, 0.65, 0.12, 1, 0.18, 0.55, 0.76, 1)
+preview_texture = ExtResource("4_background")
+background_texture = ExtResource("4_background")
+segment_types = PackedStringArray("Ring")
+asset_weights = {"Decoration": 0.0, "Panel": 0.0, "Pipe": 0.0, "Arch": 1.0}
+particle_settings = {"density": 0.01, "amount_scale": 0.01}
+lighting_settings = {"glow_intensity": 0.14, "glow_strength": 0.18, "bloom": 0.01, "frame_rest_glow": 0.10, "frame_rest_emission_scale": 0.70, "ambient_energy": 0.72, "scene_brightness": 0.94, "road_reflections_enabled": false}
+fog_settings = {"density": 0.00014}
+camera_settings = {"step_impact": 0.28, "step_duration": 0.20, "fov_pulse": 0.18}
+music_reaction_settings = {"beat_strength": 0.0, "beat_decay": 0.22, "speed_boost": 0.0, "downbeat_multiplier": 1.0, "action_only_visuals": true, "wave_speed": 62.0, "wave_width": 10.0, "wave_lifetime": 1.8, "wave_near_fade_distance": 28.0, "wave_emission_strength": 0.10}
+preset_name = "CLOUD BEDROOM GALLERY"
+style_id = "CloudBedroomGallery"
+world_style = ExtResource("3_world")
+theme = ExtResource("2_theme")
+seed_offset = 340561
+ring_density = 1.0
+decoration_density = 0.0
+panel_density = 0.0
+pipe_density = 0.0
+fog_amount = 0.08
+glow_strength = 0.18
+camera_motion = 0.08
+speed_multiplier = 1.0
+atmosphere_density = 0.03
+floor_pattern = "None"
+layout_weight_scale = {"Ring": 4.0}
+level_id = "34_cloud_bedroom_gallery"
+segment_sequence = PackedStringArray("Ring")

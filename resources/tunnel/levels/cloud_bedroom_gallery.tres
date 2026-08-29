@@ -8,8 +8,8 @@
 [ext_resource type="Resource" path="res://resources/tunnel/default_asset_library.tres" id="6_library"]
 [ext_resource type="Resource" path="res://assets/tunnel/asset_registry.tres" id="7_registry"]
 [ext_resource type="Resource" path="res://resources/tunnel/neon_material_library.tres" id="8_materials"]
-[ext_resource type="Resource" path="res://resources/tunnel/themes/toybox_bedroom_run.tres" id="9_theme"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/34_toybox_bedroom_run.tres" id="10_level"]
+[ext_resource type="Resource" path="res://resources/tunnel/themes/cloud_bedroom_gallery.tres" id="9_theme"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/34_cloud_bedroom_gallery.tres" id="10_level"]
 
 [resource]
 script = ExtResource("1_config")
@@ -19,7 +19,7 @@ segment_count = 8
 segment_length = 18.0
 tunnel_speed = 14.0
 front_center_z = 16.0
-deterministic_seed = 340034
+deterministic_seed = 340561
 segment_scene = ExtResource("2_entrance")
 segment_scenes = Array[PackedScene]([ExtResource("2_entrance"), ExtResource("3_ring"), ExtResource("4_gate"), ExtResource("5_showcase")])
 tunnel_width = 13.0
@@ -38,16 +38,16 @@ beat_decay_seconds = 0.22
 beat_speed_boost = 0.0
 downbeat_multiplier = 1.0
 theme_transition_seconds = 0.8
-fog_density = 0.00018
-glow_intensity = 0.20
-glow_bloom = 0.015
-glow_strength = 0.24
-atmosphere_density = 0.04
+fog_density = 0.00014
+glow_intensity = 0.14
+glow_bloom = 0.01
+glow_strength = 0.18
+atmosphere_density = 0.03
 spectrum_enabled = false
-camera_motion = 0.10
-step_camera_impact = 0.30
+camera_motion = 0.08
+step_camera_impact = 0.28
 step_camera_duration = 0.20
-initial_theme = "ToyboxBedroomRun"
+initial_theme = "CloudBedroomGallery"
 themes = Array[TunnelTheme]([ExtResource("9_theme")])
-initial_preset = "TOYBOX BEDROOM RUN"
+initial_preset = "CLOUD BEDROOM GALLERY"
 presets = Array[TunnelLevelPreset]([ExtResource("10_level")])

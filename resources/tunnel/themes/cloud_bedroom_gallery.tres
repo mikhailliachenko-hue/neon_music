@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="TunnelTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/godot/tunnel/tunnel_theme.gd" id="1_theme"]
+
+[resource]
+script = ExtResource("1_theme")
+theme_name = "CloudBedroomGallery"
+emission_color = Color(0.12, 0.62, 1.0, 1)
+accent_color = Color(1.0, 0.65, 0.12, 1)
+background_color = Color(0.18, 0.55, 0.76, 1)
+fog_color = Color(0.82, 0.88, 0.88, 1)
+fog_density = 0.00014
+glow_intensity = 0.14
+emission_energy = 1.2
+floor_color = Color(0.56, 0.26, 0.09, 1)
+floor_emission = 0.05
+ambient_color = Color(0.95, 0.84, 0.67, 1)
+ambient_energy = 0.72
+ring_probability_scale = 1.0
+decoration_probability_scale = 0.0
+layout_weights = {"Ring": 1.0}

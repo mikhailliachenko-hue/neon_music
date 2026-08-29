@@ -42,7 +42,7 @@
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/31_split_glow_arcade.tres" id="40_level_31"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/32_infinite_neon_portal.tres" id="41_level_32"]
 [ext_resource type="Resource" path="res://resources/tunnel/dance_levels/33_synthwave_horizon_valley.tres" id="42_level_33"]
-[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/34_toybox_bedroom_run.tres" id="43_level_34"]
+[ext_resource type="Resource" path="res://resources/tunnel/dance_levels/34_cloud_bedroom_gallery.tres" id="43_level_34"]
 
 [resource]
 script = ExtResource("1_config")
