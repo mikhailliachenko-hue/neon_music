@@ -32,6 +32,6 @@ environment = SubResource("Environment_preview")
 [node name="Camera3D" type="Camera3D" parent="."]
 position = Vector3(0, 2.18, 7.25)
 current = true
-fov = 62.0
+fov = 66.0
 
 [node name="SplitGlowArcade" parent="." instance=ExtResource("2_level")]

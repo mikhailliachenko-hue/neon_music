@@ -35,23 +35,28 @@ def root_object(name: str, reference: str) -> bpy.types.Object:
     return root
 
 
-def rounded_portal_points(y: float) -> list[tuple[float, float, float]]:
-    points: list[tuple[float, float, float]] = []
+def rounded_split_paths(y: float) -> tuple[list[tuple[float, float, float]], list[tuple[float, float, float]]]:
     center_y = 1.78
     half_width = 6.10
     half_height = 4.15
     radius = 1.12
-    centers = [
-        (-half_width + radius, center_y - half_height + radius, math.pi, math.pi * 1.5),
-        (half_width - radius, center_y - half_height + radius, math.pi * 1.5, math.tau),
-        (half_width - radius, center_y + half_height - radius, 0.0, math.pi * 0.5),
-        (-half_width + radius, center_y + half_height - radius, math.pi * 0.5, math.pi),
-    ]
-    for cx, cz, start, end in centers:
-        for step in range(10):
-            angle = start + (end - start) * step / 9.0
-            points.append((cx + math.cos(angle) * radius, y, cz + math.sin(angle) * radius))
-    return points
+    bottom = center_y - half_height
+    top = center_y + half_height
+
+    def arc(cx: float, cz: float, start: float, end: float) -> list[tuple[float, float, float]]:
+        return [
+            (cx + math.cos(start + (end - start) * step / 11.0) * radius, y, cz + math.sin(start + (end - start) * step / 11.0) * radius)
+            for step in range(12)
+        ]
+
+    bottom_left = arc(-half_width + radius, bottom + radius, math.pi, math.pi * 1.5)
+    bottom_right = arc(half_width - radius, bottom + radius, math.pi * 1.5, math.tau)
+    # The GLTF import basis presents this authored vertical profile inverted in
+    # the fitted Godot frame. Author the crown on Blender's low side so the
+    # runtime result is the intended open-bottom, rounded portal.
+    left = [(-half_width, y, top), (-half_width, y, bottom + radius)] + bottom_left + [(0.0, y, bottom)]
+    right = [(0.0, y, bottom), (half_width - radius, y, bottom)] + bottom_right + [(half_width, y, top)]
+    return left, right
 
 
 def build_split_glow_arcade() -> None:
@@ -64,6 +69,8 @@ def build_split_glow_arcade() -> None:
     orange = material("Sunset Edge Neon", (1.0, 0.16, 0.02, 1.0), roughness=0.12, emission=(1.0, 0.20, 0.03, 1.0), strength=14.0)
     cyan_floor = material("Cyan Floor Reflection", (0.005, 0.045, 0.075, 1.0), metallic=0.92, roughness=0.10, emission=(0.0, 0.20, 0.30, 1.0), strength=0.55)
     pink_floor = material("Pink Floor Reflection", (0.075, 0.004, 0.035, 1.0), metallic=0.92, roughness=0.10, emission=(0.30, 0.0, 0.10, 1.0), strength=0.55)
+    cyan_wall = material("Cyan Wall Reflection", (0.003, 0.025, 0.060, 1.0), metallic=0.92, roughness=0.12, emission=(0.0, 0.13, 0.26, 1.0), strength=0.42)
+    pink_wall = material("Pink Wall Reflection", (0.065, 0.002, 0.028, 1.0), metallic=0.92, roughness=0.12, emission=(0.25, 0.0, 0.08, 1.0), strength=0.42)
 
     shell = [
         box("Wet Reflective Tile Floor", (0.0, 0.0, -2.19), (10.0, 18.12, 0.20), floor_mat, bevel=0.05),
@@ -72,6 +79,8 @@ def build_split_glow_arcade() -> None:
         box("Dark Ceiling", (0.0, 0.0, 6.08), (13.4, 18.12, 0.30), dark, bevel=0.10),
         box("Left Cyan Floor Reflection", (-2.50, 0.0, -2.076), (4.92, 18.0, 0.012), cyan_floor, bevel=0.004),
         box("Right Pink Floor Reflection", (2.50, 0.0, -2.076), (4.92, 18.0, 0.012), pink_floor, bevel=0.004),
+        box("Left Cyan Wall Reflection", (-6.37, 0.0, 1.70), (0.018, 18.0, 7.2), cyan_wall, bevel=0.003),
+        box("Right Pink Wall Reflection", (6.37, 0.0, 1.70), (0.018, 18.0, 7.2), pink_wall, bevel=0.003),
     ]
     for x in (-4.55, -2.28, 0.0, 2.28, 4.55):
         shell.append(box(f"Floor Tile Seam X {x:+.2f}", (x, 0.0, -2.064), (0.022, 18.0, 0.012), dark, bevel=0.004))
@@ -80,15 +89,10 @@ def build_split_glow_arcade() -> None:
     parent_all(root, shell)
 
     frame: list[bpy.types.Object] = []
-    points = rounded_portal_points(0.0)
-    frame.append(tube("Rounded Portal Dark Housing", points, 0.105, dark, cyclic=True))
-    left = [p for p in points if p[0] <= 0.10]
-    right = [p for p in points if p[0] >= -0.10]
-    left.sort(key=lambda p: math.atan2(p[2] - 1.78, p[0]))
-    right.sort(key=lambda p: math.atan2(p[2] - 1.78, p[0]))
-    frame.append(tube("Rounded Portal Cyan Half", left, 0.047, cyan))
-    frame.append(tube("Rounded Portal Pink Half", right, 0.047, pink))
-    frame.append(box("Warm Crown Accent", (3.85, 0.02, 5.91), (3.7, 0.13, 0.08), orange, bevel=0.035))
+    left, right = rounded_split_paths(0.0)
+    frame.append(tube("Rounded Portal Cyan Half", left, 0.038, cyan))
+    frame.append(tube("Rounded Portal Pink Half", right, 0.038, pink))
+    frame.append(box("Warm Crown Accent", (3.75, 0.012, -2.37), (4.50, 0.075, 0.045), orange, bevel=0.020))
     parent_all(root, frame)
 
     configure_scene()
@@ -105,24 +109,28 @@ def build_infinite_neon_portal() -> None:
     blue = material("Portal Electric Blue", (0.05, 0.12, 1.0, 1.0), roughness=0.10, emission=(0.10, 0.20, 1.0, 1.0), strength=16.0)
     violet = material("Portal Violet", (0.54, 0.02, 1.0, 1.0), roughness=0.10, emission=(0.68, 0.04, 1.0, 1.0), strength=16.0)
     pink = material("Portal Magenta", (1.0, 0.01, 0.55, 1.0), roughness=0.10, emission=(1.0, 0.03, 0.64, 1.0), strength=16.0)
+    cyan_glass = material("Portal Cyan Wall Glow", (0.002, 0.025, 0.085, 1.0), metallic=0.94, roughness=0.08, emission=(0.0, 0.16, 0.34, 1.0), strength=0.55)
+    violet_glass = material("Portal Violet Wall Glow", (0.035, 0.002, 0.095, 1.0), metallic=0.94, roughness=0.08, emission=(0.15, 0.0, 0.38, 1.0), strength=0.55)
 
     shell = [
         box("Mirror Portal Floor", (0.0, 0.0, -2.19), (10.0, 18.12, 0.20), navy, bevel=0.04),
         box("Mirror Portal Ceiling", (0.0, 0.0, 6.05), (13.0, 18.12, 0.28), navy, bevel=0.08),
         box("Left Mirror Portal Wall", (-6.45, 0.0, 1.78), (0.30, 18.12, 8.3), navy, bevel=0.08),
         box("Right Mirror Portal Wall", (6.45, 0.0, 1.78), (0.30, 18.12, 8.3), navy, bevel=0.08),
+        box("Left Portal Wall Reflection", (-6.28, 0.0, 1.78), (0.018, 18.0, 8.0), cyan_glass, bevel=0.003),
+        box("Right Portal Wall Reflection", (6.28, 0.0, 1.78), (0.018, 18.0, 8.0), violet_glass, bevel=0.003),
     ]
     parent_all(root, shell)
 
     frame = [
-        box("Portal Left Upper Cyan", (-5.95, 0.0, 3.78), (0.095, 0.16, 4.0), cyan, bevel=0.042),
-        box("Portal Left Lower Magenta", (-5.95, 0.0, -0.05), (0.095, 0.16, 3.66), pink, bevel=0.042),
-        box("Portal Top Cyan", (-2.95, 0.0, 5.78), (5.95, 0.16, 0.095), cyan, bevel=0.042),
-        box("Portal Top Blue", (2.95, 0.0, 5.78), (5.95, 0.16, 0.095), blue, bevel=0.042),
-        box("Portal Right Upper Violet", (5.95, 0.0, 3.78), (0.095, 0.16, 4.0), violet, bevel=0.042),
-        box("Portal Right Lower Cyan", (5.95, 0.0, -0.05), (0.095, 0.16, 3.66), cyan, bevel=0.042),
-        box("Portal Bottom Magenta", (-2.95, 0.0, -1.88), (5.95, 0.16, 0.095), pink, bevel=0.042),
-        box("Portal Bottom Cyan", (2.95, 0.0, -1.88), (5.95, 0.16, 0.095), cyan, bevel=0.042),
+        box("Portal Left Upper Cyan", (-5.95, 0.0, 3.78), (0.052, 0.10, 4.0), cyan, bevel=0.022),
+        box("Portal Left Lower Magenta", (-5.95, 0.0, -0.05), (0.052, 0.10, 3.66), pink, bevel=0.022),
+        box("Portal Top Cyan", (-2.95, 0.0, 5.78), (5.95, 0.10, 0.052), cyan, bevel=0.022),
+        box("Portal Top Blue", (2.95, 0.0, 5.78), (5.95, 0.10, 0.052), blue, bevel=0.022),
+        box("Portal Right Upper Violet", (5.95, 0.0, 3.78), (0.052, 0.10, 4.0), violet, bevel=0.022),
+        box("Portal Right Lower Cyan", (5.95, 0.0, -0.05), (0.052, 0.10, 3.66), cyan, bevel=0.022),
+        box("Portal Bottom Magenta", (-2.95, 0.0, -1.88), (5.95, 0.10, 0.052), pink, bevel=0.022),
+        box("Portal Bottom Cyan", (2.95, 0.0, -1.88), (5.95, 0.10, 0.052), cyan, bevel=0.022),
     ]
     parent_all(root, frame)
 
@@ -135,7 +143,7 @@ def build_infinite_neon_portal() -> None:
 def _write_synthwave_background() -> None:
     width, height = 1024, 1024
     rng = random.Random(1900024831642483)
-    stars = [(rng.randrange(width), rng.randrange(0, 680), 0) for _ in range(420)]
+    stars = [(rng.randrange(width), rng.randrange(0, 680), 0) for _ in range(720)]
     pixels: list[float] = []
     sun_x, sun_y, sun_radius = width * 0.5, height * 0.45, width * 0.17
     for y in range(height):
@@ -173,16 +181,16 @@ def build_synthwave_horizon_valley() -> None:
     cyan = material("Grid Cyan", (0.0, 0.72, 0.90, 1.0), roughness=0.12, emission=(0.02, 0.95, 1.0, 1.0), strength=13.0)
     violet = material("Mountain Violet", (0.52, 0.015, 0.95, 1.0), roughness=0.12, emission=(0.76, 0.03, 1.0, 1.0), strength=11.0)
 
-    shell = [box("Synthwave Black Runway", (0.0, 0.0, -2.19), (10.0, 18.12, 0.20), black, bevel=0.03)]
-    for x in (-4.8, -3.6, -2.4, -1.2, 0.0, 1.2, 2.4, 3.6, 4.8):
+    shell = [box("Synthwave Black Runway", (0.0, 0.0, -2.19), (16.0, 18.12, 0.20), black, bevel=0.03)]
+    for x in (-7.8, -6.5, -5.2, -3.9, -2.6, -1.3, 0.0, 1.3, 2.6, 3.9, 5.2, 6.5, 7.8):
         shell.append(box(f"Grid Longitudinal {x:+.1f}", (x, 0.0, -2.075), (0.032, 18.0, 0.022), cyan, bevel=0.009))
     for y in (-8.5, -7.0, -5.5, -4.0, -2.5, -1.0, 0.5, 2.0, 3.5, 5.0, 6.5, 8.0):
-        shell.append(box(f"Grid Crossline {y:+.1f}", (0.0, y, -2.074), (9.9, 0.034, 0.022), cyan, bevel=0.009))
+        shell.append(box(f"Grid Crossline {y:+.1f}", (0.0, y, -2.074), (15.9, 0.034, 0.022), cyan, bevel=0.009))
 
     rng = random.Random(1900024831642483)
     for side, sign in (("Left", -1.0), ("Right", 1.0)):
         for ridge in range(4):
-            base_x = sign * (6.2 + ridge * 1.25)
+            base_x = sign * (7.1 + ridge * 1.20)
             points = []
             for index in range(13):
                 y = -9.0 + index * 1.5

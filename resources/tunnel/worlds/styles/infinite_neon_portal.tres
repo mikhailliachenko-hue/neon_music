@@ -45,6 +45,6 @@ side_reflection_enabled = false
 safe_lane_half_width = 4.8
 minimum_overhead_y = 5.5
 side_clearance_margin = 0.4
-camera_fov_offset = -1.0
+camera_fov_offset = 5.0
 fog_scale = 0.36
 background_depth = 1.3

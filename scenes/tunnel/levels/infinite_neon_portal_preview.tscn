@@ -32,6 +32,6 @@ environment = SubResource("Environment_preview")
 [node name="Camera3D" type="Camera3D" parent="."]
 position = Vector3(0, 2.15, 7.25)
 current = true
-fov = 59.5
+fov = 69.0
 
 [node name="InfiniteNeonPortal" parent="." instance=ExtResource("2_level")]
