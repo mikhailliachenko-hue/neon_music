@@ -279,6 +279,10 @@ Runtime renderer scripts.
   taller frames to match the wider visual cadence of its reference. The open
   valley keeps the road and wire
   mountains in the decorative shell while the single horizon remains a backdrop.
+- Gameplay actions launch the shared travelling action wave. Split Glow and
+  Infinite Neon Portal add a restrained outward-only X/Y scale impulse to their
+  Blender frames while preserving Z and gameplay clearance; Synthwave Horizon
+  Valley reacts through grid/mountain emission without transforming its floor.
 - Shared L1 geometry coverage lives in
   `pinterest_tunnel_pack_asset_smoke_test.gd`; Forward+ evidence lives under
   `output/diagnostics/pinterest_tunnel_pack/` and is not committed.

@@ -527,8 +527,9 @@ func apply_frame_reaction(
 				var module := module_node as Node3D
 				if module == null:
 					continue
-				# The transform remains stable. The reference pulse is a light wave;
-				# scaling the imported threshold could intersect gameplay platforms.
+				# Authored frames may breathe outward in X/Y with the travelling action
+				# wave. Z remains fixed, and positive scale grows the opening away from
+				# the gameplay lane instead of pushing geometry along the note path.
 				if module.has_meta("rhythm_frame_base_scale"):
 					module.scale = module.get_meta("rhythm_frame_base_scale") as Vector3
 				var depth := maxf(0.0, wave_origin_z - module.global_position.z)
@@ -568,6 +569,10 @@ func apply_frame_reaction(
 							gradient_start, gradient_mid, gradient_end, gradient_cursor
 						)
 				var visual_amount := clampf(wave_amount, 0.0, 1.0) * 0.70
+				if module.has_meta("rhythm_frame_base_scale"):
+					var base_scale := module.get_meta("rhythm_frame_base_scale") as Vector3
+					var scale_impulse := 1.0 + visual_amount * _active_world_style.action_wave_scale_impulse
+					module.scale = base_scale * Vector3(scale_impulse, scale_impulse, 1.0)
 				var final_color := base_color.lerp(wave_color, visual_amount)
 				var action_emission_gain := 0.24 + wave_emission_strength * 1.15
 				var emission := (0.50 + _frame_emission * 0.12) * _frame_rest_emission_scale \

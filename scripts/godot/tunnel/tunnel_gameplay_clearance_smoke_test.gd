@@ -103,19 +103,24 @@ func _run() -> void:
 		hold.queue_free()
 		await process_frame
 
-	for index in range(generator.level_presets().size() - 1, -1, -1):
-		var wave_preset := generator.level_presets()[index]
-		if wave_preset.world_style != null \
-			and wave_preset.world_style.action_wave_enabled \
-			and wave_preset.world_style.asset_set != null \
-			and not wave_preset.world_style.asset_set.ring_assets.is_empty():
-			generator.select_level_by_index(index, 740000 + index)
-			break
-	generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
-	generator.sync_to_song_time(song_time + 0.1, {})
-	if int(generator.get_runtime_stats().get("frame_waves", 0)) <= 0:
+	# Use a fresh pool with the Pinterest portal as its startup preset. The broad
+	# loop above deliberately hot-swaps all 33 worlds and is not representative of
+	# the normal level-launch path used by production playback.
+	var pulse_generator := LEVEL_SCENE.instantiate() as NeonTunnelGenerator
+	pulse_generator.config = pulse_generator.config.duplicate(true) as NeonTunnelConfig
+	pulse_generator.config.initial_preset = "INFINITE NEON PORTAL"
+	pulse_generator.config.deterministic_seed = 740031
+	root.add_child(pulse_generator)
+	await process_frame
+	pulse_generator.sync_to_song_time(0.0, {})
+	pulse_generator.trigger_action_camera_impact("STEP", 1.0, 0.0)
+	# The wave is intentionally hidden in the nearest 28 m so it cannot compete
+	# with notes. Sample as its front crosses the visible mid-distance frames.
+	pulse_generator.sync_to_song_time(0.28, {})
+	if int(pulse_generator.get_runtime_stats().get("frame_waves", 0)) <= 0:
 		failures.append("action-enabled authored world did not launch a travelling wave")
-	for segment in generator._segments:
+	var scale_impulse_observed := false
+	for segment in pulse_generator._segments:
 		for slot_name in ["Rings", "Arches"]:
 			var slot := segment.get_node_or_null("ExternalAssets/" + slot_name) as Node3D
 			if slot == null:
@@ -126,17 +131,28 @@ func _run() -> void:
 					continue
 				for module_node in group.get_children():
 					var module := module_node as Node3D
-					if module != null and module.has_meta("rhythm_frame_base_scale") \
-					and not module.scale.is_equal_approx(module.get_meta("rhythm_frame_base_scale") as Vector3):
-						failures.append("travelling light wave changed frame geometry")
+					if module == null or not module.has_meta("rhythm_frame_base_scale"):
+						continue
+					var base_scale := module.get_meta("rhythm_frame_base_scale") as Vector3
+					if not is_equal_approx(module.scale.z, base_scale.z):
+						failures.append("travelling frame impulse changed depth scale")
+					if module.scale.x + 0.0001 < base_scale.x or module.scale.y + 0.0001 < base_scale.y:
+						failures.append("travelling frame impulse shrank into the gameplay opening")
+					if module.scale.x > base_scale.x * 1.081 or module.scale.y > base_scale.y * 1.081:
+						failures.append("travelling frame impulse exceeded the 8 percent safety cap")
+					if module.scale.x > base_scale.x + 0.0001 or module.scale.y > base_scale.y + 0.0001:
+						scale_impulse_observed = true
+	if not scale_impulse_observed:
+		failures.append("action-enabled Pinterest frame did not receive a scale impulse")
 
 	print("TUNNEL_CLEARANCE_SMOKE presets=%d half_width=%.2f hand_top=%.2f waves=%d" % [
 		generator.level_presets().size(), GAMEPLAY_HALF_WIDTH, GAMEPLAY_HAND_TOP,
-		int(generator.get_runtime_stats().get("frame_waves", 0)),
+		int(pulse_generator.get_runtime_stats().get("frame_waves", 0)),
 	])
 	for failure in failures:
 		push_error("TUNNEL_CLEARANCE_SMOKE: %s" % failure)
 	generator.queue_free()
+	pulse_generator.queue_free()
 	quit(0 if failures.is_empty() else 1)
 
 

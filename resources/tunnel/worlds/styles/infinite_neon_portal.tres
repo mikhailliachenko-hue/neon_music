@@ -38,6 +38,7 @@ floor_roughness = 0.08
 action_wave_enabled = true
 preserve_authored_frame_palette = true
 action_wave_body_glow = 0.40
+action_wave_scale_impulse = 0.036
 action_wave_gradient_start = Color(0.02, 0.95, 1.0, 1)
 action_wave_gradient_mid = Color(0.20, 0.25, 1.0, 1)
 action_wave_gradient_end = Color(1.0, 0.03, 0.64, 1)

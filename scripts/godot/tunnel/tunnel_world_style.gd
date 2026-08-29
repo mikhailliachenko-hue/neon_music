@@ -49,6 +49,7 @@ class_name TunnelWorldStyle
 @export var action_wave_enabled := false
 @export var preserve_authored_frame_palette := false
 @export_range(0.0, 1.5, 0.01) var action_wave_body_glow := 0.18
+@export_range(0.0, 0.08, 0.001) var action_wave_scale_impulse := 0.0
 @export var action_wave_gradient_start := Color(0.0, 0.0, 0.0, 0.0)
 @export var action_wave_gradient_mid := Color(0.0, 0.0, 0.0, 0.0)
 @export var action_wave_gradient_end := Color(0.0, 0.0, 0.0, 0.0)
