@@ -95,6 +95,31 @@ def cylinder(
     return obj
 
 
+def torus(
+    name: str,
+    location: tuple[float, float, float],
+    major_radius: float,
+    minor_radius: float,
+    mat: bpy.types.Material,
+    parent: bpy.types.Object,
+    rotation: tuple[float, float, float] = (0.0, 0.0, 0.0),
+) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=major_radius,
+        minor_radius=minor_radius,
+        major_segments=48,
+        minor_segments=10,
+        location=location,
+        rotation=rotation,
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.materials.append(mat)
+    obj.parent = parent
+    bpy.ops.object.shade_smooth()
+    return obj
+
+
 def cloud(name: str, x: float, y: float, z: float, wall_x: float, mat: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
     pieces: list[bpy.types.Object] = []
     for index, (dy, dz, sy, sz) in enumerate(((-0.26, 0.00, 0.30, 0.20), (0.0, 0.13, 0.36, 0.28), (0.30, 0.01, 0.27, 0.18))):
@@ -104,43 +129,69 @@ def cloud(name: str, x: float, y: float, z: float, wall_x: float, mat: bpy.types
 
 
 def drawer_chest(x: float, y: float, white: bpy.types.Material, knob: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
-    parts = [box("Left Tall Dresser Body", (x, y, -0.72), (1.72, 0.90, 2.45), white, 0.07, parent)]
-    for row in range(4):
-        z = 0.05 - row * 0.52
-        front = box(f"Left Dresser Drawer {row + 1}", (x + 0.46, y, z), (0.10, 0.73, 0.38), white, 0.04, parent)
-        parts.append(front)
-        if row == 0:
-            for offset in (-0.29, 0.29):
-                parts.append(sphere(f"Left Dresser Knob {row + 1} {offset:+.2f}", (x + 0.54, y + offset, z), (0.07, 0.07, 0.07), knob, parent))
-        else:
-            parts.append(sphere(f"Left Dresser Knob {row + 1}", (x + 0.54, y, z), (0.07, 0.07, 0.07), knob, parent))
-    parts.append(box("Left Dresser Top", (x, y, 0.56), (1.92, 1.04, 0.16), white, 0.05, parent))
+    # The reference dresser is broad, tapered and fronted by two small drawers
+    # above three full-width drawers.  Layered rails make those silhouettes read
+    # from the gameplay camera instead of as lines painted onto a plain cube.
+    parts = [box("Left Tall Dresser Carcass", (x, y, -0.69), (1.42, 1.92, 2.58), white, 0.09, parent)]
+    parts.append(box("Left Dresser Crown Top", (x, y, 0.68), (1.58, 2.12, 0.18), white, 0.07, parent))
+    parts.append(box("Left Dresser Plinth", (x, y, -2.00), (1.52, 2.02, 0.20), white, 0.06, parent))
+    for sy in (-0.78, 0.78):
+        parts.append(box(f"Left Dresser Curved Foot {sy:+.2f}", (x, y + sy, -2.14), (1.20, 0.28, 0.30), white, 0.08, parent))
+    for index, (z, drawer_width, centers) in enumerate((
+        (0.30, 0.78, (-0.48, 0.48)),
+        (-0.30, 1.72, (0.0,)),
+        (-0.88, 1.72, (0.0,)),
+        (-1.46, 1.72, (0.0,)),
+    )):
+        for center in centers:
+            parts.append(box(
+                f"Left Dresser Raised Drawer {index + 1} {center:+.2f}",
+                (x + 0.75, y + center, z),
+                (0.12, drawer_width, 0.43),
+                white,
+                0.055,
+                parent,
+            ))
+            parts.append(sphere(
+                f"Left Dresser Knob {index + 1} {center:+.2f}",
+                (x + 0.84, y + center, z),
+                (0.085, 0.085, 0.085),
+                knob,
+                parent,
+            ))
     return parts
 
 
 def globe(x: float, y: float, wood: bpy.types.Material, blue: bpy.types.Material, green: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
-    parts = [cylinder("Globe Stand", (x, y, 0.80), 0.09, 0.32, wood, parent)]
-    parts.append(sphere("Blue Globe", (x, y, 1.17), (0.38, 0.38, 0.38), blue, parent))
-    for index, (dx, dy, dz) in enumerate(((-0.18, -0.15, 0.13), (0.15, 0.12, -0.04), (-0.02, 0.20, -0.16))):
-        parts.append(sphere(f"Globe Land {index + 1}", (x + dx, y + dy, 1.17 + dz), (0.12, 0.05, 0.10), green, parent))
-    parts.append(cylinder("Globe Foot", (x, y, 0.62), 0.30, 0.08, wood, parent))
+    parts = [cylinder("Globe Stand", (x, y, 0.88), 0.075, 0.30, wood, parent)]
+    parts.append(cylinder("Globe Foot", (x, y, 0.70), 0.31, 0.09, wood, parent))
+    parts.append(sphere("Blue Globe", (x, y, 1.32), (0.46, 0.46, 0.46), blue, parent))
+    parts.append(torus("Brass Globe Meridian", (x, y, 1.32), 0.50, 0.026, wood, parent, (math.radians(18), 0.0, math.radians(12))))
+    for index, (dx, dy, dz, sx, sy, sz) in enumerate((
+        (-0.22, -0.37, 0.14, 0.16, 0.055, 0.15),
+        (0.18, -0.38, -0.03, 0.13, 0.050, 0.18),
+        (-0.01, -0.42, -0.23, 0.18, 0.045, 0.10),
+    )):
+        parts.append(sphere(f"Globe Land {index + 1}", (x + dx, y + dy, 1.32 + dz), (sx, sy, sz), green, parent))
     return parts
 
 
 def bedside_table(x: float, y: float, white: bpy.types.Material, brass: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
-    parts = [box("Bedside Table Top", (x, y, -0.31), (0.90, 0.75, 0.14), white, 0.05, parent)]
-    for sx in (-0.34, 0.34):
-        for sy in (-0.27, 0.27):
-            parts.append(box(f"Bedside Leg {sx:+.2f} {sy:+.2f}", (x + sx, y + sy, -1.10), (0.13, 0.13, 1.52), white, 0.025, parent))
-    parts.append(box("Bedside Drawer", (x - 0.39, y, -0.58), (0.12, 0.58, 0.32), white, 0.035, parent))
-    parts.append(sphere("Bedside Drawer Pull", (x - 0.47, y, -0.58), (0.08, 0.08, 0.08), brass, parent))
+    parts = [box("Bedside Table Top", (x, y, -0.18), (1.04, 0.90, 0.16), white, 0.06, parent)]
+    parts.append(box("Bedside Drawer Case", (x, y, -0.48), (0.92, 0.82, 0.48), white, 0.045, parent))
+    parts.append(box("Bedside Raised Drawer", (x + 0.50, y, -0.48), (0.10, 0.64, 0.30), white, 0.035, parent))
+    parts.append(sphere("Bedside Drawer Pull", (x + 0.58, y, -0.48), (0.075, 0.075, 0.075), brass, parent))
+    for sx in (-0.36, 0.36):
+        for sy in (-0.31, 0.31):
+            parts.append(box(f"Bedside Tapered Leg {sx:+.2f} {sy:+.2f}", (x + sx, y + sy, -1.30), (0.12, 0.12, 1.25), white, 0.028, parent))
     return parts
 
 
 def lamp(x: float, y: float, red: bpy.types.Material, cream: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
-    parts = [sphere("Red Ceramic Lamp Base", (x, y, 0.12), (0.25, 0.25, 0.34), red, parent)]
-    parts.append(cylinder("Lamp Stem", (x, y, 0.50), 0.045, 0.48, red, parent))
-    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.38, radius2=0.22, depth=0.50, location=(x, y, 0.82))
+    parts = [sphere("Red Ceramic Lamp Base", (x, y, 0.22), (0.30, 0.30, 0.40), red, parent)]
+    parts.append(cylinder("Lamp Base Foot", (x, y, -0.02), 0.24, 0.08, red, parent))
+    parts.append(cylinder("Lamp Stem", (x, y, 0.64), 0.045, 0.50, red, parent))
+    bpy.ops.mesh.primitive_cone_add(vertices=48, radius1=0.45, radius2=0.27, depth=0.58, location=(x, y, 1.04))
     shade = bpy.context.object
     shade.name = "Cream Lamp Shade"
     shade.data.materials.append(cream)
@@ -151,16 +202,19 @@ def lamp(x: float, y: float, red: bpy.types.Material, cream: bpy.types.Material,
 
 def bed(x: float, y: float, wood: bpy.types.Material, blue: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
     parts: list[bpy.types.Object] = []
-    parts.append(box("Bed Mattress", (x, y, -0.77), (1.85, 3.35, 0.45), blue, 0.18, parent))
-    parts.append(box("Blue Bedspread Drop", (x - 0.89, y + 0.15, -1.18), (0.18, 2.90, 1.02), blue, 0.13, parent))
-    parts.append(box("Bed Footboard", (x, y + 1.70, -0.72), (2.05, 0.18, 1.22), wood, 0.06, parent))
+    parts.append(box("Bed Mattress", (x, y, -0.70), (1.88, 3.38, 0.44), blue, 0.20, parent))
+    parts.append(box("Blue Bedspread Side Drop", (x - 0.91, y + 0.06, -1.20), (0.16, 3.08, 1.08), blue, 0.12, parent))
+    parts.append(box("Blue Bedspread Foot Drop", (x, y + 1.57, -1.12), (1.85, 0.16, 0.90), blue, 0.12, parent))
+    parts.append(box("Bed Pillow", (x, y - 1.12, -0.40), (1.40, 0.66, 0.24), blue, 0.18, parent))
+    parts.append(box("Bed Footboard", (x, y + 1.74, -0.66), (2.12, 0.18, 1.30), wood, 0.07, parent))
+    parts.append(box("Bed Footboard Inset", (x - 0.10, y + 1.63, -0.66), (1.62, 0.08, 0.74), wood, 0.04, parent))
     parts.append(box("Bed Headboard Rail", (x, y - 1.70, 0.36), (2.02, 0.18, 0.20), wood, 0.06, parent))
     for sx in (-0.92, 0.92):
         parts.append(box(f"Bed Head Post {sx:+.1f}", (x + sx, y - 1.70, 0.15), (0.18, 0.18, 2.68), wood, 0.045, parent))
         parts.append(sphere(f"Bed Head Finial {sx:+.1f}", (x + sx, y - 1.70, 1.55), (0.17, 0.17, 0.17), wood, parent))
         parts.append(box(f"Bed Foot Post {sx:+.1f}", (x + sx, y + 1.70, -0.75), (0.18, 0.18, 1.28), wood, 0.04, parent))
-    for index in range(6):
-        sx = x - 0.66 + index * 0.265
+    for index in range(7):
+        sx = x - 0.72 + index * 0.24
         parts.append(cylinder(f"Headboard Spindle {index + 1}", (sx, y - 1.70, 0.35), 0.045, 1.62, wood, parent))
     # Curved crest approximates the distinctive arched headboard silhouette.
     curve_data = bpy.data.curves.new("Arched Headboard Crest Curve", "CURVE")
@@ -188,6 +242,9 @@ def shelf(x: float, y: float, white: bpy.types.Material, parent: bpy.types.Objec
     for index in range(4):
         z = -1.72 + index * 0.76
         parts.append(box(f"Right Shelf Board {index + 1}", (x, y, z), (1.65, 0.68, 0.13), white, 0.035, parent))
+    parts.append(box("Right Shelf Back Rail", (x + 0.68, y, -0.55), (0.10, 0.58, 2.30), white, 0.03, parent))
+    for sy in (-0.24, 0.24):
+        parts.append(sphere(f"Right Shelf Finial {sy:+.2f}", (x - 0.78, y + sy, 0.82), (0.11, 0.11, 0.11), white, parent))
     return parts
 
 
@@ -202,6 +259,13 @@ def oval_rug(x: float, y: float, blue: bpy.types.Material, cream: bpy.types.Mate
         rug.data.materials.append(mat)
         rug.parent = parent
         parts.append(rug)
+    return parts
+
+
+def toy_ball(x: float, y: float, yellow: bpy.types.Material, blue: bpy.types.Material, red: bpy.types.Material, parent: bpy.types.Object) -> list[bpy.types.Object]:
+    parts = [sphere("Toy Ball Yellow Body", (x, y, -1.55), (0.34, 0.34, 0.34), yellow, parent)]
+    parts.append(torus("Toy Ball Blue Band", (x, y, -1.55), 0.285, 0.075, blue, parent, (math.radians(90), 0.0, 0.0)))
+    parts.append(sphere("Toy Ball Red Badge", (x - 0.31, y, -1.55), (0.035, 0.15, 0.15), red, parent))
     return parts
 
 
@@ -242,11 +306,11 @@ def configure_render() -> None:
     sun = bpy.context.object
     sun.data.energy = 1.8
     sun.data.color = (1.0, 0.82, 0.62)
-    bpy.ops.object.camera_add(location=(0.0, 6.85, 1.20))
+    bpy.ops.object.camera_add(location=(0.0, 7.15, 1.05))
     camera = bpy.context.object
     camera.name = "CAM_CloudBedroom_Hero"
-    camera.data.lens = 22.0
-    aim(camera, (0.0, -0.35, -0.35))
+    camera.data.lens = 24.0
+    aim(camera, (0.0, -0.55, -0.42))
     scene.camera = camera
 
 
@@ -279,12 +343,12 @@ def build() -> None:
     root["gameplay_clearance_half_width_m"] = SAFE_HALF_WIDTH
 
     wallpaper = material("Powder Blue Cloud Wallpaper", (0.18, 0.55, 0.76, 1.0), 0.62)
-    white = material("Warm Painted Ivory", (0.92, 0.88, 0.75, 1.0), 0.54)
-    cloud_white = material("Soft Cloud White", (0.96, 0.94, 0.82, 1.0), 0.68)
-    floor = material("Copper Honey Wood", (0.56, 0.26, 0.09, 1.0), 0.42)
-    floor_light = material("Copper Honey Highlight", (0.76, 0.40, 0.15, 1.0), 0.40)
-    bed_blue = material("Deep Royal Blue Fabric", (0.015, 0.16, 0.62, 1.0), 0.82)
-    wood = material("Warm Walnut Bed Wood", (0.34, 0.13, 0.045, 1.0), 0.48)
+    white = material("Warm Painted Ivory", (0.94, 0.93, 0.88, 1.0), 0.58)
+    cloud_white = material("Soft Cloud White", (0.98, 0.97, 0.91, 1.0), 0.72)
+    floor = material("Copper Honey Wood", (0.50, 0.22, 0.075, 1.0), 0.48)
+    floor_light = material("Copper Honey Highlight", (0.69, 0.33, 0.12, 1.0), 0.46)
+    bed_blue = material("Deep Royal Blue Fabric", (0.012, 0.095, 0.54, 1.0), 0.88)
+    wood = material("Warm Walnut Bed Wood", (0.30, 0.105, 0.028, 1.0), 0.52)
     red = material("Lamp Red", (0.72, 0.025, 0.02, 1.0), 0.38)
     yellow = material("Desk Golden Yellow", (0.92, 0.62, 0.02, 1.0), 0.46)
     purple = material("Desk Plum", (0.34, 0.05, 0.17, 1.0), 0.52)
@@ -309,6 +373,16 @@ def build() -> None:
         shell.append(box(f"{side} Crown Moulding", (wall_x + 0.17 * inset, 0.0, 5.52), (0.20, ROOM_LENGTH, 0.22), white, 0.035, root))
         for cloud_index, (depth, height) in enumerate(((-7.2, 3.1), (-5.0, 4.25), (-2.8, 3.55), (-0.5, 4.45), (1.9, 3.25), (4.3, 4.20), (6.7, 3.50))):
             shell.extend(cloud(f"{side} {cloud_index + 1}", 0.0, depth, height, wall_x + 0.14 * inset, cloud_white, root))
+        # Two blank white wall canvases are a strong part of the source image.
+        for panel_index, panel_y in enumerate((-3.15, 2.35)):
+            shell.append(box(
+                f"{side} Blank Wall Canvas {panel_index + 1}",
+                (wall_x + 0.24 * inset, panel_y, 2.62),
+                (0.12, 2.28, 2.72),
+                white,
+                0.055,
+                root,
+            ))
 
     bay: list[bpy.types.Object] = []
     bay.extend(drawer_chest(-5.45, -1.25, white, brass, root))
@@ -318,11 +392,9 @@ def build() -> None:
     bay.extend(bed(5.55, -0.70, wood, bed_blue, root))
     bay.extend(shelf(5.45, 2.05, white, root))
     bay.extend(oval_rug(-5.35, 3.00, bed_blue, white, orange, root))
+    bay.extend(toy_ball(-5.05, 2.75, yellow, globe_blue, red, root))
     bay.append(box("Foreground Yellow Desk Top", (5.55, 4.05, -1.02), (2.05, 1.35, 0.27), yellow, 0.08, root))
     bay.append(box("Foreground Plum Desk Base", (5.55, 4.05, -1.65), (1.72, 1.10, 1.00), purple, 0.06, root))
-    for side, x in (("Left", -6.03), ("Right", 6.03)):
-        bay.append(box(f"{side} Bedroom Bay Divider", (x, 0.0, 1.30), (0.42, 0.30, 6.75), white, 0.06, root))
-    bay.append(box("Bedroom Bay Ceiling Trim", (0.0, 0.0, 4.83), (12.25, 0.34, 0.36), white, 0.06, root))
 
     bpy.context.scene.unit_settings.system = "METRIC"
     configure_render()

@@ -298,9 +298,10 @@ Runtime renderer scripts.
   `source_assets/blender/cloud_bedroom_gallery.blend` plus separate shell and
   furniture-bay GLBs under `assets/tunnel/blender_modules/`.
 - Large furniture remains beyond the verified 4.4 m gameplay half-width and the
-  opening keeps 4.65 m overhead clearance. Two furnished bedroom bays per 18 m
-  segment preserve reference scale without turning the tunnel into repeated
-  clutter. Action waves add at most a 2% outward X/Y pulse to the decorative bay;
+  opening keeps 4.65 m overhead clearance. One detailed bedroom group per 18 m
+  segment preserves the reference props without turning the room into repeated
+  clutter. The group has no cross-road columns or ceiling frame. Action waves add
+  at most a 2% outward X/Y pulse to the decorative bay;
   Z, the gameplay road, notes, receptors and obstacles remain unchanged.
 - Fresh-import evidence lives under `output/diagnostics/cloud_bedroom_gallery/`;
   L1 geometry coverage is

@@ -18,7 +18,7 @@ func _run() -> void:
 	var shell_bounds := _combined_bounds(shell)
 	var bay_bounds := _combined_bounds(bay)
 	var floor_bounds := _named_mesh_bounds(shell, "*Continuous Bedroom Subfloor*")
-	var bed_bounds := _merge_patterns(bay, ["Bed Mattress", "Blue Bedspread Drop", "Bed Footboard", "Bed Head*", "Bed Foot*", "Headboard*"])
+	var bed_bounds := _merge_patterns(bay, ["Bed Mattress", "Blue Bedspread*", "Bed Pillow", "Bed Footboard*", "Bed Head*", "Bed Foot*", "Headboard*"])
 	var left_furniture := _merge_patterns(bay, ["Left*", "Bedside*", "Globe*", "Blue Globe", "Red Ceramic*", "Cream Lamp*"])
 	if shell_bounds.size.x < 12.7 or shell_bounds.size.z < 17.8 or shell_bounds.end.y < 5.60:
 		failures.append("bedroom shell lost corridor-scale bounds: %s" % str(shell_bounds))
@@ -28,7 +28,10 @@ func _run() -> void:
 		failures.append("bed enters the gameplay lane: %s" % str(bed_bounds))
 	if left_furniture.end.x > -4.40:
 		failures.append("left furniture enters the gameplay lane: %s" % str(left_furniture))
-	if bay_bounds.size.z > 8.0 or bay_bounds.end.y < 4.60:
+	# This level deliberately has no cross-corridor ceiling frames: they made the
+	# bedroom read as a subway tunnel. Furniture still needs a tall readable
+	# silhouette, but no decorative prop should bridge over the gameplay lane.
+	if bay_bounds.size.z > 8.0 or bay_bounds.end.y < 1.50:
 		failures.append("bedroom bay lost its authored scale: %s" % str(bay_bounds))
 	print("CLOUD_BEDROOM_ASSET_SMOKE shell=%s floor=%s bay=%s bed=%s" % [str(shell_bounds), str(floor_bounds), str(bay_bounds), str(bed_bounds)])
 	for failure in failures:
