@@ -79,3 +79,31 @@ def test_report_uses_canonical_movement_hit_beats_before_note_timestamps() -> No
 
     assert report["eight_count_hit_moments"] == [2, 2]
     assert report["max_adjacent_hit_run"] == 2
+
+
+def test_report_exposes_reference_scene_and_active_dodge_diagnostics() -> None:
+    track = {
+        "bpm": 128.0,
+        "beat_interval": 0.46875,
+        "settings": {
+            "reference_phrase_scenes": {
+                "scene_count": 2,
+                "call_response_scene_count": 2,
+                "motif_transfer_count": 2,
+                "payoff_count": 2,
+                "active_recovery_count": 1,
+                "complexity_jump_violations": 0,
+                "repeated_scene_count": 0,
+                "scene_distribution": {"feet_call_hands_answer": 2},
+            },
+            "reference_wall_safe_combos": {"applied": [{"phrase_index": 4}]},
+        },
+    }
+
+    report = build_report(track)
+
+    assert report["call_response_scene_count"] == 2
+    assert report["motif_transfer_count"] == 2
+    assert report["active_recovery_count"] == 1
+    assert report["activity_during_dodge_count"] == 1
+    assert report["complexity_jump_violations"] == 0

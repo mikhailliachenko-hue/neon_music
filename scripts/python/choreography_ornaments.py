@@ -81,6 +81,10 @@ def _protected_block(items: list[dict[str, Any]], movements: dict[str, dict[str,
             movement_id in PROTECTED_MOVEMENTS
             or bool(meta.get("sustained", False))
             or str(meta.get("family", "")) not in ORNAMENT_FAMILIES
+            or str(item.get("cell_function", "")).startswith((
+                "REFERENCE_SCENE_",
+                "REFERENCE_ACTIVE_RECOVERY",
+            ))
         ):
             return True
     return not items

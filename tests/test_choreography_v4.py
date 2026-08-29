@@ -23,6 +23,11 @@ from choreography_combo_director import (  # noqa: E402
     combo_target_count,
     safe_lane_map,
 )
+from choreography_scene_director import (  # noqa: E402
+    REFERENCE_SCENE_PATTERNS,
+    SCENE_PHASES,
+    scene_diagnostics,
+)
 
 
 APPROVED_SCENE_END_MASKS = {
@@ -50,6 +55,45 @@ def products():
     grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
     beatmap = build_vertical_slice(grid, copy.deepcopy(LEGACY_MAP))
     return grid, beatmap
+
+
+def test_reference_scene_library_has_complete_safe_motor_arcs():
+    for pattern in REFERENCE_SCENE_PATTERNS:
+        assert len(pattern["cells"]) == len(SCENE_PHASES) == 4
+        assert all(sum(duration for _, duration in cell) == 8 for cell in pattern["cells"])
+        complexity = list(pattern["motor_complexity"])
+        assert len(complexity) == 4
+        assert all(current - previous <= 1 for previous, current in zip(complexity, complexity[1:]))
+    assert scene_diagnostics([
+        {"scene_id": "a", "motor_complexity": [1, 2, 3, 3], "active_recovery": True},
+        {"scene_id": "b", "motor_complexity": [1, 1, 2, 3], "active_recovery": False},
+    ])["complexity_jump_violations"] == 0
+
+
+def test_reference_phrase_scenes_are_complete_deterministic_and_renderer_visible():
+    grid = migrate_beat_grid_v1(copy.deepcopy(LEGACY_GRID))
+    first = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    second = build_full_track(grid, copy.deepcopy(LEGACY_MAP))
+    first_settings = first["settings"]["reference_phrase_scenes"]
+    second_settings = second["settings"]["reference_phrase_scenes"]
+    assert first_settings == second_settings
+    assert first_settings["scene_count"] >= 1
+    assert first_settings["call_response_scene_count"] == first_settings["scene_count"]
+    assert first_settings["motif_transfer_count"] == first_settings["scene_count"]
+    assert first_settings["payoff_count"] == first_settings["scene_count"]
+    assert first_settings["complexity_jump_violations"] == 0
+    scene_phrase_indices = {int(value["phrase_index"]) for value in first_settings["applied"]}
+    assert not scene_phrase_indices & {
+        int(value["phrase_index"])
+        for value in first["settings"]["reference_wall_safe_combos"]["applied"]
+    }
+    scene_events = [
+        event for event in first["movement_events"]
+        if int(event.get("phrase_index", -1)) in scene_phrase_indices
+    ]
+    assert {event["reference_scene_phase"] for event in scene_events} == set(SCENE_PHASES)
+    assert all(event["reference_scene_id"] for event in scene_events)
+    assert any(note.get("reference_scene_id") for note in first["notes"])
 
 def test_multi_tempo_hypotheses():
     grid, _ = products()

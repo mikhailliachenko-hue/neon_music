@@ -48,6 +48,12 @@ from choreography_combo_director import (
     safe_lane_map,
     wall_pattern_for,
 )
+from choreography_scene_director import (
+    ACTIVE_SCENE_ROLES,
+    SCENE_PHASES,
+    choose_scene_assignments,
+    scene_diagnostics,
+)
 from canonical_timing import canonical_position_for_time
 
 BEAT_GRID_SCHEMA = "neon_music.beat_grid.v2"
@@ -905,6 +911,120 @@ def _reference_phrase_is_complete(phrase: list[dict[str, Any]], phrase_index: in
         default=phrase_start,
     )
     return phrase_end >= phrase_start + 32
+
+
+def _apply_reference_phrase_scenes(
+    selected_sequences: list[list[dict[str, Any]]],
+    phrase_contexts: list[dict[str, Any]],
+    director_plan: dict[str, Any],
+    profile: str,
+    intensity_mode: str,
+    excluded_phrase_indices: set[int] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Author complete call/mirror/transfer/payoff 32-count scenes.
+
+    Existing special mechanics win. The pass only claims complete wall-free
+    phrases and refuses any rewrite that breaks the normal two-family phrase
+    readability budget. A simple first cell in the following phrase provides
+    active recovery without turning the road completely empty.
+    """
+    if profile == WARMUP_PROFILE:
+        return [], scene_diagnostics([])
+    excluded = set(excluded_phrase_indices or set())
+    directives = director_plan.get("directives", [])
+    eligible: list[int] = []
+    for phrase_index, phrase in enumerate(selected_sequences):
+        context = phrase_contexts[phrase_index] if phrase_index < len(phrase_contexts) else {}
+        role = str(context.get("section_role", "")).lower()
+        directive = directives[phrase_index] if phrase_index < len(directives) else {}
+        if (
+            phrase_index == 0
+            or phrase_index >= len(selected_sequences) - 1
+            or phrase_index in excluded
+            or role not in ACTIVE_SCENE_ROLES
+            or directive.get("reserved_wall_windows")
+            or not _reference_phrase_is_complete(phrase, phrase_index)
+        ):
+            continue
+        eligible.append(phrase_index)
+
+    assignments = choose_scene_assignments(phrase_contexts, eligible, intensity_mode)
+    applied: list[dict[str, Any]] = []
+    for assignment in assignments:
+        phrase_index = int(assignment["phrase_index"])
+        phrase = selected_sequences[phrase_index]
+        original_phrase = copy.deepcopy(phrase)
+        pattern = assignment["pattern"]
+        scene_id = str(assignment["scene_id"])
+        phrase_start = phrase_index * 32
+        cell_stances = tuple(pattern.get("stances", ()))
+        rewrite_ok = True
+        for cell_index, (phase, steps) in enumerate(zip(SCENE_PHASES, pattern["cells"])):
+            start = phrase_start + cell_index * 8
+            replacements = [
+                (
+                    movement_id,
+                    int(duration),
+                    f"REFERENCE_SCENE_{scene_id.upper()}_{phase.upper()}_{step_index + 1}",
+                    ("SETUP", "DEVELOP", "LIFT", "PAYOFF")[cell_index],
+                )
+                for step_index, (movement_id, duration) in enumerate(steps)
+            ]
+            if not _replace_reference_window(phrase, start, start + 8, replacements):
+                rewrite_ok = False
+                break
+            scene_items = [
+                item for item in phrase
+                if start <= int(item.get("start_beat", 0)) < start + 8
+            ]
+            stances = cell_stances[cell_index] if cell_index < len(cell_stances) else ()
+            for item_index, item in enumerate(scene_items):
+                item["reference_scene_id"] = scene_id
+                item["reference_scene_phase"] = phase
+                item["motor_complexity"] = int(pattern["motor_complexity"][cell_index])
+                if item_index < len(stances) and stances[item_index]:
+                    item["double_step_stance"] = str(stances[item_index])
+        violations = phrase_readability_violations(phrase, MOVEMENTS)
+        if not rewrite_ok or violations:
+            phrase[:] = original_phrase
+            continue
+        record = {
+            key: value for key, value in assignment.items() if key != "pattern"
+        }
+        record.update({
+            "start_beat": phrase_start,
+            "phases": list(SCENE_PHASES),
+            "motor_complexity": list(pattern["motor_complexity"]),
+            "active_recovery": False,
+        })
+        applied.append(record)
+
+    applied_by_phrase = {int(value["phrase_index"]): value for value in applied}
+    for phrase_index, record in sorted(applied_by_phrase.items()):
+        recovery_phrase_index = phrase_index + 1
+        if recovery_phrase_index >= len(selected_sequences) or recovery_phrase_index in excluded:
+            continue
+        directive = directives[recovery_phrase_index] if recovery_phrase_index < len(directives) else {}
+        if directive.get("reserved_wall_windows") or recovery_phrase_index in applied_by_phrase:
+            continue
+        recovery_start = recovery_phrase_index * 32
+        recovery_phrase = selected_sequences[recovery_phrase_index]
+        if _replace_reference_window(recovery_phrase, recovery_start, recovery_start + 8, [
+            ("WEIGHT_SHIFT", 8, "REFERENCE_ACTIVE_RECOVERY", "SETUP"),
+        ]):
+            recovery_item = next(
+                item for item in recovery_phrase
+                if int(item.get("start_beat", -1)) == recovery_start
+            )
+            recovery_item.update({
+                "reference_scene_id": str(record["scene_id"]),
+                "reference_scene_phase": "active_recovery",
+                "motor_complexity": 0,
+            })
+            record["active_recovery"] = True
+            record["recovery_phrase_index"] = recovery_phrase_index
+
+    return applied, scene_diagnostics(applied)
 
 
 def _apply_reference_grounded_double_steps(
@@ -2508,6 +2628,28 @@ def build_choreography(
     spectacle_combo_config = grid.get("generation_settings", {}).get("spectacle_combos", {})
     if not isinstance(spectacle_combo_config, dict):
         spectacle_combo_config = {}
+    reference_phrase_scenes, reference_phrase_scene_summary = _apply_reference_phrase_scenes(
+        selected_sequences,
+        phrase_contexts,
+        director_plan,
+        profile,
+        intensity_mode=str(spectacle_combo_config.get("intensity", "Dynamic")),
+        excluded_phrase_indices=(
+            wall_phrase_indices
+            | set(hand_hold_phrase_indices)
+            | set(reference_jump_repeat_phrase_indices)
+            | reference_grounded_double_step_phrase_indices
+        ) if bool(spectacle_combo_config.get("enabled", True)) else set(range(len(selected_sequences))),
+    )
+    reference_phrase_scene_indices = {
+        int(value["phrase_index"])
+        for value in reference_phrase_scenes
+    }
+    reference_phrase_scene_owned_indices = reference_phrase_scene_indices | {
+        int(value["recovery_phrase_index"])
+        for value in reference_phrase_scenes
+        if "recovery_phrase_index" in value
+    }
     reference_spectacle_combos = _apply_reference_spectacle_combos(
         selected_sequences,
         phrase_contexts,
@@ -2517,6 +2659,7 @@ def build_choreography(
         excluded_phrase_indices=(
             set(hand_hold_phrase_indices)
             | set(reference_jump_repeat_phrase_indices)
+            | reference_phrase_scene_owned_indices
         ) if bool(spectacle_combo_config.get("enabled", True)) else set(range(len(selected_sequences))),
     )
     reference_spectacle_combo_phrase_indices = {
@@ -2534,6 +2677,7 @@ def build_choreography(
         excluded_phrase_indices=(
             set(hand_hold_phrase_indices)
             | set(reference_jump_repeat_phrase_indices)
+            | reference_phrase_scene_owned_indices
         ),
     )
     reference_wall_safe_combo_phrase_indices = {
@@ -2551,6 +2695,7 @@ def build_choreography(
         excluded_phrase_indices=(
             wall_phrase_indices
             | reference_grounded_double_step_phrase_indices
+            | reference_phrase_scene_owned_indices
             | reference_spectacle_combo_phrase_indices
             | reference_wall_safe_combo_phrase_indices
         ),
@@ -2562,6 +2707,7 @@ def build_choreography(
         excluded_phrase_indices=(
             wall_phrase_indices
             | reference_grounded_double_step_phrase_indices
+            | reference_phrase_scene_owned_indices
             | reference_spectacle_combo_phrase_indices
             | reference_wall_safe_combo_phrase_indices
         ),
@@ -2703,6 +2849,9 @@ def build_choreography(
             "readability_weight": meta.get("readability_weight", 0.7),
             "compound_grammar": copy.deepcopy(COMPOUND_GRAMMAR.get(item["movement"])),
             "double_step_stance": item.get("double_step_stance", ""),
+            "reference_scene_id": item.get("reference_scene_id", ""),
+            "reference_scene_phase": item.get("reference_scene_phase", ""),
+            "motor_complexity": int(item.get("motor_complexity", 0)),
             "spectacle_combo_id": item.get("spectacle_combo_id", ""),
             "spectacle_combo_step": int(item.get("spectacle_combo_step", 0)),
             "spectacle_combo_size": int(item.get("spectacle_combo_size", 0)),
@@ -2765,6 +2914,8 @@ def build_choreography(
             "reference_hand_hold_accent": phrase_index in hand_hold_phrase_indices,
             "reference_jump_repeat_challenge": phrase_index in reference_jump_repeat_phrase_indices,
             "reference_grounded_double_step": phrase_index in reference_grounded_double_step_phrase_indices,
+            "reference_phrase_scene": phrase_index in reference_phrase_scene_indices,
+            "reference_phrase_scene_recovery": phrase_index in (reference_phrase_scene_owned_indices - reference_phrase_scene_indices),
             "reference_spectacle_combo": phrase_index in reference_spectacle_combo_phrase_indices,
             "reference_wall_safe_combo": phrase_index in reference_wall_safe_combo_phrase_indices,
             "reference_finale_callback": phrase_index == reference_finale_callback_phrase_index,
@@ -2866,6 +3017,12 @@ def build_choreography(
                     "spectacle_combo_step": int(event.get("spectacle_combo_step", 0)),
                     "spectacle_combo_size": int(event.get("spectacle_combo_size", 0)),
                 })
+            if event.get("reference_scene_id"):
+                optional_renderer_metadata.update({
+                    "reference_scene_id": str(event["reference_scene_id"]),
+                    "reference_scene_phase": str(event.get("reference_scene_phase", "")),
+                    "motor_complexity": int(event.get("motor_complexity", 0)),
+                })
             if event.get("authored_for_wall"):
                 optional_renderer_metadata.update({
                     "wall_context": str(event.get("wall_context", "safe_side_combo")),
@@ -2886,7 +3043,7 @@ def build_choreography(
         "bpm": grid["bpm"], "beat_interval": interval, "seed": seed,
         "schema_versions": {"beatmap": BEATMAP_SCHEMA, "movement_events": MOVEMENT_SCHEMA, "micro_accents": ACCENT_SCHEMA, "obstacle_events": OBSTACLE_SCHEMA},
         "library_version": "movement_library.v2.1", "rules_version": "choreography_rules.v4.8",
-        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_grounded_double_steps": {"applied": reference_grounded_double_steps, "visual_language": "short_paired_footprints", "stances": ["wide", "narrow"]}, "reference_spectacle_combos": {"enabled": bool(spectacle_combo_config.get("enabled", True)), "intensity": normalize_combo_intensity(str(spectacle_combo_config.get("intensity", "Dynamic"))), "applied": reference_spectacle_combos, "library": [str(value["id"]) for value in SPECTACLE_COMBO_PATTERNS]}, "reference_wall_safe_combos": {"enabled": bool(spectacle_combo_config.get("enabled", True)) and bool(spectacle_combo_config.get("wall_safe_enabled", True)), "applied": reference_wall_safe_combos, "library": [str(value["id"]) for value in WALL_SAFE_COMBO_PATTERNS], "visual_language": "two_lane_safe_side_dance"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "partial_final_phrase": partial_final_phrase, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
+        "settings": {"semantic_obstacles_enabled": bool(obstacles), "legacy_independent_obstacles_enabled": False, "profile": profile, "warmup_repeat_ratio_target": 0.7, "warmup_max_unique_movements": 4, "unprepared_double_foot_replacements": reference_long_steps["replaced"], "reference_long_steps": reference_long_steps, "rhythm_ornaments": rhythm_ornaments, "reference_hand_call_rewrites": reference_hand_call_rewrites, "reference_hand_recovery_rewrites": reference_hand_recovery_rewrites, "reference_jump_repeat_challenges": {"applied_phrase_indices": reference_jump_repeat_phrase_indices, "visual_language": "paired_step_platforms_with_pooled_floor_laser"}, "reference_grounded_double_steps": {"applied": reference_grounded_double_steps, "visual_language": "short_paired_footprints", "stances": ["wide", "narrow"]}, "reference_phrase_scenes": {"enabled": bool(spectacle_combo_config.get("enabled", True)), "intensity": normalize_combo_intensity(str(spectacle_combo_config.get("intensity", "Dynamic"))), "applied": reference_phrase_scenes, "visual_language": "call_mirror_transfer_payoff", **reference_phrase_scene_summary}, "reference_spectacle_combos": {"enabled": bool(spectacle_combo_config.get("enabled", True)), "intensity": normalize_combo_intensity(str(spectacle_combo_config.get("intensity", "Dynamic"))), "applied": reference_spectacle_combos, "library": [str(value["id"]) for value in SPECTACLE_COMBO_PATTERNS]}, "reference_wall_safe_combos": {"enabled": bool(spectacle_combo_config.get("enabled", True)) and bool(spectacle_combo_config.get("wall_safe_enabled", True)), "applied": reference_wall_safe_combos, "library": [str(value["id"]) for value in WALL_SAFE_COMBO_PATTERNS], "visual_language": "two_lane_safe_side_dance"}, "reference_finale_callback": {"applied": reference_finale_callback_phrase_index >= 0, "phrase_index": reference_finale_callback_phrase_index, "environment_vfx_boost": True}, "partial_final_phrase": partial_final_phrase, "reference_hand_holds": {"enabled": bool(hand_hold_config.get("enabled", True)), "rate_phrases": max(2, int(hand_hold_config.get("rate_phrases", 4))), "applied_phrase_indices": hand_hold_phrase_indices}, "foot_concurrency": foot_concurrency},
         "preroll": {"countdown_beats": 4, "base_groove": "MARCH_IN_PLACE", "mandatory": False},
         "section_plan": grid.get("sections") or analyze_sections({"duration": beats[-1]["time"] + interval}, beats),
         "phrase_plan": phrase_plan, "director_plan": director_plan, "motifs": [{"id": "signature_A", "duration_beats": 16, "movements": ["STEP_PUNCH_LEFT", "STEP_TOUCH_RIGHT", "RESET_CENTER", "STEP_PUNCH_RIGHT", "STEP_TOUCH_LEFT", "RESET_CENTER"], "variation_target": .2}],

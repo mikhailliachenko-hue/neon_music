@@ -291,11 +291,12 @@ class AnalyzerApp(tk.Tk):
         self._spin(parent, 3, "Simultaneous feet", self.max_simultaneous_feet_var, 1, 2, 1, "max")
         ttk.Label(parent, text="Hard safety cap: never three step targets at one hit.", style="SectionBody.TLabel").grid(row=4, column=1, sticky="w", pady=(0, 4))
         self._spin(parent, 5, "Wall density brake", self.wall_density_multiplier_var, 1.0, 5.0, 0.05, "x")
-        ttk.Checkbutton(parent, text="Spectacle combo choreography", variable=self.spectacle_combos_enabled_var).grid(row=6, column=1, sticky="w", pady=4)
+        ttk.Checkbutton(parent, text="Reference dynamic scenes", variable=self.spectacle_combos_enabled_var).grid(row=6, column=1, sticky="w", pady=4)
         ttk.Checkbutton(parent, text="Combos during side dodge", variable=self.wall_safe_combos_enabled_var).grid(row=7, column=1, sticky="w", pady=4)
         intensity_row = self._grid_row(parent, 8, "Combo intensity")
         for value in COMBO_INTENSITIES:
             ttk.Radiobutton(intensity_row, text=value, value=value, variable=self.combo_intensity_var).pack(side="left", padx=(0, 12))
+        ttk.Label(parent, text="32-count: call → mirror → transfer → payoff, then active recovery.", style="SectionBody.TLabel").grid(row=9, column=1, sticky="w", pady=(0, 4))
         parent.columnconfigure(1, weight=1)
 
     def _build_wall_timing(self, parent) -> None:
@@ -572,7 +573,10 @@ class AnalyzerApp(tk.Tk):
             choreography = beatmap.get("choreography_v4", {})
             director = choreography.get("director_plan", {}) if isinstance(choreography, dict) else {}
             director_phrases = len(director.get("directives", [])) if isinstance(director, dict) else 0
-            self._queue.put(("ok", "Detected {notes} gameplay notes and {walls} analyzer wall windows ({high_walls} bright high / {low_walls} low corridor); {runtime_walls} remain after V4 movement safety. Double-hand holds: {hand_holds}; legacy floor holds: {holds}. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. 32-count Director phrases: {director_phrases}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
+            choreography_settings = choreography.get("settings", {}) if isinstance(choreography, dict) else {}
+            reference_scenes = choreography_settings.get("reference_phrase_scenes", {}) if isinstance(choreography_settings, dict) else {}
+            wall_safe_combos = choreography_settings.get("reference_wall_safe_combos", {}) if isinstance(choreography_settings, dict) else {}
+            self._queue.put(("ok", "Detected {notes} gameplay notes and {walls} analyzer wall windows ({high_walls} bright high / {low_walls} low corridor); {runtime_walls} remain after V4 movement safety. Double-hand holds: {hand_holds}; legacy floor holds: {holds}. Music-aware sections: {sections}; neural meter: {neural}; peak accents: {peaks}. 32-count Director phrases: {director_phrases}. Reference scenes: {reference_scenes}; motif transfers: {motif_transfers}; active recoveries: {active_recoveries}; dodge combos: {dodge_combos}. Strict candidates {strict}/{candidates}. Wall-window accepted prep/active/recovery: {prep}/{active}/{recovery}.\nWrote:\n{track}\n{srt}\n{feedback_srt}\n".format(
                 notes=len(audio_analyzer._beatmap_notes(beatmap)),
                 walls=wall_summary.get("event_count", 0),
                 runtime_walls=wall_summary.get("runtime_event_count", 0),
@@ -584,6 +588,10 @@ class AnalyzerApp(tk.Tk):
                 neural=bool(timing.get("neural_meter", {}).get("used", False)),
                 peaks=timing.get("music_expression", {}).get("summary", {}).get("peak_accent_count", 0),
                 director_phrases=director_phrases,
+                reference_scenes=reference_scenes.get("scene_count", 0),
+                motif_transfers=reference_scenes.get("motif_transfer_count", 0),
+                active_recoveries=reference_scenes.get("active_recovery_count", 0),
+                dodge_combos=len(wall_safe_combos.get("applied", [])) if isinstance(wall_safe_combos, dict) else 0,
                 strict=wall_summary.get("strict_candidate_count", 0),
                 candidates=wall_summary.get("candidate_count", 0),
                 prep=diagnostics.get("wall_preparation_accepted_notes", 0),

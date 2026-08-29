@@ -199,6 +199,12 @@ def build_report(track: dict[str, Any]) -> dict[str, Any]:
     rhythm_ornaments = settings.get("rhythm_ornaments", {})
     if not isinstance(rhythm_ornaments, dict):
         rhythm_ornaments = {}
+    phrase_scenes = settings.get("reference_phrase_scenes", {})
+    if not isinstance(phrase_scenes, dict):
+        phrase_scenes = {}
+    wall_safe_combos = settings.get("reference_wall_safe_combos", {})
+    if not isinstance(wall_safe_combos, dict):
+        wall_safe_combos = {}
     burst_count = sum(count >= 4 for count in hit_counts)
     breath_count = sum(count <= 2 for count in hit_counts)
     observed_tail_breath_count = sum(
@@ -240,6 +246,15 @@ def build_report(track: dict[str, Any]) -> dict[str, Any]:
         "rhythm_eligible_mask_blocks": int(rhythm_ornaments.get("eligible_blocks", 0)),
         "rhythm_approved_mask_ratio": float(rhythm_ornaments.get("approved_mask_ratio", 0.0)),
         "rhythm_authored_tail_breath_blocks": int(rhythm_ornaments.get("tail_breath_blocks", 0)),
+        "reference_scene_count": int(phrase_scenes.get("scene_count", 0)),
+        "call_response_scene_count": int(phrase_scenes.get("call_response_scene_count", 0)),
+        "motif_transfer_count": int(phrase_scenes.get("motif_transfer_count", 0)),
+        "payoff_count": int(phrase_scenes.get("payoff_count", 0)),
+        "active_recovery_count": int(phrase_scenes.get("active_recovery_count", 0)),
+        "activity_during_dodge_count": len(wall_safe_combos.get("applied", [])),
+        "complexity_jump_violations": int(phrase_scenes.get("complexity_jump_violations", 0)),
+        "repeated_scene_count": int(phrase_scenes.get("repeated_scene_count", 0)),
+        "reference_scene_distribution": phrase_scenes.get("scene_distribution", {}),
         "wall_candidates": len(wall_events),
         "wall_runtime_accepted": runtime_accepted,
         "wall_runtime_event_count": len(runtime_wall_events) if has_runtime_wall_events else runtime_accepted,
